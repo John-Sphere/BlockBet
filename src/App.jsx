@@ -194,7 +194,7 @@ export default function App() {
     setLoading(false);
   }
 
-  const allMatches = [...liveMatches, ...sportsMatches];
+  const allMatches = [...sportsMatches];
   const LEAGUES = ["All", ...new Set(sportsMatches.map(m => m.league))].slice(0, 8);
   const filtered = activeLeague === "All" ? allMatches : allMatches.filter(m => m.league === activeLeague);
   const totalOdds = betSlip.reduce((acc, b) => acc * parseFloat(b.odds || 1), 1).toFixed(2);
