@@ -422,8 +422,86 @@ export default function App() {
         ))}
       </div>
 
-      {/* MAIN LAYOUT */}
-      <div style={{ display: "flex", maxWidth: isMobile ? "100%" : 1400, margin: "0 auto" }}>
+      {/* HERO BANNER */}
+      <div style={{ background: "#020617", padding: isMobile ? "24px 16px" : "40px 24px", position: "relative", overflow: "hidden", borderBottom: "1px solid #1e293b" }}>
+        <div style={{ position: "absolute", top: -80, right: -80, width: 280, height: 280, borderRadius: "50%", background: "#0ea5e9", opacity: 0.12, filter: "blur(40px)" }} />
+        <div style={{ position: "absolute", bottom: -100, left: -60, width: 260, height: 260, borderRadius: "50%", background: "#6366f1", opacity: 0.1, filter: "blur(40px)" }} />
+
+        <div style={{ position: "relative", zIndex: 2, maxWidth: 480 }}>
+          <div style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "rgba(56,189,248,0.1)", border: "1px solid rgba(56,189,248,0.3)", color: "#38bdf8", fontSize: 12, fontWeight: "600", padding: "5px 12px", borderRadius: 20, marginBottom: 16 }}>
+            <div style={{ width: 6, height: 6, background: "#38bdf8", borderRadius: "50%" }} />
+            Live on Arc Testnet
+          </div>
+
+          <div style={{ fontSize: isMobile ? 22 : 32, fontWeight: "700", color: "white", lineHeight: 1.2, marginBottom: 12 }}>
+            Bet on sports with{" "}
+            <span style={{ background: "linear-gradient(90deg, #38bdf8, #818cf8)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+              real USDC
+            </span>
+            , fully on-chain
+          </div>
+
+          <div style={{ fontSize: 14, color: "#94a3b8", lineHeight: 1.6, marginBottom: 24 }}>
+            Transparent odds, instant payouts, zero middlemen. Connect your wallet and start betting on real matches today.
+          </div>
+
+          <div style={{ display: "flex", gap: 12, marginBottom: 28, flexWrap: "wrap" }}>
+            {!connected && (
+              <button onClick={connectWallet}
+                style={{ background: "linear-gradient(135deg, #0ea5e9, #6366f1)", color: "white", border: "none", padding: "11px 22px", borderRadius: 10, fontSize: 14, fontWeight: "600", cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
+                🦊 Connect Wallet
+              </button>
+            )}
+            <button onClick={() => window.scrollTo({ top: isMobile ? 400 : 300, behavior: "smooth" })}
+              style={{ background: "transparent", color: "#e2e8f0", border: "1px solid #334155", padding: "11px 22px", borderRadius: 10, fontSize: 14, fontWeight: "500", cursor: "pointer" }}>
+              View Matches
+            </button>
+          </div>
+
+          <div style={{ display: "flex", gap: 28, flexWrap: "wrap" }}>
+            <div>
+              <div style={{ fontSize: 18, fontWeight: "700", color: "white" }}>{stats.pools.toLocaleString()}</div>
+              <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>USDC in pools</div>
+            </div>
+            <div>
+              <div style={{ fontSize: 18, fontWeight: "700", color: "white" }}>{stats.bettors.toLocaleString()}</div>
+              <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>active bettors</div>
+            </div>
+            <div>
+              <div style={{ fontSize: 18, fontWeight: "700", color: "white" }}>100%</div>
+              <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>on-chain payouts</div>
+            </div>
+          </div>
+        </div>
+
+        {!isMobile && (
+          <div style={{ position: "absolute", right: 40, top: "50%", transform: "translateY(-50%)", width: 260, zIndex: 1 }}>
+            <div style={{ background: "#0a0f1e", border: "1px solid #1e293b", borderRadius: 12, padding: 14, marginBottom: 10 }}>
+              <div style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "rgba(239,68,68,0.1)", color: "#ef4444", fontSize: 9, fontWeight: "600", padding: "2px 6px", borderRadius: 8, marginBottom: 8 }}>
+                <div style={{ width: 4, height: 4, background: "#ef4444", borderRadius: "50%" }} /> LIVE
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span style={{ fontSize: 12, color: "#e2e8f0", fontWeight: "500" }}>Man United</span>
+                <div style={{ display: "flex", gap: 5 }}>
+                  <span style={{ background: "#1e293b", color: "#38bdf8", fontSize: 11, fontWeight: "600", padding: "4px 8px", borderRadius: 6 }}>2.10</span>
+                  <span style={{ background: "#1e293b", color: "#38bdf8", fontSize: 11, fontWeight: "600", padding: "4px 8px", borderRadius: 6 }}>3.40</span>
+                  <span style={{ background: "#1e293b", color: "#38bdf8", fontSize: 11, fontWeight: "600", padding: "4px 8px", borderRadius: 6 }}>2.85</span>
+                </div>
+              </div>
+            </div>
+            <div style={{ background: "#0a0f1e", border: "1px solid #1e293b", borderRadius: 12, padding: 14 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span style={{ fontSize: 12, color: "#e2e8f0", fontWeight: "500" }}>Barcelona</span>
+                <div style={{ display: "flex", gap: 5 }}>
+                  <span style={{ background: "#1e293b", color: "#38bdf8", fontSize: 11, fontWeight: "600", padding: "4px 8px", borderRadius: 6 }}>1.96</span>
+                  <span style={{ background: "#1e293b", color: "#38bdf8", fontSize: 11, fontWeight: "600", padding: "4px 8px", borderRadius: 6 }}>3.80</span>
+                  <span style={{ background: "#1e293b", color: "#38bdf8", fontSize: 11, fontWeight: "600", padding: "4px 8px", borderRadius: 6 }}>4.20</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
 
         {/* DESKTOP SIDEBAR */}
         {!isMobile && (
