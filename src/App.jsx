@@ -3,6 +3,7 @@ import { ethers } from "ethers";
 
 const CONTRACT_ADDRESS = "0x6df1feCD5d4A8cA8701458bDc5139bC1038d6fd7";
 const USDC_ADDRESS = "0x3600000000000000000000000000000000000000";
+
 const ABI = [
   "function placeBet(uint256,uint8,uint256) public",
   "function claimWinnings(uint256) public",
@@ -11,12 +12,36 @@ const ABI = [
 ];
 const USDC_ABI = ["function approve(address,uint256) public returns (bool)"];
 
-const SPORTS = [
-  { id: "Football", icon: "⚽" },
-  { id: "Basketball", icon: "🏀" },
-  { id: "Tennis", icon: "🎾" },
-  { id: "Baseball", icon: "⚾" },
+const VIRTUAL_TEAMS = [
+  { home: "Man United", away: "Arsenal", league: "Virtual Premier League" },
+  { home: "Barcelona", away: "Real Madrid", league: "Virtual La Liga" },
+  { home: "Liverpool", away: "Man City", league: "Virtual Premier League" },
+  { home: "PSG", away: "Bayern Munich", league: "Virtual Champions League" },
+  { home: "Chelsea", away: "Tottenham", league: "Virtual Premier League" },
+  { home: "Juventus", away: "AC Milan", league: "Virtual Serie A" },
+  { home: "Dortmund", away: "Inter Milan", league: "Virtual Bundesliga" },
+  { home: "Atletico Madrid", away: "Sevilla", league: "Virtual La Liga" },
+  { home: "Ajax", away: "PSV", league: "Virtual Eredivisie" },
+  { home: "Porto", away: "Benfica", league: "Virtual Primeira Liga" },
 ];
+
+const TEAM_LOGOS = {
+  "Man United": "https://upload.wikimedia.org/wikipedia/en/7/7a/Manchester_United_FC_crest.svg",
+  "Arsenal": "https://upload.wikimedia.org/wikipedia/en/5/53/Arsenal_FC.svg",
+  "Chelsea": "https://upload.wikimedia.org/wikipedia/en/c/cc/Chelsea_FC.svg",
+  "Liverpool": "https://upload.wikimedia.org/wikipedia/en/0/0c/Liverpool_FC.svg",
+  "Man City": "https://upload.wikimedia.org/wikipedia/en/e/eb/Manchester_City_FC_badge.svg",
+  "Tottenham": "https://upload.wikimedia.org/wikipedia/en/b/b4/Tottenham_Hotspur.svg",
+  "Barcelona": "https://upload.wikimedia.org/wikipedia/en/4/47/FC_Barcelona_%28crest%29.svg",
+  "Real Madrid": "https://upload.wikimedia.org/wikipedia/en/5/56/Real_Madrid_CF.svg",
+  "Bayern Munich": "https://upload.wikimedia.org/wikipedia/commons/1/1b/FC_Bayern_M%C3%BCnchen_logo_%282017%29.svg",
+  "PSG": "https://upload.wikimedia.org/wikipedia/en/a/a7/Paris_Saint-Germain_F.C..svg",
+  "Juventus": "https://upload.wikimedia.org/wikipedia/commons/1/15/Juventus_FC_2017_logo.svg",
+  "AC Milan": "https://upload.wikimedia.org/wikipedia/commons/d/d0/Logo_of_AC_Milan.svg",
+  "Inter Milan": "https://upload.wikimedia.org/wikipedia/commons/0/05/FC_Internazionale_Milano_2021.svg",
+  "Atletico Madrid": "https://upload.wikimedia.org/wikipedia/en/f/f4/Atletico_Madrid_2017_logo.svg",
+  "Dortmund": "https://upload.wikimedia.org/wikipedia/commons/6/67/Borussia_Dortmund_logo.svg",
+};
 
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
@@ -31,61 +56,62 @@ function useIsMobile() {
 export default function App() {
   const isMobile = useIsMobile();
   const [signer, setSigner] = useState(null);
-  const [sportsMatches, setSportsMatches] = useState([]);
+  const [matches, setMatches] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [sportsLoading, setSportsLoading] = useState(true);
   const [connected, setConnected] = useState(false);
   const [walletAddress, setWalletAddress] = useState("");
   const [betSlip, setBetSlip] = useState([]);
   const [showSlip, setShowSlip] = useState(false);
   const [activeLeague, setActiveLeague] = useState("All");
-  const [activeSport, setActiveSport] = useState("Football");
-  const [activeTab, setActiveTab] = useState("home");
   const [betAmount, setBetAmount] = useState("");
   const [showMenu, setShowMenu] = useState(false);
-  const [stats, setStats] = useState({ matches: 0, pools: 0, bettors: 3891 });
+  const [activeTab, setActiveTab] = useState("home");
+  const [countdowns, setCountdowns] = useState({});
 
   useEffect(() => {
-    fetchSportsData("Football");
-    const interval = setInterval(() => fetchSportsData(activeSport), 60000);
-    return () => clearInterval(interval);
+    loadMatches();
+    const matchInterval = setInterval(loadMatches, 30000);
+    const countdownInterval = setInterval(() => {
+      setCountdowns(prev => {
+        const updated = {};
+        Object.keys(prev).forEach(id => {
+          updated[id] = Math.max(0, (prev[id] || 90) - 1);
+        });
+        return updated;
+      });
+    }, 1000);
+    return () => {
+      clearInterval(matchInterval);
+      clearInterval(countdownInterval);
+    };
   }, []);
 
-  async function fetchSportsData(sport) {
-    setSportsLoading(true);
+  async function loadMatches(prov) {
     try {
-      const today = new Date().toISOString().split("T")[0];
-      const sportMap = { Football: "Soccer", Basketball: "Basketball", Tennis: "Tennis", Baseball: "Baseball" };
-      const url = `https://www.thesportsdb.com/api/v1/json/3/eventsday.php?d=${today}&s=${sportMap[sport]}`;
-      const res = await fetch(url);
-      const data = await res.json();
-      if (data.events) {
-        const matches = data.events.slice(0, 40).map((event, idx) => ({
-          id: "s" + idx,
-          homeTeam: event.strHomeTeam,
-          awayTeam: event.strAwayTeam,
-          league: event.strLeague,
-          time: event.strTime ? event.strTime.slice(0, 5) : "TBD",
-          date: event.dateEvent,
-          homeScore: event.intHomeScore,
-          awayScore: event.intAwayScore,
-          status: event.strStatus,
-          homeBadge: event.strHomeTeamBadge,
-          awayBadge: event.strAwayTeamBadge,
-          totalHome: Math.floor(Math.random() * 5000) + 500,
-          totalDraw: Math.floor(Math.random() * 2000) + 200,
-          totalAway: Math.floor(Math.random() * 4000) + 400,
-          resolved: false,
-          isReal: true,
-          sport,
-        }));
-        setSportsMatches(matches);
-        setStats(s => ({ ...s, matches: matches.length, pools: matches.reduce((a, m) => a + m.totalHome + m.totalDraw + m.totalAway, 0) }));
-      } else {
-        setSportsMatches([]);
+      const provider = prov || new ethers.BrowserProvider(window.ethereum);
+      const contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, provider);
+      const count = await contract.matchCount();
+      const loaded = [];
+      for (let i = Math.max(1, Number(count) - 9); i <= Number(count); i++) {
+        const m = await contract.getMatch(i);
+        const teamInfo = VIRTUAL_TEAMS.find(t => t.home === m[0] && t.away === m[1]) || { league: "Virtual League" };
+        loaded.push({
+          id: i,
+          homeTeam: m[0],
+          awayTeam: m[1],
+          league: teamInfo.league,
+          totalHome: Number(ethers.formatUnits(m[2], 6)),
+          totalDraw: Number(ethers.formatUnits(m[3], 6)),
+          totalAway: Number(ethers.formatUnits(m[4], 6)),
+          resolved: m[5],
+          result: Number(m[6]),
+        });
+        if (!countdowns[i]) {
+          setCountdowns(prev => ({ ...prev, [i]: Math.floor(Math.random() * 90) + 30 }));
+        }
       }
-    } catch { setSportsMatches([]); }
-    setSportsLoading(false);
+      setMatches(loaded.reverse());
+    } catch { setMatches([]); }
   }
 
   async function connectWallet() {
@@ -97,6 +123,7 @@ export default function App() {
     setSigner(web3Signer);
     setConnected(true);
     setWalletAddress(address.slice(0, 6) + "..." + address.slice(-4));
+    loadMatches(web3Provider);
   }
 
   function disconnectWallet() {
@@ -105,8 +132,8 @@ export default function App() {
   }
 
   function getOdds(side, pool) {
-    if (!side || !pool) return (Math.random() * 3 + 1.3).toFixed(2);
-    return Math.max(1.01, (pool / side)).toFixed(2);
+    if (!side || !pool) return (Math.random() * 2 + 1.3).toFixed(2);
+    return Math.max(1.01, pool / side).toFixed(2);
   }
 
   function addToBetSlip(match, prediction, odds) {
@@ -124,8 +151,39 @@ export default function App() {
     }
   }
 
-  const filtered = activeLeague === "All" ? sportsMatches : sportsMatches.filter(m => m.league === activeLeague);
-  const LEAGUES = ["All", ...new Set(sportsMatches.map(m => m.league))].slice(0, 8);
+  async function placeBet(matchId, prediction) {
+    if (!signer) return alert("Connect your wallet first!");
+    if (!betAmount || betAmount <= 0) return alert("Enter a bet amount!");
+    const amountInUnits = ethers.parseUnits(betAmount.toString(), 6);
+    setLoading(true);
+    try {
+      const usdc = new ethers.Contract(USDC_ADDRESS, USDC_ABI, signer);
+      await (await usdc.approve(CONTRACT_ADDRESS, amountInUnits)).wait();
+      const contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
+      await (await contract.placeBet(matchId, prediction, amountInUnits)).wait();
+      alert("✅ Bet placed successfully!");
+      loadMatches();
+      setBetSlip([]);
+      setBetAmount("");
+    } catch (err) { alert("Error: " + err.message); }
+    setLoading(false);
+  }
+
+  async function claimWinnings(matchId) {
+    if (!signer) return alert("Connect your wallet first!");
+    setLoading(true);
+    try {
+      const contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
+      await (await contract.claimWinnings(matchId)).wait();
+      alert("💰 Winnings claimed!");
+      loadMatches();
+    } catch (err) { alert("Error: " + err.message); }
+    setLoading(false);
+  }
+
+  const resultLabel = (r) => r === 1 ? "🏠 Home Win" : r === 2 ? "🤝 Draw" : r === 3 ? "✈️ Away Win" : "Pending";
+  const LEAGUES = ["All", ...new Set(matches.map(m => m.league))];
+  const filtered = activeLeague === "All" ? matches : matches.filter(m => m.league === activeLeague);
   const totalOdds = betSlip.reduce((acc, b) => acc * parseFloat(b.odds || 1), 1);
   const potentialWin = betAmount ? (betAmount * totalOdds).toFixed(2) : "0.00";
 
@@ -135,16 +193,23 @@ export default function App() {
     grouped[m.league].push(m);
   });
 
-  const TeamBadge = ({ team, badge, size = 22 }) => {
-    if (badge) return <img src={badge} alt={team} style={{ width: size, height: size, objectFit: "contain", borderRadius: "50%" }} onError={e => e.target.style.display = "none"} />;
-    return <div style={{ width: size, height: size, background: "#1e293b", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: size * 0.5 }}>⚽</div>;
+  const TeamBadge = ({ team, size = 22 }) => {
+    if (TEAM_LOGOS[team]) return (
+      <img src={TEAM_LOGOS[team]} alt={team}
+        style={{ width: size, height: size, objectFit: "contain", flexShrink: 0 }}
+        onError={e => e.target.style.display = "none"} />
+    );
+    return <div style={{ width: size, height: size, background: "#1e293b", borderRadius: "50%", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: size * 0.5 }}>⚽</div>;
   };
 
-  const isLiveMatch = (match) => match.homeScore !== null && match.status !== "Match Finished";
-  const isFinished = (match) => match.status === "Match Finished";
+  const formatCountdown = (secs) => {
+    const m = Math.floor(secs / 60);
+    const s = secs % 60;
+    return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+  };
 
   const BetSlipContent = () => (
-    <div style={{ height: "100%" }}>
+    <div>
       <div style={{ background: "linear-gradient(135deg, #0ea5e9, #6366f1)", padding: "14px 16px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <span style={{ fontSize: 16, fontWeight: "600", color: "white" }}>🎯 Bet Slip</span>
@@ -170,7 +235,7 @@ export default function App() {
         {betSlip.length === 0 ? (
           <div style={{ textAlign: "center", padding: "30px 0", color: "#64748b" }}>
             <div style={{ fontSize: 36, marginBottom: 8 }}>🎯</div>
-            <div style={{ fontSize: 13 }}>Click on any odds to add to your slip</div>
+            <div style={{ fontSize: 13 }}>Click odds to add to slip</div>
           </div>
         ) : (
           <>
@@ -186,17 +251,17 @@ export default function App() {
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                     <span style={{ fontSize: 15, fontWeight: "bold", color: "#38bdf8" }}>{bet.odds}</span>
                     <button onClick={() => setBetSlip(betSlip.filter((_, idx) => idx !== i))}
-                      style={{ background: "none", border: "none", color: "#ef4444", cursor: "pointer", fontSize: 16, lineHeight: 1 }}>✕</button>
+                      style={{ background: "none", border: "none", color: "#ef4444", cursor: "pointer", fontSize: 16 }}>✕</button>
                   </div>
                 </div>
               </div>
             ))}
 
             <div style={{ margin: "14px 0" }}>
-              <div style={{ fontSize: 12, color: "#94a3b8", marginBottom: 6 }}>Stake amount (USDC)</div>
+              <div style={{ fontSize: 12, color: "#94a3b8", marginBottom: 6 }}>Stake (USDC)</div>
               <input type="number" placeholder="Enter amount..."
                 value={betAmount} onChange={e => setBetAmount(e.target.value)}
-                style={{ width: "100%", padding: "10px 12px", borderRadius: 8, border: "1px solid #1e293b", background: "#0f172a", color: "white", fontSize: 14, boxSizing: "border-box", outline: "none" }} />
+                style={{ width: "100%", padding: "10px 12px", borderRadius: 8, border: "1px solid #1e293b", background: "#0f172a", color: "white", fontSize: 14, boxSizing: "border-box" }} />
             </div>
 
             <div style={{ background: "#0f172a", border: "1px solid #1e293b", borderRadius: 10, padding: 12, marginBottom: 12 }}>
@@ -210,7 +275,12 @@ export default function App() {
               </div>
             </div>
 
-            <button onClick={() => connected ? alert("Place bet on Arc Testnet matches!") : connectWallet()}
+            <button
+              onClick={() => {
+                if (!connected) return connectWallet();
+                if (betSlip.length === 0) return alert("Add selections first!");
+                betSlip.forEach(bet => placeBet(bet.matchId, bet.prediction));
+              }}
               style={{ width: "100%", padding: "13px", background: "linear-gradient(135deg, #0ea5e9, #6366f1)", color: "white", border: "none", borderRadius: 10, fontWeight: "600", cursor: "pointer", fontSize: 15 }}>
               {connected ? "🎯 Place Bet" : "🦊 Connect Wallet"}
             </button>
@@ -227,29 +297,28 @@ export default function App() {
   return (
     <div style={{ background: "#020617", minHeight: "100vh", color: "white", fontFamily: "Arial, sans-serif" }}>
 
+      {/* HEADER */}
       <div style={{ background: "#0a0f1e", borderBottom: "1px solid #1e293b", padding: isMobile ? "10px 14px" : "0 24px", position: "sticky", top: 0, zIndex: 100 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", height: isMobile ? "auto" : 56 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             {isMobile && (
               <button onClick={() => setShowMenu(!showMenu)} style={{ background: "none", border: "none", color: "white", fontSize: 20, cursor: "pointer" }}>☰</button>
             )}
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <div style={{ width: 34, height: 34, background: "linear-gradient(135deg, #0ea5e9, #6366f1)", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <img src="/logo.png" alt="logo" style={{ width: 26, height: 26, objectFit: "contain" }} />
+            <div style={{ width: 34, height: 34, background: "linear-gradient(135deg, #0ea5e9, #6366f1)", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <img src="/logo.png" alt="logo" style={{ width: 26, height: 26, objectFit: "contain" }} />
+            </div>
+            <div>
+              <div style={{ fontSize: isMobile ? 13 : 16, fontWeight: "700", background: "linear-gradient(90deg, #38bdf8, #818cf8)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+                DISTANT FINANCE
               </div>
-              <div>
-                <div style={{ fontSize: isMobile ? 13 : 16, fontWeight: "700", background: "linear-gradient(90deg, #38bdf8, #818cf8)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-                  DISTANT FINANCE
-                </div>
-                <div style={{ fontSize: 9, color: "#475569", letterSpacing: 2 }}>DECENTRALIZED BETTING</div>
-              </div>
+              <div style={{ fontSize: 9, color: "#475569", letterSpacing: 2 }}>VIRTUAL SPORTS BETTING</div>
             </div>
           </div>
 
           {!isMobile && (
             <div style={{ display: "flex", gap: 24 }}>
-              {["Sports", "Live Betting", "Jackpot", "Livescore", "Results"].map(t => (
-                <span key={t} style={{ fontSize: 13, cursor: "pointer", color: t === "Sports" ? "#38bdf8" : "#64748b", borderBottom: t === "Sports" ? "2px solid #38bdf8" : "none", padding: "18px 0", display: "inline-block" }}>{t}</span>
+              {["Virtual Sports", "Live Betting", "Results", "How it Works"].map(t => (
+                <span key={t} style={{ fontSize: 13, cursor: "pointer", color: t === "Virtual Sports" ? "#38bdf8" : "#64748b", borderBottom: t === "Virtual Sports" ? "2px solid #38bdf8" : "none", padding: "18px 0", display: "inline-block" }}>{t}</span>
               ))}
             </div>
           )}
@@ -291,6 +360,7 @@ export default function App() {
         </div>
       </div>
 
+      {/* MOBILE MENU */}
       {isMobile && showMenu && (
         <div style={{ position: "fixed", top: 0, left: 0, width: "100%", height: "100%", zIndex: 200 }}>
           <div onClick={() => setShowMenu(false)} style={{ position: "absolute", width: "100%", height: "100%", background: "rgba(0,0,0,0.8)" }} />
@@ -301,10 +371,10 @@ export default function App() {
             </div>
             {connected ? (
               <div style={{ background: "#0f172a", borderRadius: 10, padding: 14, marginBottom: 20, border: "1px solid #1e3a5f" }}>
-                <div style={{ fontSize: 11, color: "#64748b", marginBottom: 4 }}>Connected wallet</div>
+                <div style={{ fontSize: 11, color: "#64748b", marginBottom: 4 }}>Connected</div>
                 <div style={{ fontSize: 13, color: "#38bdf8", fontWeight: "600" }}>🦊 {walletAddress}</div>
                 <button onClick={() => { disconnectWallet(); setShowMenu(false); }}
-                  style={{ marginTop: 10, width: "100%", padding: 8, background: "#1e1e2e", color: "#ef4444", border: "1px solid #3f1515", borderRadius: 6, cursor: "pointer", fontSize: 13 }}>
+                  style={{ marginTop: 10, width: "100%", padding: 8, background: "#1e1e2e", color: "#ef4444", border: "1px solid #3f1515", borderRadius: 6, cursor: "pointer" }}>
                   Disconnect
                 </button>
               </div>
@@ -314,18 +384,11 @@ export default function App() {
                 🦊 Connect Wallet
               </button>
             )}
-            <div style={{ fontSize: 10, color: "#475569", letterSpacing: 1, marginBottom: 10, fontWeight: "600" }}>SPORTS</div>
-            {SPORTS.map(sport => (
-              <div key={sport.id} onClick={() => { setActiveSport(sport.id); fetchSportsData(sport.id); setActiveLeague("All"); setShowMenu(false); }}
-                style={{ padding: "12px 8px", fontSize: 14, color: activeSport === sport.id ? "#38bdf8" : "#94a3b8", cursor: "pointer", borderBottom: "1px solid #0f172a", fontWeight: activeSport === sport.id ? "600" : "normal" }}>
-                {sport.icon} {sport.id}
-              </div>
-            ))}
-            <div style={{ fontSize: 10, color: "#475569", letterSpacing: 1, marginBottom: 10, marginTop: 20, fontWeight: "600" }}>LEAGUES</div>
+            <div style={{ fontSize: 10, color: "#475569", letterSpacing: 1, marginBottom: 10, fontWeight: "600" }}>VIRTUAL LEAGUES</div>
             {LEAGUES.map(league => (
               <div key={league} onClick={() => { setActiveLeague(league); setShowMenu(false); }}
                 style={{ padding: "10px 8px", fontSize: 13, color: activeLeague === league ? "#38bdf8" : "#94a3b8", cursor: "pointer", borderBottom: "1px solid #0f172a", fontWeight: activeLeague === league ? "600" : "normal" }}>
-                {league === "All" ? "🌍 All Matches" : "🏆 " + league}
+                {league === "All" ? "🌍 All Matches" : "🎮 " + league}
               </div>
             ))}
           </div>
@@ -339,17 +402,17 @@ export default function App() {
         <div style={{ position: "relative", zIndex: 2, maxWidth: 480 }}>
           <div style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "rgba(56,189,248,0.1)", border: "1px solid rgba(56,189,248,0.3)", color: "#38bdf8", fontSize: 12, fontWeight: "600", padding: "5px 12px", borderRadius: 20, marginBottom: 16 }}>
             <div style={{ width: 6, height: 6, background: "#38bdf8", borderRadius: "50%" }} />
-            Live on Arc Testnet
+            🎮 Virtual Sports Betting
           </div>
           <div style={{ fontSize: isMobile ? 22 : 32, fontWeight: "700", color: "white", lineHeight: 1.2, marginBottom: 12 }}>
-            Bet on sports with{" "}
+            Bet on{" "}
             <span style={{ background: "linear-gradient(90deg, #38bdf8, #818cf8)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-              real USDC
+              Virtual Matches
             </span>
-            , fully on-chain
+            {" "}with USDC
           </div>
           <div style={{ fontSize: 14, color: "#94a3b8", lineHeight: 1.6, marginBottom: 24 }}>
-            Transparent odds, instant payouts, zero middlemen. Connect your wallet and start betting on real matches today.
+            Fast-paced virtual football matches. New games every few minutes. Instant USDC payouts on Arc Testnet!
           </div>
           <div style={{ display: "flex", gap: 12, marginBottom: 28, flexWrap: "wrap" }}>
             {!connected && (
@@ -358,19 +421,19 @@ export default function App() {
                 🦊 Connect Wallet
               </button>
             )}
-            <button onClick={() => window.scrollTo({ top: isMobile ? 400 : 300, behavior: "smooth" })}
-              style={{ background: "transparent", color: "#e2e8f0", border: "1px solid #334155", padding: "11px 22px", borderRadius: 10, fontSize: 14, fontWeight: "500", cursor: "pointer" }}>
-              View Matches
+            <button onClick={() => window.scrollTo({ top: 500, behavior: "smooth" })}
+              style={{ background: "transparent", color: "#e2e8f0", border: "1px solid #334155", padding: "11px 22px", borderRadius: 10, fontSize: 14, cursor: "pointer" }}>
+              View Matches ⬇️
             </button>
           </div>
           <div style={{ display: "flex", gap: 28, flexWrap: "wrap" }}>
             <div>
-              <div style={{ fontSize: 18, fontWeight: "700", color: "white" }}>{stats.pools.toLocaleString()}</div>
-              <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>USDC in pools</div>
+              <div style={{ fontSize: 18, fontWeight: "700", color: "white" }}>{matches.length}</div>
+              <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>active matches</div>
             </div>
             <div>
-              <div style={{ fontSize: 18, fontWeight: "700", color: "white" }}>{stats.bettors.toLocaleString()}</div>
-              <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>active bettors</div>
+              <div style={{ fontSize: 18, fontWeight: "700", color: "white" }}>~3 min</div>
+              <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>match duration</div>
             </div>
             <div>
               <div style={{ fontSize: 18, fontWeight: "700", color: "white" }}>100%</div>
@@ -378,214 +441,180 @@ export default function App() {
             </div>
           </div>
         </div>
-        {!isMobile && (
+
+        {!isMobile && matches.length > 0 && (
           <div style={{ position: "absolute", right: 40, top: "50%", transform: "translateY(-50%)", width: 260, zIndex: 1 }}>
-            <div style={{ background: "#0a0f1e", border: "1px solid #1e293b", borderRadius: 12, padding: 14, marginBottom: 10 }}>
-              <div style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "rgba(239,68,68,0.1)", color: "#ef4444", fontSize: 9, fontWeight: "600", padding: "2px 6px", borderRadius: 8, marginBottom: 8 }}>
-                <div style={{ width: 4, height: 4, background: "#ef4444", borderRadius: "50%" }} /> LIVE
-              </div>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <span style={{ fontSize: 12, color: "#e2e8f0", fontWeight: "500" }}>Man United</span>
-                <div style={{ display: "flex", gap: 5 }}>
-                  <span style={{ background: "#1e293b", color: "#38bdf8", fontSize: 11, fontWeight: "600", padding: "4px 8px", borderRadius: 6 }}>2.10</span>
-                  <span style={{ background: "#1e293b", color: "#38bdf8", fontSize: 11, fontWeight: "600", padding: "4px 8px", borderRadius: 6 }}>3.40</span>
-                  <span style={{ background: "#1e293b", color: "#38bdf8", fontSize: 11, fontWeight: "600", padding: "4px 8px", borderRadius: 6 }}>2.85</span>
+            {matches.slice(0, 2).map((match, i) => {
+              const pool = match.totalHome + match.totalDraw + match.totalAway;
+              const o1 = getOdds(match.totalHome, pool);
+              const ox = getOdds(match.totalDraw, pool);
+              const o2 = getOdds(match.totalAway, pool);
+              return (
+                <div key={i} style={{ background: "#0a0f1e", border: "1px solid #1e293b", borderRadius: 12, padding: 14, marginBottom: 10 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                    <div style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "rgba(99,102,241,0.1)", color: "#818cf8", fontSize: 9, fontWeight: "600", padding: "2px 6px", borderRadius: 8 }}>
+                      🎮 VIRTUAL
+                    </div>
+                    <span style={{ fontSize: 10, color: "#ef4444", fontWeight: "bold" }}>
+                      ⏱️ {formatCountdown(countdowns[match.id] || 90)}
+                    </span>
+                  </div>
+                  <div style={{ fontSize: 12, color: "#e2e8f0", fontWeight: "600", marginBottom: 8 }}>
+                    {match.homeTeam} vs {match.awayTeam}
+                  </div>
+                  <div style={{ display: "flex", gap: 5 }}>
+                    {[o1, ox, o2].map((odd, idx) => (
+                      <span key={idx} style={{ flex: 1, background: "#1e293b", color: "#38bdf8", fontSize: 11, fontWeight: "600", padding: "4px 0", borderRadius: 6, textAlign: "center" }}>{odd}</span>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            </div>
-            <div style={{ background: "#0a0f1e", border: "1px solid #1e293b", borderRadius: 12, padding: 14 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <span style={{ fontSize: 12, color: "#e2e8f0", fontWeight: "500" }}>Barcelona</span>
-                <div style={{ display: "flex", gap: 5 }}>
-                  <span style={{ background: "#1e293b", color: "#38bdf8", fontSize: 11, fontWeight: "600", padding: "4px 8px", borderRadius: 6 }}>1.96</span>
-                  <span style={{ background: "#1e293b", color: "#38bdf8", fontSize: 11, fontWeight: "600", padding: "4px 8px", borderRadius: 6 }}>3.80</span>
-                  <span style={{ background: "#1e293b", color: "#38bdf8", fontSize: 11, fontWeight: "600", padding: "4px 8px", borderRadius: 6 }}>4.20</span>
-                </div>
-              </div>
-            </div>
+              );
+            })}
           </div>
         )}
       </div>
 
-      <div style={{ background: "#0a0f1e", borderBottom: "1px solid #1e293b", padding: isMobile ? "10px 14px" : "10px 24px" }}>
-        <div style={{ display: "flex", gap: isMobile ? 12 : 24, overflowX: "auto" }}>
-          {[
-            { label: "Live matches", value: stats.matches, icon: "🔴" },
-            { label: "USDC in pools", value: stats.pools.toLocaleString(), icon: "💰" },
-            { label: "Active bettors", value: stats.bettors.toLocaleString(), icon: "👥" },
-            { label: "Network", value: "Arc Testnet", icon: "⛓️" },
-          ].map(stat => (
-            <div key={stat.label} style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-              <span style={{ fontSize: 14 }}>{stat.icon}</span>
-              <div>
-                <div style={{ fontSize: isMobile ? 13 : 14, fontWeight: "600", color: "#e2e8f0" }}>{stat.value}</div>
-                <div style={{ fontSize: 10, color: "#475569" }}>{stat.label}</div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div style={{ background: "#0a0f1e", borderBottom: "1px solid #1e293b", padding: isMobile ? "8px 14px" : "0 24px", display: "flex", gap: isMobile ? 6 : 0, overflowX: "auto" }}>
-        {SPORTS.map(sport => (
-          <button key={sport.id}
-            onClick={() => { setActiveSport(sport.id); fetchSportsData(sport.id); setActiveLeague("All"); }}
-            style={{
-              background: isMobile ? (activeSport === sport.id ? "linear-gradient(135deg,#0ea5e9,#6366f1)" : "#0f172a") : "transparent",
-              color: activeSport === sport.id ? (isMobile ? "white" : "#38bdf8") : "#64748b",
-              border: "none",
-              borderBottom: !isMobile ? (activeSport === sport.id ? "2px solid #38bdf8" : "2px solid transparent") : "none",
-              padding: isMobile ? "7px 14px" : "12px 16px",
-              borderRadius: isMobile ? 20 : 0,
-              cursor: "pointer", fontSize: 13, whiteSpace: "nowrap",
-              fontWeight: activeSport === sport.id ? "600" : "normal",
-              flexShrink: 0,
-            }}>
-            {sport.icon} {sport.id}
-          </button>
-        ))}
-      </div>
-
+      {/* LEAGUE FILTER */}
       <div style={{ background: "#020617", padding: isMobile ? "8px 14px" : "8px 24px", display: "flex", gap: 6, overflowX: "auto", borderBottom: "1px solid #0f172a" }}>
         {LEAGUES.map(league => (
           <button key={league} onClick={() => setActiveLeague(league)}
-            style={{
-              background: activeLeague === league ? "linear-gradient(135deg,#0ea5e9,#6366f1)" : "#0f172a",
-              color: activeLeague === league ? "white" : "#64748b",
-              border: "1px solid " + (activeLeague === league ? "transparent" : "#1e293b"),
-              padding: isMobile ? "5px 12px" : "6px 14px",
-              borderRadius: 20, cursor: "pointer", fontSize: isMobile ? 11 : 12,
-              whiteSpace: "nowrap", fontWeight: activeLeague === league ? "600" : "normal",
-              flexShrink: 0,
-            }}>
+            style={{ background: activeLeague === league ? "linear-gradient(135deg,#0ea5e9,#6366f1)" : "#0f172a", color: activeLeague === league ? "white" : "#64748b", border: "1px solid " + (activeLeague === league ? "transparent" : "#1e293b"), padding: isMobile ? "5px 12px" : "6px 14px", borderRadius: 20, cursor: "pointer", fontSize: isMobile ? 11 : 12, whiteSpace: "nowrap", fontWeight: activeLeague === league ? "600" : "normal", flexShrink: 0 }}>
             {league}
           </button>
         ))}
       </div>
 
+      {/* MAIN LAYOUT */}
       <div style={{ display: "flex", maxWidth: isMobile ? "100%" : 1400, margin: "0 auto" }}>
 
+        {/* DESKTOP SIDEBAR */}
         {!isMobile && (
-          <div style={{ width: 220, background: "#0a0f1e", borderRight: "1px solid #1e293b", flexShrink: 0, minHeight: "calc(100vh - 160px)" }}>
-            <div style={{ padding: "12px 16px", fontSize: 10, color: "#475569", letterSpacing: 1, fontWeight: "600" }}>POPULAR</div>
+          <div style={{ width: 220, background: "#0a0f1e", borderRight: "1px solid #1e293b", flexShrink: 0 }}>
+            <div style={{ padding: "12px 16px", fontSize: 10, color: "#475569", letterSpacing: 1, fontWeight: "600" }}>VIRTUAL LEAGUES</div>
             {LEAGUES.map(league => (
               <div key={league} onClick={() => setActiveLeague(league)}
-                style={{ padding: "10px 16px", fontSize: 13, cursor: "pointer", color: activeLeague === league ? "#38bdf8" : "#94a3b8", borderBottom: "1px solid #0f172a", display: "flex", justifyContent: "space-between", alignItems: "center", fontWeight: activeLeague === league ? "600" : "normal", background: activeLeague === league ? "#0f172a" : "transparent" }}>
-                <span>{league === "All" ? "🌍 All Matches" : "🏆 " + league}</span>
-                <span style={{ color: "#334155", fontSize: 16 }}>›</span>
+                style={{ padding: "10px 16px", fontSize: 13, cursor: "pointer", color: activeLeague === league ? "#38bdf8" : "#94a3b8", borderBottom: "1px solid #0f172a", display: "flex", justifyContent: "space-between", fontWeight: activeLeague === league ? "600" : "normal", background: activeLeague === league ? "#0f172a" : "transparent" }}>
+                <span>{league === "All" ? "🌍 All Matches" : "🎮 " + league}</span>
+                <span style={{ color: "#334155" }}>›</span>
               </div>
             ))}
+
+            <div style={{ padding: "16px", marginTop: 12, background: "#0f172a", margin: 12, borderRadius: 10, border: "1px solid #1e293b" }}>
+              <div style={{ fontSize: 11, color: "#475569", marginBottom: 8, fontWeight: "600" }}>HOW IT WORKS</div>
+              <div style={{ fontSize: 12, color: "#94a3b8", lineHeight: 1.8 }}>
+                1️⃣ Connect MetaMask<br />
+                2️⃣ Pick a match<br />
+                3️⃣ Choose Home/Draw/Away<br />
+                4️⃣ Enter USDC amount<br />
+                5️⃣ Claim winnings! 💰
+              </div>
+            </div>
           </div>
         )}
 
+        {/* MATCHES */}
         <div style={{ flex: 1, minWidth: 0 }}>
           {!isMobile && (
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 72px 72px 72px 36px", padding: "8px 16px", background: "#0a0f1e", fontSize: 11, color: "#475569", fontWeight: "600", borderBottom: "1px solid #1e293b" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 72px 72px 72px 80px", padding: "8px 16px", background: "#0a0f1e", fontSize: 11, color: "#475569", fontWeight: "600", borderBottom: "1px solid #1e293b" }}>
               <span>MATCH</span>
               <span style={{ textAlign: "center" }}>1</span>
               <span style={{ textAlign: "center" }}>X</span>
               <span style={{ textAlign: "center" }}>2</span>
-              <span></span>
+              <span style={{ textAlign: "center" }}>TIMER</span>
             </div>
           )}
 
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: isMobile ? "8px 14px" : "8px 16px", background: "#020617", borderBottom: "1px solid #0f172a" }}>
             <span style={{ color: "#38bdf8", fontSize: 13, fontWeight: "600" }}>
-              {sportsLoading ? "⏳ Loading..." : `🔴 ${activeLeague === "All" ? "All Matches" : activeLeague} (${filtered.length})`}
+              🎮 Virtual Matches ({filtered.length})
             </span>
-            <button onClick={() => fetchSportsData(activeSport)}
+            <button onClick={() => loadMatches()}
               style={{ background: "#0f172a", color: "#38bdf8", border: "1px solid #1e293b", padding: "5px 12px", borderRadius: 6, cursor: "pointer", fontSize: 12 }}>
               🔄 Refresh
             </button>
           </div>
 
-          {sportsLoading ? (
+          {matches.length === 0 ? (
             <div style={{ textAlign: "center", padding: 60, color: "#475569" }}>
-              <div style={{ fontSize: 48, marginBottom: 12 }}>⏳</div>
-              <div>Loading {activeSport} matches...</div>
-            </div>
-          ) : filtered.length === 0 ? (
-            <div style={{ textAlign: "center", padding: 60, color: "#475569" }}>
-              <div style={{ fontSize: 48, marginBottom: 12 }}>📋</div>
-              <div>No matches found today</div>
+              <div style={{ fontSize: 48, marginBottom: 12 }}>🎮</div>
+              <div style={{ fontSize: 16, marginBottom: 8 }}>No virtual matches yet!</div>
+              <div style={{ fontSize: 13, color: "#334155", marginBottom: 20 }}>Connect your wallet to load matches</div>
+              <button onClick={connectWallet}
+                style={{ background: "linear-gradient(135deg, #0ea5e9, #6366f1)", color: "white", border: "none", padding: "12px 24px", borderRadius: 10, fontWeight: "600", cursor: "pointer", fontSize: 14 }}>
+                🦊 Connect Wallet
+              </button>
             </div>
           ) : (
-            Object.entries(grouped).map(([league, matches]) => (
+            Object.entries(grouped).map(([league, leagueMatches]) => (
               <div key={league}>
-                <div style={{ padding: isMobile ? "8px 14px" : "8px 16px", background: "#0a0f1e", fontSize: 11, color: "#94a3b8", fontWeight: "600", borderTop: "1px solid #1e293b", borderBottom: "1px solid #1e293b" }}>
-                  🏆 {league.toUpperCase()}
+                <div style={{ padding: isMobile ? "8px 14px" : "8px 16px", background: "#0a0f1e", fontSize: 11, color: "#818cf8", fontWeight: "600", borderTop: "1px solid #1e293b", borderBottom: "1px solid #1e293b", display: "flex", alignItems: "center", gap: 6 }}>
+                  🎮 {league.toUpperCase()}
                 </div>
-                {matches.map((match, idx) => {
-                  const pool = (match.totalHome || 0) + (match.totalDraw || 0) + (match.totalAway || 0);
+                {leagueMatches.map((match, idx) => {
+                  const pool = match.totalHome + match.totalDraw + match.totalAway;
                   const o1 = getOdds(match.totalHome, pool);
                   const ox = getOdds(match.totalDraw, pool);
                   const o2 = getOdds(match.totalAway, pool);
                   const selected = betSlip.find(b => b.matchId === match.id);
-                  const live = isLiveMatch(match);
-                  const finished = isFinished(match);
+                  const countdown = countdowns[match.id] || 90;
 
                   return (
                     <div key={match.id} style={{ background: idx % 2 === 0 ? "#020617" : "#030a14", borderBottom: "1px solid #0f172a" }}>
                       <div style={{ padding: isMobile ? "10px 14px" : "12px 16px", display: "flex", alignItems: "center", gap: isMobile ? 8 : 12 }}>
 
-                        <div style={{ minWidth: isMobile ? 38 : 48, textAlign: "center", flexShrink: 0 }}>
-                          {live ? (
-                            <div>
-                              <div style={{ display: "inline-flex", alignItems: "center", gap: 3, background: "#1a0a0a", color: "#ef4444", fontSize: 10, fontWeight: "bold", padding: "2px 6px", borderRadius: 10, border: "1px solid #3f1515" }}>
-                                <div style={{ width: 5, height: 5, background: "#ef4444", borderRadius: "50%" }} />
-                                LIVE
-                              </div>
-                              <div style={{ fontSize: 12, fontWeight: "bold", color: "#e2e8f0", marginTop: 2 }}>
-                                {match.homeScore ?? 0} - {match.awayScore ?? 0}
-                              </div>
-                            </div>
-                          ) : finished ? (
-                            <div>
-                              <div style={{ fontSize: 12, fontWeight: "bold", color: "#94a3b8" }}>
-                                {match.homeScore ?? 0} - {match.awayScore ?? 0}
-                              </div>
-                              <div style={{ fontSize: 10, color: "#475569" }}>FT</div>
-                            </div>
-                          ) : (
-                            <div>
-                              <div style={{ fontSize: 12, color: "#94a3b8", fontWeight: "600" }}>{match.time}</div>
-                              <div style={{ fontSize: 10, color: "#475569" }}>{match.date?.slice(5)}</div>
-                            </div>
-                          )}
-                        </div>
-
+                        {/* MATCH INFO */}
                         <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-                            <TeamBadge team={match.homeTeam} badge={match.homeBadge} size={isMobile ? 18 : 22} />
-                            <span style={{ fontSize: isMobile ? 12 : 13, color: "#e2e8f0", fontWeight: "500", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          <div style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "rgba(99,102,241,0.1)", color: "#818cf8", fontSize: 9, fontWeight: "600", padding: "2px 6px", borderRadius: 8, marginBottom: 6 }}>
+                            🎮 VIRTUAL • {match.league}
+                          </div>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 5 }}>
+                            <TeamBadge team={match.homeTeam} size={isMobile ? 16 : 20} />
+                            <span style={{ fontSize: isMobile ? 12 : 13, color: "#e2e8f0", fontWeight: "600", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                               {match.homeTeam}
                             </span>
                           </div>
                           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                            <TeamBadge team={match.awayTeam} badge={match.awayBadge} size={isMobile ? 18 : 22} />
-                            <span style={{ fontSize: isMobile ? 12 : 13, color: "#e2e8f0", fontWeight: "500", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                            <TeamBadge team={match.awayTeam} size={isMobile ? 16 : 20} />
+                            <span style={{ fontSize: isMobile ? 12 : 13, color: "#e2e8f0", fontWeight: "600", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                               {match.awayTeam}
                             </span>
                           </div>
+                          {match.resolved && (
+                            <div style={{ marginTop: 6, fontSize: 11, color: "#4ade80", fontWeight: "600" }}>
+                              ✅ Result: {resultLabel(match.result)}
+                            </div>
+                          )}
                         </div>
 
-                        <div style={{ display: "flex", gap: isMobile ? 4 : 5, flexShrink: 0 }}>
-                          {[{ code: 1, odds: o1, label: "1" }, { code: 2, odds: ox, label: "X" }, { code: 3, odds: o2, label: "2" }].map(opt => (
-                            <button key={opt.code}
-                              onClick={() => addToBetSlip(match, opt.code, opt.odds)}
-                              style={{
-                                width: isMobile ? 50 : 66,
-                                padding: isMobile ? "6px 2px" : "8px 4px",
-                                background: selected?.prediction === opt.code ? "linear-gradient(135deg,#0ea5e9,#6366f1)" : "#0f172a",
-                                color: "white",
-                                border: "1px solid " + (selected?.prediction === opt.code ? "transparent" : "#1e293b"),
-                                borderRadius: 8, cursor: "pointer", textAlign: "center",
-                              }}>
-                              <div style={{ fontSize: 9, color: selected?.prediction === opt.code ? "rgba(255,255,255,0.7)" : "#64748b", marginBottom: 2 }}>{opt.label}</div>
-                              <div style={{ fontSize: isMobile ? 12 : 14, fontWeight: "bold" }}>{opt.odds}</div>
+                        {/* ODDS */}
+                        {!match.resolved && (
+                          <div style={{ display: "flex", gap: isMobile ? 4 : 5, flexShrink: 0 }}>
+                            {[{ code: 1, odds: o1, label: "1" }, { code: 2, odds: ox, label: "X" }, { code: 3, odds: o2, label: "2" }].map(opt => (
+                              <button key={opt.code}
+                                onClick={() => addToBetSlip(match, opt.code, opt.odds)}
+                                style={{ width: isMobile ? 50 : 66, padding: isMobile ? "6px 2px" : "8px 4px", background: selected?.prediction === opt.code ? "linear-gradient(135deg,#0ea5e9,#6366f1)" : "#0f172a", color: "white", border: "1px solid " + (selected?.prediction === opt.code ? "transparent" : "#1e293b"), borderRadius: 8, cursor: "pointer", textAlign: "center" }}>
+                                <div style={{ fontSize: 9, color: selected?.prediction === opt.code ? "rgba(255,255,255,0.7)" : "#64748b", marginBottom: 2 }}>{opt.label}</div>
+                                <div style={{ fontSize: isMobile ? 12 : 14, fontWeight: "bold" }}>{opt.odds}</div>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* TIMER or CLAIM */}
+                        <div style={{ minWidth: isMobile ? 40 : 70, textAlign: "center", flexShrink: 0 }}>
+                          {match.resolved ? (
+                            <button onClick={() => claimWinnings(match.id)}
+                              style={{ background: "linear-gradient(135deg,#f59e0b,#ef4444)", color: "white", border: "none", padding: "6px 8px", borderRadius: 6, cursor: "pointer", fontSize: isMobile ? 10 : 11, fontWeight: "600" }}>
+                              💰 Claim
                             </button>
-                          ))}
-                          {!isMobile && <div style={{ color: "#334155", fontSize: 11, width: 30, display: "flex", alignItems: "center", justifyContent: "center" }}>+</div>}
+                          ) : (
+                            <div>
+                              <div style={{ fontSize: isMobile ? 12 : 14, fontWeight: "bold", color: countdown < 30 ? "#ef4444" : "#f59e0b" }}>
+                                {formatCountdown(countdown)}
+                              </div>
+                              <div style={{ fontSize: 9, color: "#475569" }}>betting</div>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -597,6 +626,7 @@ export default function App() {
           <div style={{ height: isMobile ? 70 : 24 }} />
         </div>
 
+        {/* DESKTOP BET SLIP */}
         {!isMobile && (
           <div style={{ width: 290, background: "#0a0f1e", borderLeft: "1px solid #1e293b", flexShrink: 0, position: "sticky", top: 56, height: "calc(100vh - 56px)", overflowY: "auto" }}>
             <BetSlipContent />
@@ -604,17 +634,19 @@ export default function App() {
         )}
       </div>
 
+      {/* MOBILE BET SLIP */}
       {isMobile && showSlip && (
         <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 300, background: "#0a0f1e", borderRadius: "16px 16px 0 0", border: "1px solid #1e293b" }}>
           <BetSlipContent />
         </div>
       )}
 
+      {/* MOBILE BOTTOM NAV */}
       {isMobile && (
         <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, background: "#0a0f1e", borderTop: "1px solid #1e293b", display: "flex", zIndex: 100, height: 58 }}>
           {[
             { id: "home", icon: "🏠", label: "Home" },
-            { id: "live", icon: "🔴", label: "Live" },
+            { id: "virtual", icon: "🎮", label: "Virtual" },
             { id: "betslip", icon: "🎯", label: betSlip.length > 0 ? `Slip(${betSlip.length})` : "Slip" },
             { id: "results", icon: "📊", label: "Results" },
             { id: "account", icon: "👤", label: "Account" },
@@ -629,6 +661,7 @@ export default function App() {
         </div>
       )}
 
+      {/* FOOTER */}
       <div style={{ background: "#0a0f1e", borderTop: "1px solid #1e293b", padding: "20px 24px", textAlign: "center" }}>
         <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 8, marginBottom: 6 }}>
           <div style={{ width: 24, height: 24, background: "linear-gradient(135deg,#0ea5e9,#6366f1)", borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -636,12 +669,12 @@ export default function App() {
           </div>
           <span style={{ fontSize: 14, fontWeight: "700", color: "#38bdf8" }}>DISTANT FINANCE</span>
         </div>
-        <p style={{ color: "#334155", fontSize: 12, margin: 0 }}>Decentralized Sports Betting • Arc Testnet • USDC Payments</p>
+        <p style={{ color: "#334155", fontSize: 12, margin: 0 }}>Virtual Sports Betting • Arc Testnet • USDC Payments</p>
       </div>
 
       {loading && (
         <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%,-50%)", background: "linear-gradient(135deg,#0ea5e9,#6366f1)", color: "white", padding: "14px 24px", borderRadius: 12, fontWeight: "bold", fontSize: 15, zIndex: 500 }}>
-          ⏳ Processing...
+          ⏳ Processing transaction...
         </div>
       )}
     </div>
