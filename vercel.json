@@ -1,0 +1,12 @@
+{
+  "crons": [
+    {
+      "path": "/api/create-matches",
+      "schedule": "*/2 * * * *"
+    },
+    {
+      "path": "/api/resolve-matches",
+      "schedule": "*/5 * * * *"
+    }
+  ]
+}
