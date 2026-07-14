@@ -23,6 +23,16 @@ const VIRTUAL_TEAMS = [
   { home: "Atletico Madrid", away: "Sevilla", league: "Virtual La Liga" },
   { home: "Ajax", away: "PSV", league: "Virtual Eredivisie" },
   { home: "Porto", away: "Benfica", league: "Virtual Primeira Liga" },
+  { home: "Celtic", away: "Rangers", league: "Virtual Scottish Premier" },
+  { home: "Galatasaray", away: "Fenerbahce", league: "Virtual Super Lig" },
+  { home: "Boca Juniors", away: "River Plate", league: "Virtual Superliga" },
+  { home: "Flamengo", away: "Palmeiras", league: "Virtual Brasileirao" },
+  { home: "Al Hilal", away: "Al Nassr", league: "Virtual Saudi Pro League" },
+  { home: "Marseille", away: "Lyon", league: "Virtual Ligue 1" },
+  { home: "Valencia", away: "Villarreal", league: "Virtual La Liga" },
+  { home: "Napoli", away: "Roma", league: "Virtual Serie A" },
+  { home: "Leicester", away: "Everton", league: "Virtual Premier League" },
+  { home: "Sporting CP", away: "Braga", league: "Virtual Primeira Liga" },
 ];
 
 const TEAM_LOGOS = {
