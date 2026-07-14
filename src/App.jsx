@@ -319,9 +319,8 @@ export default function App() {
             </div>
             <div>
               <div style={{ fontSize: isMobile ? 13 : 16, fontWeight: "700", background: "linear-gradient(90deg, #38bdf8, #818cf8)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-                DISTANT FINANCE
-              </div>
-              <div style={{ fontSize: 9, color: "#475569", letterSpacing: 2 }}>VIRTUAL SPORTS BETTING</div>
+                BLOCKBET              </div>
+              <div style={{ fontSize: 9, color: "#475569", letterSpacing: 2 }}>DECENTRALIZED SPORTS BETTINGG</div>
             </div>
           </div>
 
@@ -679,7 +678,7 @@ export default function App() {
           </div>
           <span style={{ fontSize: 14, fontWeight: "700", color: "#38bdf8" }}>DISTANT FINANCE</span>
         </div>
-        <p style={{ color: "#334155", fontSize: 12, margin: 0 }}>Virtual Sports Betting • Arc Testnet • USDC Payments</p>
+        <p style={{ color: "#334155", fontSize: 12, margin: 0 }}>BlockBet • Decentralized Sports Betting • Arc Testnets</p>
       </div>
 
       {loading && (
