@@ -6,13 +6,18 @@ import "./App.css";
 const CONTRACT   = "0x6df1feCD5d4A8cA8701458bDc5139bC1038d6fd7";
 const USDC_ADDR  = "0x3600000000000000000000000000000000000000";
 const CHAIN_ID   = "0x4BE";
+const RPC_URL    = "https://rpc.testnet.arc.network";
 const ARC_NET    = {
   chainId: CHAIN_ID,
   chainName: "Arc Testnet",
   nativeCurrency: { name: "USDC", symbol: "USDC", decimals: 6 },
-  rpcUrls: ["https://rpc.testnet.arc.network"],
+  rpcUrls: [RPC_URL],
   blockExplorerUrls: ["https://testnet.arcscan.app"],
 };
+
+// Read-only provider so matches/odds load for EVERY visitor,
+// not just people who already connected MetaMask.
+const readProvider = new ethers.JsonRpcProvider(RPC_URL);
 
 const BET_ABI = [
   "function placeBet(uint256,uint8,uint256) public",
@@ -219,17 +224,19 @@ export default function App() {
   const [clubCountry, setClubCountry] = useState("All");
 
   // betting state
-  const [matches,     setMatches]     = useState([]);
-  const [league,      setLeague]      = useState("All");
-  const [betSlip,     setBetSlip]     = useState([]);
-  const [slipOpen,    setSlipOpen]    = useState(false);
-  const [stake,       setStake]       = useState("");
-  const [loading,     setLoading]     = useState(false);
+  const [matches,      setMatches]      = useState([]);
+  const [matchesReady, setMatchesReady] = useState(false);
+  const [league,       setLeague]       = useState("All");
+  const [betSlip,      setBetSlip]      = useState([]);
+  const [slipOpen,     setSlipOpen]     = useState(false);
+  const [stake,        setStake]        = useState("");
+  const [loading,      setLoading]      = useState(false);
 
   // ── effects
   useEffect(() => {
+    // Always load matches on a read-only RPC — works with zero wallet.
     loadMatches();
-    const t = setInterval(loadMatches, 30000);
+    const t = setInterval(() => loadMatches(), 30000);
     const onScroll = () => setScrolled(window.scrollY > 50);
     window.addEventListener("scroll", onScroll);
     if (window.ethereum) {
@@ -250,7 +257,6 @@ export default function App() {
         setSigner(s); setConnected(true);
         setAddress(accs[0].slice(0,6) + "..." + accs[0].slice(-4));
         await checkNet(p); await fetchBal(accs[0], p);
-        loadMatches(p);
       }
     } catch {}
   }
@@ -292,7 +298,7 @@ export default function App() {
       setAddress(addr.slice(0,6) + "..." + addr.slice(-4));
       localStorage.setItem("bb_connected", "1");
       await checkNet(p); await fetchBal(addr, p);
-      loadMatches(p); toast("Wallet connected! 🎉");
+      toast("Wallet connected! 🎉");
     } catch (e) {
       toast(e.code === 4001 ? "Connection rejected." : "Failed to connect.", "err");
     }
@@ -310,10 +316,11 @@ export default function App() {
   }
 
   // ── match helpers
-  async function loadMatches(prov) {
+  // Always reads via the public RPC (readProvider) so matches show up for
+  // every visitor immediately, whether or not MetaMask is installed/connected.
+  async function loadMatches() {
     try {
-      const p = prov || new ethers.BrowserProvider(window.ethereum);
-      const c = new ethers.Contract(CONTRACT, BET_ABI, p);
+      const c = new ethers.Contract(CONTRACT, BET_ABI, readProvider);
       const cnt = Number(await c.matchCount());
       const loaded = [];
       for (let i = Math.max(1, cnt - 14); i <= cnt; i++) {
@@ -330,7 +337,12 @@ export default function App() {
         });
       }
       setMatches(loaded.reverse());
-    } catch { setMatches([]); }
+    } catch (err) {
+      console.error("loadMatches failed:", err);
+      setMatches([]);
+    } finally {
+      setMatchesReady(true);
+    }
   }
 
   function odds(side, pool, seed) {
@@ -591,24 +603,30 @@ export default function App() {
               </div>
             </div>
 
-            {/* Floating cards */}
-            {!mobile && DEMO_MATCHES.slice(0,2).map((m,i) => (
-              <div key={m.id} className="float-card" style={{ top:`${18+i*38}%`, animationDelay:`${i}s` }}>
-                <div style={{ display:"flex", justifyContent:"space-between", marginBottom:10 }}>
-                  <Pill color="var(--success)" small>🎮 VIRTUAL</Pill>
-                  <span style={{ fontSize:10, color:"var(--warning)", fontWeight:700 }}>AI: {m.ai} {m.conf}%</span>
-                </div>
-                <div style={{ fontSize:13, color:"#fff", fontWeight:700, marginBottom:10 }}>{m.home} vs {m.away}</div>
-                <div style={{ display:"flex", gap:6 }}>
-                  {["1","X","2"].map(l => (
-                    <div key={l} className="float-odd">
-                      <div style={{ fontSize:9, color:"var(--muted)" }}>{l}</div>
-                      <div style={{ fontSize:13, fontWeight:800, color:"var(--primary)" }}>{randomOdds(m.id.charCodeAt(1)+l.charCodeAt(0))}</div>
+            {/* Floating cards — hidden on mobile, and now sit in normal
+                flow on the right of the hero instead of overlapping text
+                (see .hero / .float-card rules appended to App.css) */}
+            {!mobile && (
+              <div className="float-card-stack">
+                {DEMO_MATCHES.slice(0,2).map((m,i) => (
+                  <div key={m.id} className="float-card" style={{ animationDelay:`${i}s` }}>
+                    <div style={{ display:"flex", justifyContent:"space-between", marginBottom:10 }}>
+                      <Pill color="var(--success)" small>🎮 VIRTUAL</Pill>
+                      <span style={{ fontSize:10, color:"var(--warning)", fontWeight:700 }}>AI: {m.ai} {m.conf}%</span>
                     </div>
-                  ))}
-                </div>
+                    <div style={{ fontSize:13, color:"#fff", fontWeight:700, marginBottom:10 }}>{m.home} vs {m.away}</div>
+                    <div style={{ display:"flex", gap:6 }}>
+                      {["1","X","2"].map(l => (
+                        <div key={l} className="float-odd">
+                          <div style={{ fontSize:9, color:"var(--muted)" }}>{l}</div>
+                          <div style={{ fontSize:13, fontWeight:800, color:"var(--primary)" }}>{randomOdds(m.id.charCodeAt(1)+l.charCodeAt(0))}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
+            )}
           </section>
 
           {/* ── PAGE CONTENT ── */}
@@ -622,7 +640,7 @@ export default function App() {
                     <h2 className="section-title">⚡ Virtual Football Arena</h2>
                     <p className="section-sub">AI-powered virtual matches · Instant settlement</p>
                   </div>
-                  <Btn small outline onClick={loadMatches}>🔄 Refresh</Btn>
+                  <Btn small outline onClick={() => loadMatches()}>🔄 Refresh</Btn>
                 </div>
 
                 {/* League filter */}
@@ -634,12 +652,21 @@ export default function App() {
                   ))}
                 </div>
 
-                {matches.length === 0 ? (
+                {!matchesReady ? (
+                  <Card style={{ padding:60, textAlign:"center" }}>
+                    <div className="spinner" style={{ margin:"0 auto 16px" }} />
+                    <div style={{ fontSize:13, color:"var(--muted)" }}>Loading virtual matches...</div>
+                  </Card>
+                ) : matches.length === 0 ? (
                   <Card style={{ padding:60, textAlign:"center" }}>
                     <div style={{ fontSize:48, marginBottom:16 }}>⚡</div>
-                    <div style={{ fontSize:18, fontWeight:700, color:"#fff", marginBottom:8 }}>No Virtual Matches</div>
-                    <div style={{ fontSize:13, color:"var(--muted)", marginBottom:24 }}>Connect your wallet to load matches</div>
-                    <Btn onClick={connect}>🦊 Connect Wallet</Btn>
+                    <div style={{ fontSize:18, fontWeight:700, color:"#fff", marginBottom:8 }}>No Virtual Matches Yet</div>
+                    <div style={{ fontSize:13, color:"var(--muted)", marginBottom:24 }}>
+                      No matches were found on-chain right now. Try refreshing, or connect your wallet to place bets once matches are live.
+                    </div>
+                    <Btn onClick={connected ? () => loadMatches() : connect}>
+                      {connected ? "🔄 Refresh" : "🦊 Connect Wallet"}
+                    </Btn>
                   </Card>
                 ) : (
                   Object.entries(grouped).map(([lg, lgMatches]) => (
