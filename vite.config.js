@@ -6,10 +6,21 @@ export default defineConfig({
   build: {
     rollupOptions: {
       output: {
-        manualChunks: {
-          vendor:     ["react","react-dom","react-router-dom"],
-          ethers:     ["ethers"],
-          engine:     ["./src/engine/simulate.js","./src/engine/oddsEngine.js"],
+        manualChunks(id) {
+          if (id.includes("node_modules/react") ||
+              id.includes("node_modules/react-dom") ||
+              id.includes("node_modules/react-router-dom")) {
+            return "vendor";
+          }
+          if (id.includes("node_modules/ethers")) {
+            return "ethers";
+          }
+          if (id.includes("/src/engine/")) {
+            return "engine";
+          }
+          if (id.includes("/src/data/")) {
+            return "data";
+          }
         },
       },
     },
