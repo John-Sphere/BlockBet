@@ -1,0 +1,28 @@
+.lb-page        { padding: 32px 40px; }
+.lb-head        { margin-bottom: 24px; }
+.lb-title       { font-size: 26px; font-weight: 800; color: var(--white); margin-bottom: 4px; }
+.lb-sub         { font-size: 13px; color: var(--gray-400); }
+.lb-summary     { display: grid; grid-template-columns: repeat(auto-fill,minmax(160px,1fr)); gap: 12px; margin-bottom: 24px; }
+.lb-summary-card { padding: 20px; text-align: center; }
+.lb-summary-icon { font-size: 28px; margin-bottom: 8px; }
+.lb-summary-val  { font-size: 20px; font-weight: 900; color: var(--primary); margin-bottom: 4px; }
+.lb-summary-label{ font-size: 11px; color: var(--gray-400); }
+.lb-tabs        { display: flex; gap: 6px; margin-bottom: 20px; flex-wrap: wrap; }
+.lb-tab         { background: var(--glass); border: 1px solid var(--border); color: var(--gray-400); padding: 8px 16px; border-radius: 20px; font-size: 12px; font-weight: 600; transition: var(--transition); }
+.lb-tab--active { background: linear-gradient(135deg,var(--primary),var(--secondary)) !important; color: var(--bg-base) !important; border-color: transparent !important; font-weight: 700 !important; }
+.lb-table       { overflow: hidden; }
+.lb-table-head  { display: grid; grid-template-columns: 60px 1fr 80px 80px 90px 120px; padding: 11px 20px; font-size: 10px; color: var(--gray-600); font-weight: 700; letter-spacing: 1px; border-bottom: 1px solid var(--border); background: rgba(46,199,242,0.03); }
+.lb-table-row   { display: grid; grid-template-columns: 60px 1fr 80px 80px 90px 120px; padding: 14px 20px; border-bottom: 1px solid var(--border); align-items: center; font-size: 13px; transition: var(--transition); }
+.lb-table-row:last-child { border-bottom: none; }
+.lb-table-row:hover { background: rgba(46,199,242,0.04); }
+.lb-table-row--top  { background: rgba(255,200,87,0.03) !important; }
+.lb-rank        { font-size: 18px; font-weight: 900; }
+.lb-wallet      { color: var(--white); font-family: monospace; font-size: 13px; }
+.lb-stat        { color: var(--gray-200); text-align: right; }
+.lb-profit      { font-size: 14px; font-weight: 800; color: var(--success); text-align: right; }
+
+@media (max-width: 768px) {
+  .lb-page { padding: 20px 16px; }
+  .lb-table-head, .lb-table-row { grid-template-columns: 48px 1fr 80px 100px; }
+  .lb-stat:nth-child(3), .lb-stat:nth-child(4) { display: none; }
+}

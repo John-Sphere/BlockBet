@@ -1,0 +1,60 @@
+.history-page    { padding: 32px 40px; }
+.history-head    { margin-bottom: 24px; }
+.history-title   { font-size: 26px; font-weight: 800; color: var(--white); margin-bottom: 4px; }
+.history-sub     { font-size: 13px; color: var(--gray-400); }
+
+.history-filters { display: flex; gap: 6px; overflow-x: auto; margin-bottom: 24px; padding-bottom: 4px; }
+.hf-btn          { background: var(--glass); border: 1px solid var(--border); color: var(--gray-400); padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; white-space: nowrap; flex-shrink: 0; transition: var(--transition); }
+.hf-btn--active  { background: linear-gradient(135deg,var(--primary),var(--secondary)) !important; color: var(--bg-base) !important; border-color: transparent !important; font-weight: 700 !important; }
+
+.history-layout  { display: flex; gap: 24px; align-items: flex-start; }
+.history-list    { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+.history-detail  { width: 380px; flex-shrink: 0; position: sticky; top: calc(var(--nav-h) + 16px); }
+
+.history-match   { padding: 14px 18px; cursor: pointer; }
+.history-match--selected { border-color: var(--border-hover) !important; }
+.hm-league       { font-size: 10px; color: var(--primary); font-weight: 700; letter-spacing: 0.5px; margin-bottom: 8px; }
+.hm-row          { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+.hm-team         { display: flex; align-items: center; gap: 8px; flex: 1; font-size: 13px; color: var(--gray-200); font-weight: 600; }
+.hm-team--right  { flex-direction: row-reverse; }
+.hm-winner       { color: var(--warning) !important; font-weight: 800 !important; }
+.hm-score        { text-align: center; font-size: 20px; font-weight: 900; color: var(--white); min-width: 60px; }
+.hm-score--win   { color: var(--success); }
+.hm-footer       { display: flex; align-items: center; gap: 10px; font-size: 11px; }
+.hm-ht           { color: var(--gray-400); }
+.hm-result       { margin-left: auto; color: var(--warning); font-weight: 700; }
+
+/* Detail */
+.hd-card         { overflow: hidden; }
+.hd-head         { display: flex; justify-content: space-between; align-items: center; padding: 12px 18px; border-bottom: 1px solid var(--border); font-size: 12px; color: var(--primary); font-weight: 700; }
+.hd-scoreline    { display: flex; align-items: center; gap: 10px; padding: 20px 18px; border-bottom: 1px solid var(--border); }
+.hd-team         { display: flex; flex-direction: column; align-items: center; gap: 8px; flex: 1; font-size: 13px; font-weight: 700; color: var(--white); text-align: center; }
+.hd-team--right  {text-align: right; }
+.hd-score        { font-size: 28px; font-weight: 900; color: var(--white); text-align: center; min-width: 80px; }
+.hd-ht           { font-size: 11px; color: var(--gray-400); font-weight: 400; margin-top: 4px; }
+.hd-section-title { font-size: 13px; font-weight: 800; color: var(--white); margin: 16px 18px 12px; letter-spacing: 0.5px; }
+.hd-stats        { padding: 0 18px 16px; }
+.hd-stat-row     { display: grid; grid-template-columns: 1fr 120px 1fr; gap: 8px; align-items: center; margin-bottom: 10px; }
+.hd-stat-label   { text-align: center; font-size: 10px; color: var(--gray-400); }
+.hd-stat-bar-left  { display: flex; align-items: center; gap: 8px; justify-content: flex-end; }
+.hd-stat-bar-right { display: flex; align-items: center; gap: 8px; }
+.hd-bar-wrap     { flex: 1; height: 4px; background: var(--bg-card); border-radius: 2px; overflow: hidden; min-width: 40px; }
+.hd-bar          { height: 100%; border-radius: 2px; }
+.hd-bar--home    { background: var(--primary); }
+.hd-bar--away    { background: var(--secondary); float: right; }
+
+.hd-timeline     { border-top: 1px solid var(--border); padding: 0 18px 16px; }
+.hd-events       { display: flex; flex-direction: column; gap: 6px; margin-top: 4px; }
+.hd-event        { display: flex; align-items: center; gap: 10px; padding: 6px 10px; border-radius: var(--radius-sm); font-size: 12px; }
+.hd-event--home    { background: rgba(46,199,242,0.06); }
+.hd-event--away    { background: rgba(71,215,255,0.06); }
+.hd-event--neutral { background: rgba(255,255,255,0.03); }
+.hd-event-min    { font-size: 11px; color: var(--gray-400); min-width: 30px; font-weight: 700; }
+.hd-event-icon   { font-size: 14px; }
+.hd-event-label  { color: var(--gray-200); font-weight: 600; }
+
+@media (max-width: 900px) {
+  .history-layout { flex-direction: column; }
+  .history-detail { width: 100%; position: relative; top: 0; }
+  .history-page { padding: 20px 16px; }
+}
