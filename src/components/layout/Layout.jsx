@@ -1,6 +1,6 @@
-import { useApp }    from "../../context/AppContext";
-import { Navbar }    from "./Navbar";
-import { Sidebar }   from "./Sidebar";
+import { useApp }  from "../../context/AppContext";
+import { Navbar }  from "./Navbar";
+import { Sidebar } from "./Sidebar";
 
 export function Layout({ children }) {
   const { sidebarOpen } = useApp();
@@ -11,10 +11,9 @@ export function Layout({ children }) {
       <div style={{ display:"flex", flex:1 }}>
         <Sidebar />
         <main style={{
-          flex:1, minWidth:0,
+          flex:1, minWidth:0, overflowX:"hidden",
           marginLeft: sidebarOpen ? "var(--side-w)" : 0,
           transition:"margin-left 0.3s ease",
-          overflowX:"hidden",
         }}>
           {children}
         </main>

@@ -1,71 +1,14 @@
-.admin-gate {
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  min-height: 60vh; text-align: center; gap: 16px;
-  color: var(--gray-400);
-}
-.admin-gate h2 { font-size: 24px; color: var(--white); }
-
-.admin          { padding: 32px 40px; }
-.admin__head    { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; flex-wrap: wrap; gap: 12px; }
-.admin__title   { font-size: 26px; font-weight: 800; color: var(--white); }
-.admin__sub     { font-size: 13px; color: var(--gray-400); margin-top: 4px; }
-.admin__controls{ display: flex; gap: 10px; align-items: center; }
-
-.admin__stats   { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px,1fr)); gap: 12px; margin-bottom: 28px; }
-.admin__stat-card { padding: 18px; text-align: center; }
-
-.admin__tabs    { display: flex; gap: 4px; margin-bottom: 24px; flex-wrap: wrap; }
-.admin__tab     {
-  padding: 9px 18px; background: var(--glass); border: 1px solid var(--border);
-  border-radius: var(--radius-md); font-size: 13px; color: var(--gray-400);
-  font-weight: 600; transition: var(--transition);
-}
-.admin__tab:hover        { color: var(--gray-200); }
-.admin__tab--active      { background: rgba(46,199,242,0.10) !important; color: var(--primary) !important; border-color: var(--border-hover) !important; }
-
-.admin__panel       { animation: fadeIn 0.3s ease; }
-.admin__panel-head  { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
-.admin__panel-head h2 { font-size: 20px; font-weight: 800; color: var(--white); }
-.admin__select {
-  background: var(--glass); border: 1px solid var(--border); color: var(--white);
-  padding: 8px 12px; border-radius: var(--radius-md); font-size: 13px;
-}
-
-.admin__clubs-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px,1fr)); gap: 16px; }
-.admin__club-card  { padding: 18px; }
-.admin__club-head  { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
-.admin__club-name  { font-size: 14px; font-weight: 700; color: var(--white); }
-.admin__club-league{ font-size: 11px; color: var(--gray-400); margin-top: 2px; }
-.admin__overall    { margin-left: auto; font-size: 22px; font-weight: 900; }
-
-.admin__ratings    { display: flex; flex-direction: column; gap: 8px; }
-.admin__rating-row { display: flex; flex-direction: column; gap: 3px; }
-.admin__rating-label { font-size: 10px; color: var(--gray-400); font-weight: 600; letter-spacing: 0.5px; }
-.admin__rating-input-wrap { display: flex; gap: 8px; align-items: center; }
-.admin__range {
-  flex: 1; accent-color: var(--primary); height: 4px;
-}
-.admin__rating-num {
-  width: 48px; background: var(--glass); border: 1px solid var(--border);
-  color: var(--white); padding: 4px; border-radius: 6px; font-size: 12px; text-align: center;
-}
-.admin__rating-bar  { height: 4px; background: var(--bg-card); border-radius: 2px; overflow: hidden; }
-.admin__rating-fill { height: 100%; border-radius: 2px; transition: width 0.3s, background 0.3s; }
-
-.admin__match-list  { display: flex; flex-direction: column; gap: 8px; }
-.admin__match-row   { padding: 14px 18px; }
-.admin__match-info  { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 6px; }
-.admin__match-teams { font-size: 14px; font-weight: 700; color: var(--white); flex: 1; }
-.admin__match-score { font-size: 18px; font-weight: 900; color: var(--primary); }
-.admin__match-meta  { display: flex; gap: 16px; font-size: 12px; color: var(--gray-400); }
-
-.admin__odds-table  { background: var(--glass); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
-.admin__odds-head   { display: grid; grid-template-columns: 1fr 1fr 80px 80px 80px; padding: 10px 18px; font-size: 10px; color: var(--gray-600); font-weight: 700; letter-spacing: 1px; background: rgba(46,199,242,0.04); border-bottom: 1px solid var(--border); }
-.admin__odds-row    { display: grid; grid-template-columns: 1fr 1fr 80px 80px 80px; padding: 12px 18px; border-bottom: 1px solid var(--border); font-size: 13px; color: var(--gray-200); align-items: center; }
-.admin__odds-row:last-child { border-bottom: none; }
-.admin__odds-row:hover { background: rgba(46,199,242,0.03); }
-
-@media (max-width: 768px) {
-  .admin { padding: 20px 16px; }
-  .admin__clubs-grid { grid-template-columns: 1fr; }
-}
+.admin-gate { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:60vh; text-align:center; gap:16px; color:var(--muted); }
+.admin-gate h2 { font-size:24px; color:var(--white); }
+.admin { padding:32px 40px; }
+.admin__head { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:24px; flex-wrap:wrap; gap:12px; }
+.admin__title { font-size:26px; font-weight:800; }
+.admin__sub   { font-size:13px; color:var(--muted); margin-top:4px; }
+.admin__stats { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:12px; margin-bottom:24px; }
+.admin__tabs  { display:flex; gap:4px; margin-bottom:24px; flex-wrap:wrap; }
+.admin__tab   { padding:9px 18px; background:var(--glass); border:1px solid var(--border); border-radius:var(--r); font-size:13px; color:var(--muted); font-weight:600; transition:var(--ease); }
+.admin__tab:hover { color:var(--gray); }
+.admin__tab--active { background:rgba(46,199,242,0.10)!important; color:var(--primary)!important; border-color:var(--borderh)!important; }
+.admin__panel-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:10px; }
+.admin__clubs-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:16px; }
+@media(max-width:768px){ .admin{padding:20px 16px;} .admin__clubs-grid{grid-template-columns:1fr;} }
