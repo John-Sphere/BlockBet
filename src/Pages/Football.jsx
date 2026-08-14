@@ -38,33 +38,50 @@ export default function Football() {
           chalkboard. Settle instantly in USDC.
         </p>
 
-        <svg width="100%" height="90" viewBox="0 0 400 90" aria-hidden="true">
-          <rect x="1" y="1" width="398" height="88" fill="none" stroke="var(--pitch-line)" strokeWidth="1" />
-          <line x1="200" y1="1" x2="200" y2="89" stroke="var(--pitch-line)" strokeWidth="1" />
-          <circle cx="200" cy="45" r="20" fill="none" stroke="var(--pitch-line)" strokeWidth="1" />
+        <svg width="100%" height="110" viewBox="0 0 400 110" aria-hidden="true">
+          {/* Pitch outline */}
+          <rect x="6" y="4" width="388" height="102" fill="none" stroke="var(--pitch-line)" strokeWidth="1" />
+          {/* Halfway line */}
+          <line x1="200" y1="4" x2="200" y2="106" stroke="var(--pitch-line)" strokeWidth="1" />
+          {/* Center circle + spot */}
+          <circle cx="200" cy="55" r="22" fill="none" stroke="var(--pitch-line)" strokeWidth="1" />
+          <circle cx="200" cy="55" r="1.4" fill="var(--pitch-line)" />
 
+          {/* Left penalty box + six-yard box */}
+          <rect x="6" y="24" width="42" height="62" fill="none" stroke="var(--pitch-line)" strokeWidth="1" />
+          <rect x="6" y="38" width="16" height="34" fill="none" stroke="var(--pitch-line)" strokeWidth="1" />
+          <path d="M48 34 A 18 18 0 0 1 48 76" fill="none" stroke="var(--pitch-line)" strokeWidth="1" />
+          {/* Left goal frame */}
+          <rect x="0" y="44" width="6" height="22" fill="none" stroke="var(--gold)" strokeWidth="1.5" opacity="0.6" />
+
+          {/* Right penalty box + six-yard box */}
+          <rect x="352" y="24" width="42" height="62" fill="none" stroke="var(--pitch-line)" strokeWidth="1" />
+          <rect x="378" y="38" width="16" height="34" fill="none" stroke="var(--pitch-line)" strokeWidth="1" />
+          <path d="M352 34 A 18 18 0 0 0 352 76" fill="none" stroke="var(--pitch-line)" strokeWidth="1" />
+          {/* Right goal frame */}
+          <rect x="394" y="44" width="6" height="22" fill="none" stroke="var(--gold)" strokeWidth="1.5" opacity="0.6" />
+
+          {/* Chalk-drawn attacking move */}
           <path
             className="bb-chalk-path"
-            d="M40 65 L110 30 L170 45 L230 25 L290 40"
+            d="M55 78 L120 40 L175 58 L235 30 L300 50 L360 45"
             pathLength="1"
             stroke="var(--gold)"
-            strokeWidth="1.5"
+            strokeWidth="1.75"
             fill="none"
             markerEnd="url(#arrow)"
           />
 
-          <circle className="bb-chalk-ball" r="3.5" fill="var(--gold)">
+          <circle className="bb-chalk-ball" r="4" fill="var(--gold)">
             <animateMotion
-              dur="3.2s"
+              dur="3.6s"
               repeatCount="indefinite"
-              path="M40 65 L110 30 L170 45 L230 25 L290 40"
+              path="M55 78 L120 40 L175 58 L235 30 L300 50 L360 45"
               keyPoints="0;1"
               keyTimes="0;1"
               calcMode="linear"
             />
           </circle>
-
-          <path d="M280 60 L330 40 L370 55" stroke="var(--gold)" strokeWidth="1.5" fill="none" markerEnd="url(#arrow)" opacity="0.35" />
 
           <defs>
             <marker id="arrow" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">

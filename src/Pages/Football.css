@@ -27,12 +27,12 @@
 .bb-chalk-path {
   stroke-dasharray: 1;
   stroke-dashoffset: 1;
-  animation: bb-chalk-draw 3.2s ease-in-out infinite;
+  animation: bb-chalk-draw 3.6s ease-in-out infinite;
 }
 
 .bb-chalk-ball {
   opacity: 0;
-  animation: bb-ball-fade 3.2s ease-in-out infinite;
+  animation: bb-ball-fade 3.6s ease-in-out infinite;
 }
 
 @keyframes bb-chalk-draw {
