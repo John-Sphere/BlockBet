@@ -12,14 +12,20 @@ const MatchHistory= lazy(() => import("./Pages/MatchHistory"));
 
 function Loader() {
   return (
-    <div style={{
-      display:"flex", alignItems:"center", justifyContent:"center", height:"60vh",
-    }}>
-      <div style={{
-        width:44, height:44,
-        border:"3px solid var(--gold)", borderTopColor:"transparent",
-        borderRadius:"50%", animation:"spin 0.8s linear infinite",
-      }} />
+    <div className="bb-loader">
+      <svg width="56" height="56" viewBox="0 0 56 56" aria-hidden="true">
+        <polygon
+          className="bb-loader-triangle"
+          points="28,6 50,48 6,48"
+          fill="none"
+          stroke="var(--gold)"
+          strokeWidth="2.5"
+          strokeLinejoin="round"
+          pathLength="1"
+        />
+        <circle className="bb-loader-pulse" cx="28" cy="34" r="3" fill="var(--gold)" />
+      </svg>
+      <div className="bb-loader-text">BLOCKBET</div>
     </div>
   );
 }
