@@ -1,18 +1,21 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { subscribe, initMatchManager } from "../engine/matchManager";
 import { ClubBadge } from "../components/ui/ClubBadge";
 import "./Football.css";
 
-// NOTE: adjust the field names below (match.home, match.odds.home, etc.)
-// to match whatever shape your matchManager.js / oddsEngine.js actually
-// produce. This assumes each match looks roughly like:
-// { id, league, home, away, status, kickoffIn, minute, odds: { home, draw, away } }
-
-export default function Football({ matches = [] }) {
+export default function Football() {
+  const [matches, setMatches] = useState([]);
   const [selected, setSelected] = useState({});
 
+  useEffect(() => {
+    initMatchManager();
+    const unsubscribe = subscribe((snapshot) => setMatches(snapshot));
+    return unsubscribe;
+  }, []);
+
   const grouped = matches.reduce((acc, m) => {
-    acc[m.league] = acc[m.league] || [];
-    acc[m.league].push(m);
+    acc[m.leagueName] = acc[m.leagueName] || [];
+    acc[m.leagueName].push(m);
     return acc;
   }, {});
 
@@ -53,7 +56,7 @@ export default function Football({ matches = [] }) {
           </div>
           <div className="bb-hero-stat">
             <div className="num">
-              {matches.filter((m) => m.status === "live").length}
+              {matches.filter((m) => m.status === "first_half" || m.status === "second_half").length}
             </div>
             <div className="label">Live now</div>
           </div>
@@ -66,49 +69,53 @@ export default function Football({ matches = [] }) {
             {league}
           </div>
           <div className="bb-match-grid">
-            {leagueMatches.map((match) => (
-              <div className="bb-match-card" key={match.id}>
-                <div className="bb-match-header">
-                  <div className="bb-match-teams">
-                    <ClubBadge name={match.home} size={22} />
-                    {match.home}
-                    <span className="vs">vs</span>
-                    <ClubBadge name={match.away} size={22} />
-                    {match.away}
+            {leagueMatches.map((match) => {
+              const isLive = match.status === "first_half" || match.status === "second_half" || match.status === "halftime";
+              const isFinished = match.status === "finished";
+              return (
+                <div className="bb-match-card" key={match.id}>
+                  <div className="bb-match-header">
+                    <div className="bb-match-teams">
+                      <ClubBadge name={match.homeTeam} size={22} />
+                      {match.homeTeam}
+                      <span className="vs">vs</span>
+                      <ClubBadge name={match.awayTeam} size={22} />
+                      {match.awayTeam}
+                    </div>
+                    {isLive ? (
+                      <span className="pill pill-live">● Live {match.minute}'</span>
+                    ) : isFinished ? (
+                      <span className="pill pill-finished">
+                        {match.homeScore} - {match.awayScore}
+                      </span>
+                    ) : (
+                      <span className="pill pill-open">Betting open</span>
+                    )}
                   </div>
-                  {match.status === "live" ? (
-                    <span className="pill pill-live">● Live {match.minute}'</span>
-                  ) : match.status === "finished" ? (
-                    <span className="pill pill-finished">Finished</span>
-                  ) : (
-                    <span className="pill pill-open">
-                      Kick-off {match.kickoffIn}
-                    </span>
+
+                  {!isFinished && (
+                    <div className="bb-odds-row">
+                      {[
+                        { side: "home", value: match.oddsHome },
+                        { side: "draw", value: match.oddsDraw },
+                        { side: "away", value: match.oddsAway },
+                      ].map(({ side, value }) => (
+                        <div
+                          key={side}
+                          className={`odds-box${selected[match.id] === side ? " selected" : ""}`}
+                          onClick={() => pickOdds(match.id, side)}
+                          role="button"
+                          tabIndex={0}
+                        >
+                          <div className="label">{side}</div>
+                          <div className="value">{value?.toFixed(2) ?? "-"}</div>
+                        </div>
+                      ))}
+                    </div>
                   )}
                 </div>
-
-                {match.status !== "finished" && (
-                  <div className="bb-odds-row">
-                    {["home", "draw", "away"].map((side) => (
-                      <div
-                        key={side}
-                        className={`odds-box${
-                          selected[match.id] === side ? " selected" : ""
-                        }`}
-                        onClick={() => pickOdds(match.id, side)}
-                        role="button"
-                        tabIndex={0}
-                      >
-                        <div className="label">{side}</div>
-                        <div className="value">
-                          {match.odds?.[side]?.toFixed(2) ?? "-"}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))}
+              );
+            })}
           </div>
         </section>
       ))}
