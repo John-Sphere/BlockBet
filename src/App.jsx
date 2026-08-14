@@ -7,7 +7,7 @@ import "./App.css";
 
 const Football    = lazy(() => import("./Pages/Football"));
 const Admin       = lazy(() => import("./Pages/Admin"));
-const Leaderboard = lazy(() => import("./Pages/Leaderboard"));
+const LeagueTable = lazy(() => import("./Pages/LeagueTable"));
 const MatchHistory= lazy(() => import("./Pages/MatchHistory"));
 
 function Loader() {
@@ -33,7 +33,7 @@ export default function App() {
             <Route path="/"            element={<Football />}     />
             <Route path="/football"    element={<Football />}     />
             <Route path="/history"     element={<MatchHistory />} />
-            <Route path="/leaderboard" element={<Leaderboard />}  />
+            <Route path="/leaderboard" element={<LeagueTable />}  />
             <Route path="/admin"       element={<Admin />}        />
             <Route path="*"            element={<Navigate to="/" replace />} />
           </Routes>

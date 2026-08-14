@@ -1,0 +1,62 @@
+.lt-page  { padding: 32px 40px; }
+.lt-head  { margin-bottom: 20px; }
+.lt-title { font-size: 26px; font-weight: 700; margin-bottom: 4px; color: var(--chalk); font-family: var(--font-display); }
+.lt-sub   { font-size: 13px; color: var(--chalk-dim); }
+
+.lt-tabs { display: flex; gap: 6px; overflow-x: auto; margin-bottom: 22px; padding-bottom: 4px; }
+.lt-tab  { background: var(--pitch-card); border: 1px solid var(--pitch-line); color: var(--chalk-dim); padding: 8px 16px; border-radius: 4px; font-size: 12px; font-weight: 600; white-space: nowrap; flex-shrink: 0; }
+.lt-tab--on { background: var(--gold) !important; color: var(--pitch-dark) !important; border-color: var(--gold) !important; font-weight: 700 !important; }
+
+.lt-table-head, .lt-row {
+  display: grid;
+  grid-template-columns: 32px 1fr repeat(7, 40px) 48px;
+  align-items: center;
+  padding: 10px 16px;
+  gap: 4px;
+}
+.lt-table-head {
+  font-size: 10px;
+  color: var(--chalk-dim);
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--pitch-line);
+  background: var(--pitch-dark);
+  text-align: center;
+}
+.lt-row {
+  font-size: 13px;
+  color: var(--chalk);
+  border-bottom: 1px solid var(--pitch-line);
+  text-align: center;
+}
+.lt-row:last-child { border-bottom: none; }
+.lt-row--top { background: rgba(201,162,75,0.04); }
+.lt-row--bottom { background: rgba(163,58,58,0.04); }
+
+.lt-col-pos { color: var(--chalk-dim); font-weight: 700; }
+.lt-col-club {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-align: left;
+  font-weight: 600;
+}
+.lt-table-head .lt-col-club { text-align: left; }
+.lt-col-pts { color: var(--gold); font-weight: 700; }
+
+.lt-empty {
+  padding: 48px 24px;
+  text-align: center;
+  color: var(--chalk-dim);
+  font-size: 13px;
+}
+
+@media (max-width: 768px) {
+  .lt-page { padding: 20px 16px; }
+  .lt-table-head, .lt-row { grid-template-columns: 24px 1fr repeat(3, 32px) 40px; font-size: 11px; padding: 8px 10px; }
+  .lt-table-head span:nth-child(4), .lt-table-head span:nth-child(5),
+  .lt-row span:nth-child(4), .lt-row span:nth-child(5),
+  .lt-table-head span:nth-child(6), .lt-table-head span:nth-child(7),
+  .lt-row span:nth-child(6), .lt-row span:nth-child(7) { display: none; }
+}
