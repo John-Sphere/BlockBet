@@ -1,102 +1,30 @@
 /**
  * BLOCKBET League Table
- * Real standings (P/W/D/L/GF/GA/GD/Pts) computed live from finished
- * matches, per league. Replaces the old player-activity leaderboard —
- * this is a football table, not a betting leaderboard.
+ * Real standings (P/W/D/L/GF/GA/GD/Pts), read live from the shared
+ * standings.js module — the same source matchManager.js uses to
+ * adjust odds based on current club form.
  */
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "../components/ui/Card";
 import { ClubBadge } from "../components/ui/ClubBadge";
-import {
-  subscribe,
-  initMatchManager,
-  getCurrentMatches,
-} from "../engine/matchManager";
-import { LEAGUES, CLUBS } from "../data/clubs";
+import { initMatchManager } from "../engine/matchManager";
+import { subscribe, getStandings } from "../engine/standings";
+import { LEAGUES } from "../data/clubs";
 import "./LeagueTable.css";
-
-function emptyStandings() {
-  const table = {};
-  CLUBS.forEach((c) => {
-    table[c.name] = {
-      name: c.name,
-      leagueId: c.leagueId,
-      played: 0, won: 0, drawn: 0, lost: 0,
-      gf: 0, ga: 0, points: 0,
-    };
-  });
-  return table;
-}
-
-function applyResult(table, match) {
-  const home = table[match.homeTeam];
-  const away = table[match.awayTeam];
-  if (!home || !away) return;
-
-  home.played++; away.played++;
-  home.gf += match.homeScore; home.ga += match.awayScore;
-  away.gf += match.awayScore; away.ga += match.homeScore;
-
-  if (match.homeScore > match.awayScore) {
-    home.won++; home.points += 3;
-    away.lost++;
-  } else if (match.homeScore < match.awayScore) {
-    away.won++; away.points += 3;
-    home.lost++;
-  } else {
-    home.drawn++; away.drawn++;
-    home.points += 1; away.points += 1;
-  }
-}
 
 export default function LeagueTable() {
   const [leagueId, setLeagueId] = useState(LEAGUES[0].id);
-  const [standings, setStandings] = useState(emptyStandings);
-  const countedIds = useRef(new Set());
+  const [, forceUpdate] = useState(0);
 
   useEffect(() => {
     initMatchManager();
-
-    // Count any matches already finished at mount
-    const current = getCurrentMatches();
-    const table = emptyStandings();
-    current.filter((m) => m.status === "finished").forEach((m) => {
-      countedIds.current.add(m.id);
-      applyResult(table, m);
-    });
-    setStandings(table);
-
-    const unsub = subscribe((matches) => {
-      const newlyFinished = matches.filter(
-        (m) => m.status === "finished" && !countedIds.current.has(m.id)
-      );
-      if (!newlyFinished.length) return;
-      setStandings((prev) => {
-        const next = { ...prev };
-        // Deep-copy only the rows that will change
-        newlyFinished.forEach((m) => {
-          countedIds.current.add(m.id);
-          if (next[m.homeTeam]) next[m.homeTeam] = { ...next[m.homeTeam] };
-          if (next[m.awayTeam]) next[m.awayTeam] = { ...next[m.awayTeam] };
-          applyResult(next, m);
-        });
-        return next;
-      });
-    });
-
+    const unsub = subscribe(() => forceUpdate((n) => n + 1));
     return unsub;
   }, []);
 
   const league = LEAGUES.find((l) => l.id === leagueId);
-  const rows = Object.values(standings)
-    .filter((r) => r.leagueId === leagueId)
-    .sort((a, b) => {
-      if (b.points !== a.points) return b.points - a.points;
-      const gdA = a.gf - a.ga, gdB = b.gf - b.ga;
-      if (gdB !== gdA) return gdB - gdA;
-      return b.gf - a.gf;
-    });
+  const rows = getStandings(leagueId);
 
   return (
     <div className="lt-page">
@@ -130,7 +58,7 @@ export default function LeagueTable() {
           <span>GD</span>
           <span>Pts</span>
         </div>
-        {rows.length === 0 ? (
+        {rows.length === 0 || rows.every((r) => r.played === 0) ? (
           <div className="lt-empty">
             No matches completed yet in {league?.name}. The table fills in as virtual matches finish.
           </div>

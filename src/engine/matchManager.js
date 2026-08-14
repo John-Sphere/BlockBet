@@ -1,24 +1,34 @@
 /**
  * BLOCKBET Match Manager — Phase 2
  * Manages full lifecycle of virtual matches.
- * Generates 3 matches per league = 18 simultaneous matches.
- * Staggered kick-offs so not all matches start at once.
+ * Every club in a league plays simultaneously each round (a real
+ * matchday), fixtures rotate themselves via the shuffled round-robin
+ * pool, and odds factor in each club's current league form.
  */
 
 import { simulateMatch }       from "./simulate.js";
 import { calculateOdds }       from "./oddsEngine.js";
 import { generateLeagueFixtures, shuffleFixtures } from "./fixtureGenerator.js";
-import { LEAGUES }             from "../data/clubs.js";
+import { LEAGUES, CLUBS }      from "../data/clubs.js";
 import { fetchActiveChainMatches, matchKey } from "./chainSync.js";
+import { recordResult, getFormRating } from "./standings.js";
 
 // ── TIMING ─────────────────────────────────────────────────
 const BETTING_WINDOW_MS = 2  * 60 * 1000;
 const HALF_DURATION_MS  = 2  * 60 * 1000;
 const HT_DURATION_MS    = 1  * 60 * 1000;
 const RESULT_HOLD_MS    = 2  * 60 * 1000;
-const STAGGER_MS        = 45 * 1000;
-const MATCHES_PER_LEAGUE= 3;
-const CHAIN_SYNC_MS     = 15 * 1000; // check for on-chain match IDs every 15s
+const STAGGER_MS        = 20 * 1000;
+const CHAIN_SYNC_MS     = 15 * 1000;
+
+// Full matchday — every club in a league plays at once, so the
+// number of simultaneous matches is half the club count (each match
+// uses 2 clubs). A 20-club league runs 10 matches, an 18-club league
+// runs 9.
+function matchesForLeague(leagueId) {
+  const count = CLUBS.filter((c) => c.leagueId === leagueId).length;
+  return Math.max(1, Math.floor(count / 2));
+}
 
 // ── MODULE STATE ────────────────────────────────────────────
 let matchState    = [];
@@ -73,8 +83,7 @@ export function updateMatchPool(matchId, selection, amount) {
   emit();
 }
 
-// ── CHAIN SYNC — fills in chainMatchId once create-matches.js has
-//    registered the corresponding fixture on-chain ─────────────
+// ── CHAIN SYNC ───────────────────────────────────────────────
 async function syncChainIds() {
   const chainMap = await fetchActiveChainMatches();
   if (!Object.keys(chainMap).length) return;
@@ -89,15 +98,20 @@ async function syncChainIds() {
   if (changed) emit();
 }
 
-// ── CLUB OVERRIDE ───────────────────────────────────────────
-function applyOverrides(club) {
-  if (adminOverrides[club.id]) {
-    return {
-      ...club,
-      ratings: { ...club.ratings, ...adminOverrides[club.id].ratings },
-    };
-  }
-  return club;
+// ── CLUB OVERRIDE + FORM ─────────────────────────────────────
+// Admin overrides win first, then current table form nudges the
+// resulting "form" rating so clubs on a run of good/bad results see
+// their odds shift accordingly.
+function applyClubAdjustments(club) {
+  const overridden = adminOverrides[club.id]
+    ? { ...club, ratings: { ...club.ratings, ...adminOverrides[club.id].ratings } }
+    : club;
+
+  const formAdjusted = getFormRating(overridden.name, overridden.ratings.form);
+  return {
+    ...overridden,
+    ratings: { ...overridden.ratings, form: formAdjusted },
+  };
 }
 
 // ── FIXTURE POOL ────────────────────────────────────────────
@@ -109,19 +123,31 @@ function getLeagueFixtures(leagueId) {
   return fixtureCache[leagueId];
 }
 
-function nextLeagueFixture(leagueId) {
-  const fixtures = getLeagueFixtures(leagueId);
-  if (!fixtures.length) return null;
+// Pulls the next N fixtures for a league, reshuffling the pool once
+// it's been fully cycled through — this is the "shuffling itself"
+// behavior: every full round gets a fresh random order.
+function nextLeagueFixtures(leagueId, count) {
+  let fixtures = getLeagueFixtures(leagueId);
+  if (!fixtures.length) return [];
   if (fixtureIndex[leagueId] === undefined) fixtureIndex[leagueId] = 0;
-  const fix = fixtures[fixtureIndex[leagueId] % fixtures.length];
-  fixtureIndex[leagueId]++;
-  return fix;
+
+  const picked = [];
+  for (let i = 0; i < count; i++) {
+    if (fixtureIndex[leagueId] >= fixtures.length) {
+      fixtures = shuffleFixtures(fixtures, Date.now() ^ (leagueId.length + i));
+      fixtureCache[leagueId] = fixtures;
+      fixtureIndex[leagueId] = 0;
+    }
+    picked.push(fixtures[fixtureIndex[leagueId]]);
+    fixtureIndex[leagueId]++;
+  }
+  return picked;
 }
 
 // ── CREATE MATCH ────────────────────────────────────────────
 function createMatch(leagueId, leagueName, leagueFlag, fixture, round, delayMs = 0) {
-  const home = applyOverrides(fixture.home);
-  const away = applyOverrides(fixture.away);
+  const home = applyClubAdjustments(fixture.home);
+  const away = applyClubAdjustments(fixture.away);
   const odds = calculateOdds(home.ratings, away.ratings);
   const sim  = simulateMatch(home, away, round);
   const now  = Date.now();
@@ -164,15 +190,15 @@ function createMatch(leagueId, leagueName, leagueFlag, fixture, round, delayMs =
   };
 }
 
-// ── REPLACE FINISHED MATCH ──────────────────────────────────
-function replaceMatch(match) {
-  const league = LEAGUES.find(l => l.id === match.leagueId);
-  if (!league) return null;
-  const fix = nextLeagueFixture(league.id);
-  if (!fix) return null;
-  return createMatch(
-    league.id, league.name, league.flag, fix,
-    `r${Date.now()}`, 0
+// ── REPLACE A FULL LEAGUE'S ROUND AT ONCE ───────────────────
+// Instead of replacing one finished match at a time, once every
+// match in a league's current round has finished, the whole league
+// kicks off its next round together — a proper matchday.
+function replaceLeagueRound(leagueId, leagueName, leagueFlag) {
+  const count = matchesForLeague(leagueId);
+  const fixtures = nextLeagueFixtures(leagueId, count);
+  return fixtures.map((fix, i) =>
+    createMatch(leagueId, leagueName, leagueFlag, fix, `r${Date.now()}-${i}`, i * STAGGER_MS)
   );
 }
 
@@ -210,7 +236,7 @@ function tickMatch(match, now) {
       const updated   = { ...match, minute, visibleEvents: vis, homeScore, awayScore };
       if (now >= match.ftAt) {
         const sim = match._sim;
-        return {
+        const finished = {
           ...updated,
           status:        "finished",
           minute:        90,
@@ -221,6 +247,8 @@ function tickMatch(match, now) {
           visibleEvents: sim.timeline,
           finishedAt:    now,
         };
+        recordResult(finished); // feeds the shared league table
+        return finished;
       }
       return updated;
     }
@@ -253,16 +281,22 @@ function tick() {
 
   matchState = matchState.map(m => tickMatch(m, now));
 
-  matchState = matchState.map(m => {
-    if (
-      m.status === "finished" &&
-      m.finishedAt &&
-      now - m.finishedAt > RESULT_HOLD_MS
-    ) {
-      const replacement = replaceMatch(m);
-      return replacement || m;
+  // Once every match in a league has been sitting "finished" past
+  // the result-hold window, kick off that league's next full round
+  // together, rather than staggering one-by-one replacements.
+  LEAGUES.forEach(league => {
+    const leagueMatches = matchState.filter(m => m.leagueId === league.id);
+    if (!leagueMatches.length) return;
+    const allDone = leagueMatches.every(
+      m => m.status === "finished" && m.finishedAt && now - m.finishedAt > RESULT_HOLD_MS
+    );
+    if (allDone) {
+      const nextRound = replaceLeagueRound(league.id, league.name, league.flag);
+      matchState = [
+        ...matchState.filter(m => m.leagueId !== league.id),
+        ...nextRound,
+      ];
     }
-    return m;
   });
 
   emit();
@@ -274,28 +308,17 @@ export function initMatchManager() {
   initialized = true;
 
   LEAGUES.forEach(league => {
-    const fixtures = generateLeagueFixtures(league.id);
-    if (!fixtures.length) return;
-
-    const shuffled = shuffleFixtures(fixtures, Date.now() ^ (league.id.charCodeAt(0) * 31));
-    const count    = Math.min(MATCHES_PER_LEAGUE, shuffled.length);
-
-    for (let i = 0; i < count; i++) {
-      const fix   = shuffled[i];
-      const delay = i * STAGGER_MS;
+    const count = matchesForLeague(league.id);
+    const fixtures = nextLeagueFixtures(league.id, count);
+    fixtures.forEach((fix, i) => {
       matchState.push(
-        createMatch(league.id, league.name, league.flag, fix, `r1-${i}`, delay)
+        createMatch(league.id, league.name, league.flag, fix, `r1-${i}`, i * STAGGER_MS)
       );
-    }
-
-    fixtureIndex[league.id] = count;
-    fixtureCache[league.id] = shuffled;
+    });
   });
 
   tickInterval = setInterval(tick, 1000);
 
-  // Poll the chain periodically to pick up chainMatchId once
-  // create-matches.js has registered the corresponding fixture.
   chainInterval = setInterval(syncChainIds, CHAIN_SYNC_MS);
   syncChainIds();
 

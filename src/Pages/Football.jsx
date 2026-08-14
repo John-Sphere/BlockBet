@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { subscribe, initMatchManager } from "../engine/matchManager";
 import { ClubBadge } from "../components/ui/ClubBadge";
 import { useBetSlip } from "../context/BetSlipContext";
@@ -7,6 +8,8 @@ import "./Football.css";
 export default function Football() {
   const [matches, setMatches] = useState([]);
   const { selections, addSelection } = useBetSlip();
+  const [searchParams] = useSearchParams();
+  const leagueFilter = searchParams.get("league");
 
   useEffect(() => {
     initMatchManager();
@@ -14,7 +17,11 @@ export default function Football() {
     return unsubscribe;
   }, []);
 
-  const grouped = matches.reduce((acc, m) => {
+  const visibleMatches = leagueFilter
+    ? matches.filter((m) => m.leagueId === leagueFilter)
+    : matches;
+
+  const grouped = visibleMatches.reduce((acc, m) => {
     acc[m.leagueName] = acc[m.leagueName] || [];
     acc[m.leagueName].push(m);
     return acc;
@@ -92,12 +99,12 @@ export default function Football() {
 
         <div className="bb-hero-stats">
           <div className="bb-hero-stat">
-            <div className="num">{matches.length}</div>
+            <div className="num">{visibleMatches.length}</div>
             <div className="label">Matches today</div>
           </div>
           <div className="bb-hero-stat">
             <div className="num">
-              {matches.filter((m) => m.status === "first_half" || m.status === "second_half").length}
+              {visibleMatches.filter((m) => m.status === "first_half" || m.status === "second_half").length}
             </div>
             <div className="label">Live now</div>
           </div>

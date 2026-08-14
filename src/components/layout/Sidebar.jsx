@@ -1,6 +1,7 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useSearchParams } from "react-router-dom";
 import { useApp }    from "../../context/AppContext";
 import { useWallet } from "../../context/WalletContext";
+import { LEAGUES }   from "../../data/clubs";
 
 const ALL_LINKS = [
   { to:"/football",    icon:"⚽", label:"Virtual Football", badge:"LIVE" },
@@ -11,8 +12,11 @@ const ALL_LINKS = [
 
 export function Sidebar() {
   const { pathname }              = useLocation();
+  const [searchParams]            = useSearchParams();
   const { sidebarOpen }           = useApp();
   const { connected, address, shortAddr, balance } = useWallet();
+
+  const activeLeague = searchParams.get("league");
 
   const adminWallet = (import.meta.env.VITE_ADMIN_WALLET || "").toLowerCase();
   const isAdmin = connected && address && adminWallet && address.toLowerCase() === adminWallet;
@@ -114,6 +118,35 @@ export function Sidebar() {
           );
         })}
       </nav>
+
+      {/* ── LEAGUES ── */}
+      <div style={{ padding: "10px 0", borderTop: "1px solid var(--pitch-line)" }}>
+        <div style={{ padding: "0 18px 8px", fontSize: 9, color: "var(--chalk-dim)", fontWeight: 700, letterSpacing: 1 }}>
+          LEAGUES
+        </div>
+        {LEAGUES.map((l) => {
+          const active = pathname === "/football" && activeLeague === l.id;
+          return (
+            <Link
+              key={l.id}
+              to={`/football?league=${l.id}`}
+              style={{
+                display: "flex", alignItems: "center", gap: 10,
+                padding: "9px 18px", fontSize: 12,
+                color: active ? "var(--gold)" : "var(--chalk-dim)",
+                background: active ? "rgba(201,162,75,0.08)" : "transparent",
+                textDecoration: "none",
+                fontWeight: active ? 700 : 500,
+              }}
+              onMouseEnter={e => { if (!active) e.currentTarget.style.color = "var(--chalk)"; }}
+              onMouseLeave={e => { if (!active) e.currentTarget.style.color = "var(--chalk-dim)"; }}
+            >
+              <span>{l.flag}</span>
+              <span>{l.name}</span>
+            </Link>
+          );
+        })}
+      </div>
 
       {/* ── FOOTER ── */}
       <div style={{
