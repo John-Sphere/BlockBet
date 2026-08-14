@@ -1,0 +1,20 @@
+name: Sync matches to chain
+
+on:
+  schedule:
+    # GitHub Actions' minimum interval is every 5 minutes
+    - cron: "*/5 * * * *"
+  workflow_dispatch: {}
+    # ^ lets you also trigger this manually from the Actions tab
+
+jobs:
+  ping-endpoints:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create matches
+        run: curl -sf "https://distant-finance-rho.vercel.app/api/create-matches" || echo "create-matches call failed"
+
+      - name: Resolve matches
+        run: curl -sf "https://distant-finance-rho.vercel.app/api/resolve-matches" || echo "resolve-matches call failed"
+
+    
