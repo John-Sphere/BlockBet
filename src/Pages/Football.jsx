@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
 import { subscribe, initMatchManager } from "../engine/matchManager";
 import { ClubBadge } from "../components/ui/ClubBadge";
-import { BetSlip } from "../components/ui/BetSlip";
+import { useBetSlip } from "../context/BetSlipContext";
 import "./Football.css";
 
 export default function Football() {
   const [matches, setMatches] = useState([]);
-  const [openSlip, setOpenSlip] = useState(null); // { matchId, side }
+  const { selections, addSelection } = useBetSlip();
 
   useEffect(() => {
     initMatchManager();
@@ -20,10 +20,8 @@ export default function Football() {
     return acc;
   }, {});
 
-  function pickOdds(matchId, side) {
-    setOpenSlip((prev) =>
-      prev?.matchId === matchId && prev?.side === side ? null : { matchId, side }
-    );
+  function isPicked(matchId, side) {
+    return selections.some((s) => s.matchId === matchId && s.side === side);
   }
 
   return (
@@ -75,7 +73,6 @@ export default function Football() {
             {leagueMatches.map((match) => {
               const isLive = match.status === "first_half" || match.status === "second_half" || match.status === "halftime";
               const isFinished = match.status === "finished";
-              const slipOpen = openSlip?.matchId === match.id;
               const oddsMap = { home: match.oddsHome, draw: match.oddsDraw, away: match.oddsAway };
 
               return (
@@ -104,8 +101,8 @@ export default function Football() {
                       {["home", "draw", "away"].map((side) => (
                         <div
                           key={side}
-                          className={`odds-box${slipOpen && openSlip.side === side ? " selected" : ""}`}
-                          onClick={() => pickOdds(match.id, side)}
+                          className={`odds-box${isPicked(match.id, side) ? " selected" : ""}`}
+                          onClick={() => addSelection(match, side, oddsMap[side])}
                           role="button"
                           tabIndex={0}
                         >
@@ -114,15 +111,6 @@ export default function Football() {
                         </div>
                       ))}
                     </div>
-                  )}
-
-                  {slipOpen && (
-                    <BetSlip
-                      match={match}
-                      side={openSlip.side}
-                      odds={oddsMap[openSlip.side]}
-                      onClose={() => setOpenSlip(null)}
-                    />
                   )}
                 </div>
               );
