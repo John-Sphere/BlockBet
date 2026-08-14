@@ -1,0 +1,95 @@
+.bb-navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 28px;
+  background: var(--pitch-mid);
+  border-bottom: 1px solid var(--pitch-line);
+}
+
+.bb-navbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.bb-navbar-name {
+  color: var(--chalk);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.bb-navbar-tag {
+  color: var(--chalk-dim);
+  font-size: 10px;
+  letter-spacing: 0.5px;
+}
+
+.bb-navbar-links {
+  display: flex;
+  gap: 24px;
+}
+
+.bb-navbar-link {
+  color: var(--chalk-dim);
+  font-size: 13px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid transparent;
+}
+
+.bb-navbar-link:hover {
+  color: var(--chalk);
+}
+
+.bb-navbar-link.active {
+  color: var(--chalk);
+  border-bottom-color: var(--gold);
+}
+
+.bb-navbar-wallet {
+  display: flex;
+  align-items: center;
+}
+
+.bb-wrong-net {
+  border-color: var(--live-red);
+  color: var(--live-red);
+}
+
+.bb-wallet-pill {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--pitch-card);
+  border: 1px solid var(--pitch-line);
+  border-radius: 4px;
+  padding: 6px 12px;
+}
+
+.bb-wallet-balance {
+  color: var(--gold);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.bb-wallet-addr {
+  color: var(--chalk-dim);
+  font-size: 12px;
+  cursor: pointer;
+  border-left: 1px solid var(--pitch-line);
+  padding-left: 10px;
+}
+
+.bb-wallet-addr:hover {
+  color: var(--chalk);
+}
+
+@media (max-width: 768px) {
+  .bb-navbar-links {
+    display: none;
+  }
+  .bb-navbar-tag {
+    display: none;
+  }
+}
