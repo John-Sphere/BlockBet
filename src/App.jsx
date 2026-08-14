@@ -1,5 +1,5 @@
 import { Routes, Route, Navigate } from "react-router-dom";
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useState, useEffect } from "react";
 import { Layout } from "./components/layout/Layout";
 import { BetSlipProvider } from "./context/BetSlipContext";
 import { BetSlipPanel } from "./components/ui/BetSlipPanel";
@@ -31,6 +31,21 @@ function Loader() {
 }
 
 export default function App() {
+  const [showSplash, setShowSplash] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setShowSplash(false), 5000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (showSplash) {
+    return (
+      <div className="bb-splash">
+        <Loader />
+      </div>
+    );
+  }
+
   return (
     <BetSlipProvider>
       <Layout>
