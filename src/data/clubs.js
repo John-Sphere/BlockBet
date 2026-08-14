@@ -57,3 +57,10 @@ export const clubs = [
 ];
 
 export default clubs;
+
+// Existing files (Admin.jsx, MatchHistory.jsx, matchManager.js,
+// fixtureGenerator.js) import { CLUBS, LEAGUES } — aliasing here so
+// nothing else in the project needs to change.
+export const CLUBS = clubs;
+
+export const LEAGUES = [...new Set(clubs.map((c) => c.league))];
