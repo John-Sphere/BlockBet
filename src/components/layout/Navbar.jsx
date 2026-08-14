@@ -2,7 +2,7 @@ import { Link, NavLink } from "react-router-dom";
 import { useWallet } from "../../context/WalletContext";
 import "./Navbar.css";
 
-export default function Navbar() {
+export function Navbar() {
   const {
     connect,
     disconnect,
