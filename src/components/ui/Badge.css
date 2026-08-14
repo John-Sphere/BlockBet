@@ -32,3 +32,13 @@
   border: 1px solid var(--pitch-line);
   color: var(--chalk-dim);
 }
+
+.badge-danger {
+  border: 1px solid var(--loss-red);
+  color: #E8A7A7;
+}
+
+.badge-warning {
+  border: 1px solid var(--gold);
+  color: var(--gold);
+}

@@ -2,17 +2,22 @@ import { Link, useLocation } from "react-router-dom";
 import { useApp }    from "../../context/AppContext";
 import { useWallet } from "../../context/WalletContext";
 
-const LINKS = [
+const ALL_LINKS = [
   { to:"/football",    icon:"⚽", label:"Virtual Football", badge:"LIVE" },
   { to:"/history",     icon:"📊", label:"Match History",    badge:null   },
   { to:"/leaderboard", icon:"🏆", label:"Leaderboard",      badge:null   },
-  { to:"/admin",       icon:"⚙️", label:"Admin Panel",      badge:null   },
+  { to:"/admin",       icon:"⚙️", label:"Admin Panel",      badge:null, adminOnly:true },
 ];
 
 export function Sidebar() {
   const { pathname }              = useLocation();
   const { sidebarOpen }           = useApp();
-  const { connected, shortAddr, balance } = useWallet();
+  const { connected, address, shortAddr, balance } = useWallet();
+
+  const adminWallet = (import.meta.env.VITE_ADMIN_WALLET || "").toLowerCase();
+  const isAdmin = connected && address && adminWallet && address.toLowerCase() === adminWallet;
+
+  const LINKS = ALL_LINKS.filter(l => !l.adminOnly || isAdmin);
 
   return (
     <aside style={{

@@ -1,12 +1,12 @@
 /**
  * BLOCKBET Match History
  * Loads already-finished matches on mount AND listens for new ones.
- * No more "No Matches Yet" when matches have already completed.
  */
 
 import { useState, useEffect, useRef } from "react";
 import { Card }  from "../components/ui/Card";
 import { Badge } from "../components/ui/Badge";
+import { ClubBadge } from "../components/ui/ClubBadge";
 import {
   subscribe,
   initMatchManager,
@@ -43,7 +43,6 @@ export default function MatchHistory() {
   useEffect(() => {
     initMatchManager();
 
-    // Load any already-finished matches immediately on mount
     const current = getCurrentMatches();
     const done    = current.filter(m => m.status === "finished");
     if (done.length) {
@@ -51,7 +50,6 @@ export default function MatchHistory() {
       setFinished(done);
     }
 
-    // Subscribe for future completions
     const unsub = subscribe(matches => {
       const newDone = matches.filter(
         m => m.status === "finished" && !seenIds.current.has(m.id)
@@ -73,10 +71,9 @@ export default function MatchHistory() {
 
   return (
     <div className="mh">
-      {/* Header */}
       <div className="mh__head">
         <div>
-          <h1 className="mh__title">📊 Match History</h1>
+          <h1 className="mh__title">Match history</h1>
           <p className="mh__sub">
             {finished.length > 0
               ? `${finished.length} completed match${finished.length > 1 ? "es" : ""}`
@@ -85,13 +82,12 @@ export default function MatchHistory() {
         </div>
       </div>
 
-      {/* League filter */}
       <div className="mh__filters">
         <button
           className={`mh__flt ${leagueF === "all" ? "mh__flt--on" : ""}`}
           onClick={() => setLeagueF("all")}
         >
-          ⚡ All
+          All
         </button>
         {LEAGUES.map(l => (
           <button
@@ -99,20 +95,18 @@ export default function MatchHistory() {
             className={`mh__flt ${leagueF === l.id ? "mh__flt--on" : ""}`}
             onClick={() => setLeagueF(l.id)}
           >
-            {l.flag} {l.name}
+            {l.name}
           </button>
         ))}
       </div>
 
       <div className="mh__layout">
 
-        {/* Match list */}
         <div className="mh__list">
           {shown.length === 0 ? (
             <Card style={{ padding: "56px 24px", textAlign: "center" }}>
-              <div style={{ fontSize: 48, marginBottom: 14 }}>📋</div>
-              <h3 style={{ marginBottom: 8 }}>No Matches Yet</h3>
-              <p style={{ color: "var(--muted)", fontSize: 13 }}>
+              <h3 style={{ marginBottom: 8, color: "var(--chalk)" }}>No matches yet</h3>
+              <p style={{ color: "var(--chalk-dim)", fontSize: 13 }}>
                 Completed matches will appear here automatically as the engine runs.
               </p>
             </Card>
@@ -123,25 +117,20 @@ export default function MatchHistory() {
                 style={{
                   padding: "14px 18px", marginBottom: 10, cursor: "pointer",
                   border: selected === m.id
-                    ? "1px solid rgba(46,199,242,0.45)"
-                    : "1px solid var(--border)",
+                    ? "1px solid var(--gold)"
+                    : "1px solid var(--pitch-line)",
                 }}
                 onClick={() => setSelected(m.id === selected ? null : m.id)}
               >
                 <div className="mh__row-league">
-                  <span>{m.leagueFlag} {m.leagueName}</span>
-                  <span style={{ fontSize: 10, color: "var(--muted)" }}>
+                  <span>{m.leagueName}</span>
+                  <span style={{ fontSize: 10, color: "var(--chalk-dim)" }}>
                     {timeAgo(m.finishedAt)}
                   </span>
                 </div>
                 <div className="mh__row-teams">
                   <div className="mh__row-team">
-                    <img
-                      src={m.homeLogo} alt={m.homeTeam}
-                      width={24} height={24}
-                      style={{ objectFit: "contain" }}
-                      onError={e => e.target.style.display = "none"}
-                    />
+                    <ClubBadge name={m.homeTeam} size={24} />
                     <span className={m.result === 1 ? "mh__winner" : ""}>
                       {m.homeTeam}
                     </span>
@@ -155,27 +144,22 @@ export default function MatchHistory() {
                     <span className={m.result === 3 ? "mh__winner" : ""}>
                       {m.awayTeam}
                     </span>
-                    <img
-                      src={m.awayLogo} alt={m.awayTeam}
-                      width={24} height={24}
-                      style={{ objectFit: "contain" }}
-                      onError={e => e.target.style.display = "none"}
-                    />
+                    <ClubBadge name={m.awayTeam} size={24} />
                   </div>
                 </div>
                 <div className="mh__row-footer">
-                  <Badge color="ghost">FT</Badge>
+                  <Badge tone="muted">FT</Badge>
                   {m._sim && (
-                    <span style={{ fontSize: 11, color: "var(--muted)" }}>
+                    <span style={{ fontSize: 11, color: "var(--chalk-dim)" }}>
                       HT {m._sim.firstHalf?.home}–{m._sim.firstHalf?.away}
                     </span>
                   )}
                   <span className="mh__row-result">
                     {m.result === 1
-                      ? `🏆 ${m.homeTeam}`
+                      ? m.homeTeam
                       : m.result === 3
-                        ? `🏆 ${m.awayTeam}`
-                        : "🤝 Draw"}
+                        ? m.awayTeam
+                        : "Draw"}
                   </span>
                 </div>
               </Card>
@@ -183,59 +167,51 @@ export default function MatchHistory() {
           )}
         </div>
 
-        {/* Detail panel */}
         {det && (
           <div className="mh__detail">
             <Card style={{ overflow: "hidden" }}>
 
-              {/* Detail header */}
               <div className="mh__det-head">
-                <span>{det.leagueFlag} {det.leagueName}</span>
-                <Badge color="ghost">Full Time</Badge>
+                <span>{det.leagueName}</span>
+                <Badge tone="muted">Full time</Badge>
               </div>
 
-              {/* Scoreline */}
               <div className="mh__det-score">
                 <div className="mh__det-team">
-                  <img src={det.homeLogo} alt={det.homeTeam} width={44} height={44}
-                    style={{ objectFit: "contain" }}
-                    onError={e => e.target.style.display = "none"} />
+                  <ClubBadge name={det.homeTeam} size={40} />
                   <span>{det.homeTeam}</span>
                 </div>
                 <div style={{ textAlign: "center" }}>
-                  <div style={{ fontSize: 30, fontWeight: 900 }}>
+                  <div style={{ fontSize: 30, fontWeight: 700, color: "var(--chalk)" }}>
                     {det.homeScore} – {det.awayScore}
                   </div>
                   {det._sim && (
-                    <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 4 }}>
+                    <div style={{ fontSize: 11, color: "var(--chalk-dim)", marginTop: 4 }}>
                       HT: {det._sim.firstHalf?.home}–{det._sim.firstHalf?.away}
                     </div>
                   )}
                 </div>
                 <div className="mh__det-team mh__det-team--r">
-                  <img src={det.awayLogo} alt={det.awayTeam} width={44} height={44}
-                    style={{ objectFit: "contain" }}
-                    onError={e => e.target.style.display = "none"} />
+                  <ClubBadge name={det.awayTeam} size={40} />
                   <span>{det.awayTeam}</span>
                 </div>
               </div>
 
-              {/* Stats */}
               {det.stats && (
                 <div className="mh__det-section">
-                  <div className="mh__det-section-title">Match Statistics</div>
+                  <div className="mh__det-section-title">Match statistics</div>
                   {[
                     ["Possession",      det.stats.possession?.map(v => `${v}%`)],
                     ["Shots",           det.stats.shots],
-                    ["Shots on Target", det.stats.shotsOnTarget],
+                    ["Shots on target", det.stats.shotsOnTarget],
                     ["Corners",         det.stats.corners],
                     ["Fouls",           det.stats.fouls],
-                    ["Yellow Cards",    det.stats.yellowCards],
-                    ["Red Cards",       det.stats.redCards],
+                    ["Yellow cards",    det.stats.yellowCards],
+                    ["Red cards",       det.stats.redCards],
                   ].map(([label, vals]) => vals && (
                     <div key={label} className="mh__stat-row">
                       <div className="mh__stat-home">
-                        <span style={{ fontWeight: 700, color: "var(--primary)", fontSize: 13 }}>{vals[0]}</span>
+                        <span style={{ fontWeight: 700, color: "var(--gold)", fontSize: 13 }}>{vals[0]}</span>
                         <div className="mh__stat-bar-wrap">
                           <div className="mh__stat-bar mh__stat-bar--h"
                             style={{ width: `${barPct(vals[0], vals[1])}%` }} />
@@ -247,14 +223,13 @@ export default function MatchHistory() {
                           <div className="mh__stat-bar mh__stat-bar--a"
                             style={{ width: `${barPct(vals[1], vals[0])}%` }} />
                         </div>
-                        <span style={{ fontWeight: 700, color: "var(--primary2, #47D7FF)", fontSize: 13 }}>{vals[1]}</span>
+                        <span style={{ fontWeight: 700, color: "var(--chalk)", fontSize: 13 }}>{vals[1]}</span>
                       </div>
                     </div>
                   ))}
                 </div>
               )}
 
-              {/* Timeline */}
               {det.visibleEvents?.length > 0 && (
                 <div className="mh__det-section">
                   <div className="mh__det-section-title">Timeline</div>
@@ -269,15 +244,15 @@ export default function MatchHistory() {
                         <span className="mh__event-icon">{eventIcon(e.type)}</span>
                         <span className="mh__event-text">
                           {e.type === "goal"
-                            ? `GOAL — ${e.team === "home" ? det.homeTeam : det.awayTeam}${e.detail ? ` (${e.detail})` : ""}`
+                            ? `Goal — ${e.team === "home" ? det.homeTeam : det.awayTeam}${e.detail ? ` (${e.detail})` : ""}`
                             : e.type === "yellow_card"
                               ? `Yellow — ${e.team === "home" ? det.homeTeam : det.awayTeam}`
                               : e.type === "red_card"
-                                ? `Red Card — ${e.team === "home" ? det.homeTeam : det.awayTeam}`
+                                ? `Red card — ${e.team === "home" ? det.homeTeam : det.awayTeam}`
                                 : e.type === "halftime"
-                                  ? `Half Time — ${e.score || ""}`
+                                  ? `Half time — ${e.score || ""}`
                                   : e.type === "fulltime"
-                                    ? `Full Time — ${e.score || ""}`
+                                    ? `Full time — ${e.score || ""}`
                                     : ""}
                         </span>
                       </div>
