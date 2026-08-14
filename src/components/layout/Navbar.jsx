@@ -1,7 +1,6 @@
 import { Link, NavLink } from "react-router-dom";
 import { useWallet } from "../../context/WalletContext";
 import { useApp } from "../../context/AppContext";
-import logo from "../../assets/logo.png";
 import "./Navbar.css";
 
 export function Navbar() {
@@ -30,7 +29,7 @@ export function Navbar() {
         </button>
 
         <Link to="/" className="bb-navbar-brand">
-          <img src={logo} alt="BLOCKBET" className="bb-navbar-logo" />
+          <img src="/logo.png" alt="BLOCKBET" className="bb-navbar-logo" />
           <div className="bb-navbar-tag">Virtual Football Sportsbook</div>
         </Link>
       </div>
