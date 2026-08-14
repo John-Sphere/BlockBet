@@ -83,7 +83,28 @@ export function updateMatchPool(matchId, selection, amount) {
   emit();
 }
 
-// ── CHAIN SYNC ───────────────────────────────────────────────
+// Asks the server to create this exact fixture on-chain (or return its
+// existing ID if it's already there), then patches chainMatchId onto
+// the matching client-side match once the response comes back.
+async function ensureMatchOnChain(match) {
+  try {
+    const res = await fetch(
+      `/api/ensure-match?home=${encodeURIComponent(match.homeTeam)}&away=${encodeURIComponent(match.awayTeam)}`
+    );
+    if (!res.ok) return;
+    const data = await res.json();
+    if (data.matchId === undefined) return;
+    matchState = matchState.map((m) =>
+      m.id === match.id ? { ...m, chainMatchId: data.matchId } : m
+    );
+    emit();
+  } catch {
+    // Network hiccup or contract call failed — the periodic syncChainIds
+    // poll and the GitHub Actions cron remain as a fallback.
+  }
+}
+
+// ── CHAIN SYNC (fallback, catches anything ensureMatchOnChain missed) ──
 async function syncChainIds() {
   const chainMap = await fetchActiveChainMatches();
   if (!Object.keys(chainMap).length) return;
@@ -197,9 +218,11 @@ function createMatch(leagueId, leagueName, leagueFlag, fixture, round, delayMs =
 function replaceLeagueRound(leagueId, leagueName, leagueFlag) {
   const count = matchesForLeague(leagueId);
   const fixtures = nextLeagueFixtures(leagueId, count);
-  return fixtures.map((fix, i) =>
+  const newMatches = fixtures.map((fix, i) =>
     createMatch(leagueId, leagueName, leagueFlag, fix, `r${Date.now()}-${i}`, i * STAGGER_MS)
   );
+  newMatches.forEach((m) => ensureMatchOnChain(m));
+  return newMatches;
 }
 
 // ── TICK — ADVANCE MATCH STATE ──────────────────────────────
@@ -311,9 +334,9 @@ export function initMatchManager() {
     const count = matchesForLeague(league.id);
     const fixtures = nextLeagueFixtures(league.id, count);
     fixtures.forEach((fix, i) => {
-      matchState.push(
-        createMatch(league.id, league.name, league.flag, fix, `r1-${i}`, i * STAGGER_MS)
-      );
+      const match = createMatch(league.id, league.name, league.flag, fix, `r1-${i}`, i * STAGGER_MS);
+      matchState.push(match);
+      ensureMatchOnChain(match);
     });
   });
 
