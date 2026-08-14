@@ -18,7 +18,7 @@ export function Sidebar() {
     <aside style={{
       position:"fixed", top:"var(--nav-h)", left:0, zIndex:100,
       height:"calc(100vh - var(--nav-h))", width:"var(--side-w)",
-      background:"var(--bg2)", borderRight:"1px solid var(--border)",
+      background:"var(--pitch-mid)", borderRight:"1px solid var(--pitch-line)",
       display:"flex", flexDirection:"column",
       transform: sidebarOpen ? "translateX(0)" : "translateX(-100%)",
       transition:"transform 0.3s ease",
@@ -27,35 +27,34 @@ export function Sidebar() {
 
       {/* ── BRAND BLOCK ── */}
       <div style={{
-        padding:"20px 18px", borderBottom:"1px solid var(--border)",
-        background:"linear-gradient(180deg,rgba(46,199,242,0.06),transparent)",
+        padding:"20px 18px", borderBottom:"1px solid var(--pitch-line)",
       }}>
         <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:14 }}>
           <div style={{
             width:36, height:36, borderRadius:9,
-            background:"linear-gradient(135deg,#2EC7F2,#47D7FF)",
+            border:"1.5px solid var(--gold)",
             display:"flex", alignItems:"center", justifyContent:"center",
-            boxShadow:"0 0 18px rgba(46,199,242,0.3)", flexShrink:0,
+            flexShrink:0, background:"var(--pitch-dark)",
           }}>
             <img src="/logo.png" alt="BlockBet" width={26} height={26} style={{ objectFit:"contain" }}
-              onError={e => { e.target.style.display="none"; e.target.parentNode.innerHTML='<span style="font-size:18px;font-weight:900;color:#050608">B</span>'; }} />
+              onError={e => { e.target.style.display="none"; e.target.parentNode.innerHTML='<span style="font-size:18px;font-weight:900;color:var(--gold)">B</span>'; }} />
           </div>
           <div>
-            <div className="grad" style={{ fontSize:16, fontWeight:900, letterSpacing:1 }}>BLOCKBET</div>
-            <div style={{ fontSize:9, color:"var(--muted)", letterSpacing:2 }}>VIRTUAL SPORTSBOOK</div>
+            <div style={{ fontSize:16, fontWeight:900, letterSpacing:1, color:"var(--chalk)" }}>BLOCKBET</div>
+            <div style={{ fontSize:9, color:"var(--chalk-dim)", letterSpacing:2 }}>VIRTUAL SPORTSBOOK</div>
           </div>
         </div>
 
         {/* USDC pill */}
         <div style={{
           display:"flex", alignItems:"center", gap:6,
-          background:"rgba(16,233,129,0.08)", border:"1px solid rgba(16,233,129,0.22)",
+          background:"var(--pitch-card)", border:"1px solid var(--pitch-line)",
           borderRadius:8, padding:"6px 10px",
         }}>
           <span style={{ fontSize:14 }}>💵</span>
           <div>
-            <div style={{ fontSize:9, color:"var(--muted)", fontWeight:700, letterSpacing:1 }}>POWERED BY</div>
-            <div style={{ fontSize:13, color:"var(--success)", fontWeight:800 }}>USDC • Arc Testnet</div>
+            <div style={{ fontSize:9, color:"var(--chalk-dim)", fontWeight:700, letterSpacing:1 }}>POWERED BY</div>
+            <div style={{ fontSize:13, color:"var(--gold)", fontWeight:800 }}>USDC • Arc Testnet</div>
           </div>
         </div>
       </div>
@@ -64,13 +63,13 @@ export function Sidebar() {
       {connected && (
         <div style={{
           margin:"12px 14px",
-          background:"rgba(46,199,242,0.05)", border:"1px solid var(--border)",
+          background:"var(--pitch-card)", border:"1px solid var(--pitch-line)",
           borderRadius:12, padding:"12px 14px",
         }}>
-          <div style={{ fontSize:9, color:"var(--muted)", fontWeight:700, letterSpacing:1, marginBottom:6 }}>MY WALLET</div>
-          <div style={{ fontSize:12, color:"var(--primary)", fontWeight:700, marginBottom:4 }}>🦊 {shortAddr}</div>
-          <div style={{ fontSize:18, fontWeight:900, color:"var(--success)" }}>
-            {balance} <span style={{ fontSize:11, color:"var(--muted)", fontWeight:600 }}>USDC</span>
+          <div style={{ fontSize:9, color:"var(--chalk-dim)", fontWeight:700, letterSpacing:1, marginBottom:6 }}>MY WALLET</div>
+          <div style={{ fontSize:12, color:"var(--chalk)", fontWeight:700, marginBottom:4 }}>🦊 {shortAddr}</div>
+          <div style={{ fontSize:18, fontWeight:900, color:"var(--gold)" }}>
+            {balance} <span style={{ fontSize:11, color:"var(--chalk-dim)", fontWeight:600 }}>USDC</span>
           </div>
         </div>
       )}
@@ -83,28 +82,28 @@ export function Sidebar() {
             <Link key={l.to} to={l.to} style={{
               display:"flex", alignItems:"center", gap:12,
               padding:"12px 18px", fontSize:13,
-              color: active ? "var(--primary)" : "var(--muted)",
-              background: active ? "rgba(46,199,242,0.09)" : "transparent",
-              borderLeft:`3px solid ${active ? "var(--primary)" : "transparent"}`,
+              color: active ? "var(--gold)" : "var(--chalk-dim)",
+              background: active ? "rgba(201,162,75,0.09)" : "transparent",
+              borderLeft:`3px solid ${active ? "var(--gold)" : "transparent"}`,
               fontWeight: active ? 700 : 500,
-              transition:"var(--ease)", textDecoration:"none",
+              transition:"background 0.15s ease, color 0.15s ease", textDecoration:"none",
             }}
-              onMouseEnter={e => { if (!active) { e.currentTarget.style.background="rgba(46,199,242,0.04)"; e.currentTarget.style.color="var(--gray)"; }}}
-              onMouseLeave={e => { if (!active) { e.currentTarget.style.background="transparent"; e.currentTarget.style.color="var(--muted)"; }}}
+              onMouseEnter={e => { if (!active) { e.currentTarget.style.background="rgba(201,162,75,0.05)"; e.currentTarget.style.color="var(--chalk)"; }}}
+              onMouseLeave={e => { if (!active) { e.currentTarget.style.background="transparent"; e.currentTarget.style.color="var(--chalk-dim)"; }}}
             >
               <span style={{ fontSize:18, flexShrink:0 }}>{l.icon}</span>
               <span style={{ flex:1 }}>{l.label}</span>
               {l.badge && (
                 <span style={{
                   fontSize:8, fontWeight:800, letterSpacing:0.5, padding:"2px 6px",
-                  borderRadius:5, background:"rgba(16,233,129,0.15)",
-                  border:"1px solid rgba(16,233,129,0.3)", color:"var(--success)",
+                  borderRadius:5, background:"rgba(139,30,30,0.25)",
+                  border:"1px solid var(--live-red)", color:"var(--chalk)",
                 }}>
                   {l.badge}
                 </span>
               )}
               {active && (
-                <span style={{ width:5, height:5, borderRadius:"50%", background:"var(--primary)", boxShadow:"0 0 7px var(--primary)" }} />
+                <span style={{ width:5, height:5, borderRadius:"50%", background:"var(--gold)" }} />
               )}
             </Link>
           );
@@ -113,10 +112,10 @@ export function Sidebar() {
 
       {/* ── FOOTER ── */}
       <div style={{
-        padding:"14px 18px", borderTop:"1px solid var(--border)",
-        fontSize:10, color:"var(--muted)",
+        padding:"14px 18px", borderTop:"1px solid var(--pitch-line)",
+        fontSize:10, color:"var(--chalk-dim)",
       }}>
-        <div style={{ marginBottom:2, fontWeight:600 }}>BlockBet v2.0 — Phase 2</div>
+        <div style={{ marginBottom:2, fontWeight:600, color:"var(--chalk)" }}>BlockBet v2.0 — Phase 2</div>
         <div>⛓️ Arc Testnet • 💵 USDC Native</div>
       </div>
     </aside>
