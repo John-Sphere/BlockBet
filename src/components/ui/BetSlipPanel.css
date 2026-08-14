@@ -213,6 +213,20 @@
   cursor: not-allowed;
 }
 
+.bet-slip-multi-odds {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  font-size: 13px;
+  color: var(--chalk-dim);
+}
+
+.bet-slip-multi-odds-value {
+  color: var(--gold);
+  font-weight: 700;
+  font-size: 15px;
+}
+
 @media (max-width: 768px) {
   .bet-slip-panel {
     right: 10px;
