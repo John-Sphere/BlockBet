@@ -9,29 +9,32 @@ import { simulateMatch }       from "./simulate.js";
 import { calculateOdds }       from "./oddsEngine.js";
 import { generateLeagueFixtures, shuffleFixtures } from "./fixtureGenerator.js";
 import { LEAGUES }             from "../data/clubs.js";
+import { fetchActiveChainMatches, matchKey } from "./chainSync.js";
 
 // ── TIMING ─────────────────────────────────────────────────
-const BETTING_WINDOW_MS = 2  * 60 * 1000;  // 2 min betting
-const HALF_DURATION_MS  = 2  * 60 * 1000;  // 2 min per half
-const HT_DURATION_MS    = 1  * 60 * 1000;  // 1 min half time
-const RESULT_HOLD_MS    = 2  * 60 * 1000;  // 2 min show result
-const STAGGER_MS        = 45 * 1000;        // 45s gap between matches
-const MATCHES_PER_LEAGUE= 3;                // 3 per league = 18 total
+const BETTING_WINDOW_MS = 2  * 60 * 1000;
+const HALF_DURATION_MS  = 2  * 60 * 1000;
+const HT_DURATION_MS    = 1  * 60 * 1000;
+const RESULT_HOLD_MS    = 2  * 60 * 1000;
+const STAGGER_MS        = 45 * 1000;
+const MATCHES_PER_LEAGUE= 3;
+const CHAIN_SYNC_MS     = 15 * 1000; // check for on-chain match IDs every 15s
 
 // ── MODULE STATE ────────────────────────────────────────────
 let matchState    = [];
 let listeners     = new Set();
 let initialized   = false;
 let tickInterval  = null;
+let chainInterval = null;
 let paused        = false;
 let adminOverrides= {};
-let fixtureCache  = {};  // { leagueId: [ fixtures ] }
-let fixtureIndex  = {};  // { leagueId: number }
+let fixtureCache  = {};
+let fixtureIndex  = {};
 
 // ── SUBSCRIBE ───────────────────────────────────────────────
 export function subscribe(fn) {
   listeners.add(fn);
-  fn([...matchState]);  // emit current state immediately
+  fn([...matchState]);
   return () => listeners.delete(fn);
 }
 
@@ -68,6 +71,22 @@ export function updateMatchPool(matchId, selection, amount) {
     };
   });
   emit();
+}
+
+// ── CHAIN SYNC — fills in chainMatchId once create-matches.js has
+//    registered the corresponding fixture on-chain ─────────────
+async function syncChainIds() {
+  const chainMap = await fetchActiveChainMatches();
+  if (!Object.keys(chainMap).length) return;
+  let changed = false;
+  matchState = matchState.map(m => {
+    if (m.chainMatchId !== null && m.chainMatchId !== undefined) return m;
+    const id = chainMap[matchKey(m.homeTeam, m.awayTeam)];
+    if (id === undefined) return m;
+    changed = true;
+    return { ...m, chainMatchId: id };
+  });
+  if (changed) emit();
 }
 
 // ── CLUB OVERRIDE ───────────────────────────────────────────
@@ -207,7 +226,7 @@ function tickMatch(match, now) {
     }
 
     case "finished":
-      return match;  // handled in main tick loop
+      return match;
 
     default:
       return match;
@@ -232,10 +251,8 @@ function tick() {
   if (paused) return;
   const now = Date.now();
 
-  // Advance all matches
   matchState = matchState.map(m => tickMatch(m, now));
 
-  // Replace finished matches after RESULT_HOLD_MS
   matchState = matchState.map(m => {
     if (
       m.status === "finished" &&
@@ -256,7 +273,6 @@ export function initMatchManager() {
   if (initialized) return;
   initialized = true;
 
-  // Generate MATCHES_PER_LEAGUE per league with staggered kick-offs
   LEAGUES.forEach(league => {
     const fixtures = generateLeagueFixtures(league.id);
     if (!fixtures.length) return;
@@ -266,25 +282,29 @@ export function initMatchManager() {
 
     for (let i = 0; i < count; i++) {
       const fix   = shuffled[i];
-      const delay = i * STAGGER_MS; // stagger each match by 45s
+      const delay = i * STAGGER_MS;
       matchState.push(
         createMatch(league.id, league.name, league.flag, fix, `r1-${i}`, delay)
       );
     }
 
-    // Prime the fixture index so replacements use the next fixture
     fixtureIndex[league.id] = count;
     fixtureCache[league.id] = shuffled;
   });
 
-  // Tick every second
   tickInterval = setInterval(tick, 1000);
+
+  // Poll the chain periodically to pick up chainMatchId once
+  // create-matches.js has registered the corresponding fixture.
+  chainInterval = setInterval(syncChainIds, CHAIN_SYNC_MS);
+  syncChainIds();
 
   emit();
 }
 
 export function stopMatchManager() {
   clearInterval(tickInterval);
+  clearInterval(chainInterval);
   initialized  = false;
   matchState   = [];
   fixtureCache = {};
