@@ -24,6 +24,44 @@
   line-height: 1.6;
 }
 
+.bb-chalk-path {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: bb-chalk-draw 3.2s ease-in-out infinite;
+}
+
+.bb-chalk-ball {
+  opacity: 0;
+  animation: bb-ball-fade 3.2s ease-in-out infinite;
+}
+
+@keyframes bb-chalk-draw {
+  0%   { stroke-dashoffset: 1; opacity: 1; }
+  55%  { stroke-dashoffset: 0; opacity: 1; }
+  80%  { stroke-dashoffset: 0; opacity: 1; }
+  92%  { opacity: 0; }
+  93%  { stroke-dashoffset: 1; opacity: 0; }
+  100% { stroke-dashoffset: 1; opacity: 0; }
+}
+
+@keyframes bb-ball-fade {
+  0%   { opacity: 0; }
+  8%   { opacity: 1; }
+  80%  { opacity: 1; }
+  92%  { opacity: 0; }
+  100% { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bb-chalk-path {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+  .bb-chalk-ball {
+    display: none;
+  }
+}
+
 .bb-hero-stats {
   display: flex;
   gap: 24px;

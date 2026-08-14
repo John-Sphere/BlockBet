@@ -38,11 +38,34 @@ export default function Football() {
           chalkboard. Settle instantly in USDC.
         </p>
 
-        <svg width="100%" height="90" viewBox="0 0 400 90" style={{ opacity: 0.85 }} aria-hidden="true">
+        <svg width="100%" height="90" viewBox="0 0 400 90" aria-hidden="true">
           <rect x="1" y="1" width="398" height="88" fill="none" stroke="var(--pitch-line)" strokeWidth="1" />
           <line x1="200" y1="1" x2="200" y2="89" stroke="var(--pitch-line)" strokeWidth="1" />
           <circle cx="200" cy="45" r="20" fill="none" stroke="var(--pitch-line)" strokeWidth="1" />
-          <path d="M40 65 L110 30 L170 45 L230 25" stroke="var(--gold)" strokeWidth="1.5" fill="none" markerEnd="url(#arrow)" />
+
+          <path
+            className="bb-chalk-path"
+            d="M40 65 L110 30 L170 45 L230 25 L290 40"
+            pathLength="1"
+            stroke="var(--gold)"
+            strokeWidth="1.5"
+            fill="none"
+            markerEnd="url(#arrow)"
+          />
+
+          <circle className="bb-chalk-ball" r="3.5" fill="var(--gold)">
+            <animateMotion
+              dur="3.2s"
+              repeatCount="indefinite"
+              path="M40 65 L110 30 L170 45 L230 25 L290 40"
+              keyPoints="0;1"
+              keyTimes="0;1"
+              calcMode="linear"
+            />
+          </circle>
+
+          <path d="M280 60 L330 40 L370 55" stroke="var(--gold)" strokeWidth="1.5" fill="none" markerEnd="url(#arrow)" opacity="0.35" />
+
           <defs>
             <marker id="arrow" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
               <path d="M0,0 L7,3.5 L0,7 Z" fill="var(--gold)" />
