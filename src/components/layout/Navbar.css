@@ -7,6 +7,38 @@
   border-bottom: 1px solid var(--pitch-line);
 }
 
+.bb-navbar-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.bb-navbar-menu {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  width: 30px;
+  height: 30px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+.bb-navbar-menu span {
+  display: block;
+  height: 2px;
+  width: 100%;
+  background: var(--chalk-dim);
+  border-radius: 1px;
+  transition: background 0.15s ease;
+}
+
+.bb-navbar-menu:hover span {
+  background: var(--gold);
+}
+
 .bb-navbar-brand {
   display: flex;
   align-items: center;
@@ -18,6 +50,11 @@
   font-size: 15px;
   font-weight: 700;
   letter-spacing: 1px;
+}
+
+.bb-navbar-logo {
+  height: 34px;
+  width: auto;
 }
 
 .bb-navbar-tag {

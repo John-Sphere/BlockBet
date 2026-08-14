@@ -1,5 +1,7 @@
 import { Link, NavLink } from "react-router-dom";
 import { useWallet } from "../../context/WalletContext";
+import { useApp } from "../../context/AppContext";
+import logo from "../../assets/logo.png";
 import "./Navbar.css";
 
 export function Navbar() {
@@ -12,23 +14,26 @@ export function Navbar() {
     balance,
     txPending,
   } = useWallet();
+  const { toggleSidebar } = useApp();
 
   return (
     <header className="bb-navbar">
-      <Link to="/" className="bb-navbar-brand">
-        <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true">
-          <polygon
-            points="12,2 22,22 2,22"
-            fill="none"
-            stroke="var(--gold)"
-            strokeWidth="1.5"
-          />
-        </svg>
-        <div>
-          <div className="bb-navbar-name">BLOCKBET</div>
+      <div className="bb-navbar-left">
+        <button
+          className="bb-navbar-menu"
+          onClick={toggleSidebar}
+          aria-label="Toggle sidebar"
+        >
+          <span />
+          <span />
+          <span />
+        </button>
+
+        <Link to="/" className="bb-navbar-brand">
+          <img src={logo} alt="BLOCKBET" className="bb-navbar-logo" />
           <div className="bb-navbar-tag">Virtual Football Sportsbook</div>
-        </div>
-      </Link>
+        </Link>
+      </div>
 
       <nav className="bb-navbar-links">
         <NavLink to="/football" className="bb-navbar-link">
