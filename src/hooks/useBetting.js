@@ -97,16 +97,22 @@ export function useBetting() {
   }, [signer]);
 
   // Reads this wallet's full bet history straight from the contract's
-  // event log — the contract itself doesn't keep an enumerable list of
-  // "all bets by this user", so events are the correct source of truth.
+  // event log. Note: BetPlaced/AccumulatorPlaced don't mark any field
+  // as "indexed" in the contract, so we can't filter by address at the
+  // blockchain level — fetch every event and filter to this wallet
+  // ourselves instead.
   const getMyBets = useCallback(async (address) => {
     if (!signer || !address) return { singles: [], accumulators: [] };
     const contract = new ethers.Contract(CONTRACT, BET_ABI, signer);
+    const target = address.toLowerCase();
 
-    const [betEvents, accEvents] = await Promise.all([
-      contract.queryFilter(contract.filters.BetPlaced(null, address)),
-      contract.queryFilter(contract.filters.AccumulatorPlaced(null, address)),
+    const [allBetEvents, allAccEvents] = await Promise.all([
+      contract.queryFilter(contract.filters.BetPlaced()),
+      contract.queryFilter(contract.filters.AccumulatorPlaced()),
     ]);
+
+    const betEvents = allBetEvents.filter((ev) => ev.args.bettor.toLowerCase() === target);
+    const accEvents = allAccEvents.filter((ev) => ev.args.bettor.toLowerCase() === target);
 
     const singles = await Promise.all(
       betEvents.map(async (ev) => {
