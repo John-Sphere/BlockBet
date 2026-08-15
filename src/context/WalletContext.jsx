@@ -3,13 +3,15 @@ import { ethers } from "ethers";
 
 const Ctx = createContext(null);
 
-// Per Arc's official docs (docs.arc.io): Arc genuinely uses USDC as its
-// native gas token, represented at 18 decimals (not the 6 decimals the
-// separate USDC ERC-20 contract below uses for actual bet amounts —
-// those are two different things: this is what pays gas, USDC_ADDR
-// below is the token used inside the app for betting).
+// Arc Testnet's chain ID as of when this was written — confirmed
+// directly from MetaMask querying the live RPC endpoint. This differs
+// from 1214 (0x4BE), which is what Arc's testnet used previously —
+// it appears to have been migrated/reset at some point. If wallet
+// connection issues resurface later, check whether this has changed
+// again by adding the network manually in MetaMask and reading
+// whatever chain ID it reports back.
 const ARC_CHAIN = {
-  chainId: "0x4BE",
+  chainId: "0x4CEF52",
   chainName: "Arc Testnet",
   nativeCurrency: { name: "USDC", symbol: "USDC", decimals: 18 },
   rpcUrls: ["https://rpc.testnet.arc.network"],
@@ -33,7 +35,7 @@ export function WalletProvider({ children }) {
   const [wrongNet,   setWrongNet]   = useState(false);
   const [txPending,  setTxPending]  = useState(false);
 
-  const isArc = (cid) => parseInt(cid, 16) === 1214;
+  const isArc = (cid) => parseInt(cid, 16) === 5042002;
 
   const loadBalance = useCallback(async (addr, prov) => {
     try {
