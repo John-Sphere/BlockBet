@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useCallback } from "react";
+import { ensureMatchOnChain } from "../engine/matchManager";
 
 const Ctx = createContext(null);
 
@@ -29,6 +30,17 @@ export function BetSlipProvider({ children }) {
       ];
     });
     setOpen(true);
+
+    // Only reach out to the chain for THIS specific match, right when
+    // someone actually picks it — not for all 50+ matches on page load.
+    if (match.chainMatchId === null || match.chainMatchId === undefined) {
+      ensureMatchOnChain(match.id, match.homeTeam, match.awayTeam).then((chainMatchId) => {
+        if (chainMatchId === null) return;
+        setSelections((prev) =>
+          prev.map((s) => (s.matchId === match.id ? { ...s, chainMatchId } : s))
+        );
+      });
+    }
   }, []);
 
   const removeSelection = useCallback((matchId) => {
