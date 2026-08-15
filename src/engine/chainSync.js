@@ -9,7 +9,7 @@
 
 import { ethers } from "ethers";
 
-const RPC_URL = import.meta.env.VITE_ARC_RPC_URL || "https://rpc.testnet.arc.network";
+const RPC_URL = import.meta.env.VITE_ARC_RPC_URL || "https://rpc.testnet.arc.io";
 const CONTRACT = import.meta.env.VITE_CONTRACT_ADDRESS;
 
 const ABI = [
