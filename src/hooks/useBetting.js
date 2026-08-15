@@ -101,70 +101,70 @@ export function useBetting() {
   // as "indexed" in the contract, so we can't filter by address at the
   // blockchain level — fetch every event and filter to this wallet
   // ourselves instead.
+  //
+  // Calls run sequentially, not in parallel (Promise.all) — Arc's
+  // public testnet RPC rate-limits bursts of simultaneous requests,
+  // which silently drops most of the detail lookups if fired all at
+  // once. One at a time is slower but actually completes reliably.
   const getMyBets = useCallback(async (address) => {
     if (!signer || !address) return { singles: [], accumulators: [] };
     const contract = new ethers.Contract(CONTRACT, BET_ABI, signer);
     const target = address.toLowerCase();
 
-    const [allBetEvents, allAccEvents] = await Promise.all([
-      contract.queryFilter(contract.filters.BetPlaced()),
-      contract.queryFilter(contract.filters.AccumulatorPlaced()),
-    ]);
+    const allBetEvents = await contract.queryFilter(contract.filters.BetPlaced());
+    const allAccEvents = await contract.queryFilter(contract.filters.AccumulatorPlaced());
 
     const betEvents = allBetEvents.filter((ev) => ev.args.bettor.toLowerCase() === target);
     const accEvents = allAccEvents.filter((ev) => ev.args.bettor.toLowerCase() === target);
 
-    const singles = await Promise.all(
-      betEvents.map(async (ev) => {
-        const matchId = ev.args.matchId;
-        const prediction = Number(ev.args.prediction);
-        const amount = ev.args.amount;
+    const singles = [];
+    for (const ev of betEvents) {
+      const matchId = ev.args.matchId;
+      const prediction = Number(ev.args.prediction);
+      const amount = ev.args.amount;
+      const [homeTeam, awayTeam, , , , resolved, result] = await contract.getMatch(matchId);
+      const bet = await contract.bets(matchId, address);
+      singles.push({
+        matchId: Number(matchId),
+        prediction,
+        amount: ethers.formatUnits(amount, 6),
+        homeTeam,
+        awayTeam,
+        resolved,
+        result: Number(result),
+        claimed: bet[2],
+        won: resolved && Number(result) === prediction,
+        txHash: ev.transactionHash,
+      });
+    }
+
+    const accumulators = [];
+    for (const ev of accEvents) {
+      const accId = ev.args.accId;
+      const legCount = Number(ev.args.legCount);
+      const stake = ev.args.stake;
+      const combinedOddsBps = Number(ev.args.combinedOddsBps);
+      const outcome = await contract.checkAccumulatorOutcome(accId);
+      const accData = await contract.accumulators(accId);
+
+      const legs = [];
+      for (let i = 0; i < legCount; i++) {
+        const [matchId, prediction] = await contract.getAccumulatorLeg(accId, i);
         const [homeTeam, awayTeam, , , , resolved, result] = await contract.getMatch(matchId);
-        const bet = await contract.bets(matchId, address);
-        return {
-          matchId: Number(matchId),
-          prediction,
-          amount: ethers.formatUnits(amount, 6),
-          homeTeam,
-          awayTeam,
-          resolved,
-          result: Number(result),
-          claimed: bet[2],
-          won: resolved && Number(result) === prediction,
-          txHash: ev.transactionHash,
-        };
-      })
-    );
+        legs.push({ matchId: Number(matchId), prediction: Number(prediction), homeTeam, awayTeam, resolved, result: Number(result) });
+      }
 
-    const accumulators = await Promise.all(
-      accEvents.map(async (ev) => {
-        const accId = ev.args.accId;
-        const legCount = Number(ev.args.legCount);
-        const stake = ev.args.stake;
-        const combinedOddsBps = Number(ev.args.combinedOddsBps);
-        const outcome = await contract.checkAccumulatorOutcome(accId);
-        const accData = await contract.accumulators(accId);
-
-        const legs = await Promise.all(
-          Array.from({ length: legCount }, async (_, i) => {
-            const [matchId, prediction] = await contract.getAccumulatorLeg(accId, i);
-            const [homeTeam, awayTeam, , , , resolved, result] = await contract.getMatch(matchId);
-            return { matchId: Number(matchId), prediction: Number(prediction), homeTeam, awayTeam, resolved, result: Number(result) };
-          })
-        );
-
-        return {
-          accId: Number(accId),
-          legCount,
-          stake: ethers.formatUnits(stake, 6),
-          combinedOdds: combinedOddsBps / 10000,
-          outcome: Number(outcome), // 0=pending, 1=won, 2=lost
-          claimed: accData[3],
-          legs,
-          txHash: ev.transactionHash,
-        };
-      })
-    );
+      accumulators.push({
+        accId: Number(accId),
+        legCount,
+        stake: ethers.formatUnits(stake, 6),
+        combinedOdds: combinedOddsBps / 10000,
+        outcome: Number(outcome),
+        claimed: accData[3],
+        legs,
+        txHash: ev.transactionHash,
+      });
+    }
 
     return {
       singles: singles.reverse(),
