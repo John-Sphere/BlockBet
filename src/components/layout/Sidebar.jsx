@@ -1,13 +1,13 @@
+import { useState } from "react";
 import { Link, useLocation, useSearchParams } from "react-router-dom";
 import { useApp }    from "../../context/AppContext";
 import { useWallet } from "../../context/WalletContext";
 import { LEAGUES }   from "../../data/clubs";
 
-const ALL_LINKS = [
-  { to:"/football",    icon:"⚽", label:"Virtual Football", badge:"LIVE" },
-  { to:"/history",     icon:"📊", label:"Match History",    badge:null   },
-  { to:"/leaderboard", icon:"🏆", label:"Leaderboard",      badge:null   },
-  { to:"/admin",       icon:"⚙️", label:"Admin Panel",      badge:null, adminOnly:true },
+const OTHER_LINKS = [
+  { to:"/history",     icon:"📊", label:"Match History" },
+  { to:"/leaderboard", icon:"🏆", label:"Table"          },
+  { to:"/admin",       icon:"⚙️", label:"Admin Panel", adminOnly:true },
 ];
 
 export function Sidebar() {
@@ -15,13 +15,26 @@ export function Sidebar() {
   const [searchParams]            = useSearchParams();
   const { sidebarOpen }           = useApp();
   const { connected, address, shortAddr, balance } = useWallet();
+  const [footballOpen, setFootballOpen] = useState(true);
 
   const activeLeague = searchParams.get("league");
+  const isLiveView = searchParams.get("live") === "1";
+  const onFootball = pathname === "/football" || pathname === "/";
 
   const adminWallet = (import.meta.env.VITE_ADMIN_WALLET || "").toLowerCase();
   const isAdmin = connected && address && adminWallet && address.toLowerCase() === adminWallet;
 
-  const LINKS = ALL_LINKS.filter(l => !l.adminOnly || isAdmin);
+  const otherLinks = OTHER_LINKS.filter(l => !l.adminOnly || isAdmin);
+
+  const navItemStyle = (active) => ({
+    display:"flex", alignItems:"center", gap:12,
+    padding:"12px 18px", fontSize:13,
+    color: active ? "var(--gold)" : "var(--chalk-dim)",
+    background: active ? "rgba(201,162,75,0.09)" : "transparent",
+    borderLeft:`3px solid ${active ? "var(--gold)" : "transparent"}`,
+    fontWeight: active ? 700 : 500,
+    transition:"background 0.15s ease, color 0.15s ease", textDecoration:"none",
+  });
 
   return (
     <aside style={{
@@ -83,34 +96,75 @@ export function Sidebar() {
         </div>
       )}
 
-      {/* ── NAV LINKS ── */}
+      {/* ── NAV ── */}
       <nav style={{ flex:1, padding:"8px 0" }}>
-        {LINKS.map(l => {
+
+        {/* All Football Matches — expandable, leagues nested inside */}
+        <button
+          onClick={() => setFootballOpen((v) => !v)}
+          style={{
+            width:"100%", display:"flex", alignItems:"center", gap:12,
+            padding:"12px 18px", fontSize:13, background:"none", border:"none", cursor:"pointer",
+            color: onFootball && !activeLeague && !isLiveView ? "var(--gold)" : "var(--chalk-dim)",
+            fontWeight: onFootball && !activeLeague && !isLiveView ? 700 : 500,
+            borderLeft: `3px solid ${onFootball && !activeLeague && !isLiveView ? "var(--gold)" : "transparent"}`,
+          }}
+        >
+          <span style={{ fontSize:18, flexShrink:0 }}>⚽</span>
+          <span style={{ flex:1, textAlign:"left" }}>All Football Matches</span>
+          <span style={{ fontSize:10, transform: footballOpen ? "rotate(90deg)" : "none", transition:"transform 0.15s ease" }}>▸</span>
+        </button>
+
+        {footballOpen && (
+          <div style={{ paddingLeft: 6 }}>
+            <Link
+              to="/football"
+              style={{ ...navItemStyle(onFootball && !activeLeague && !isLiveView), fontSize: 12, padding: "9px 18px 9px 30px" }}
+            >
+              <span>All matches</span>
+            </Link>
+
+            <Link
+              to="/football?live=1"
+              style={{ ...navItemStyle(onFootball && isLiveView), fontSize: 12, padding: "9px 18px 9px 30px" }}
+            >
+              <span style={{ flex:1 }}>Live matches</span>
+              <span style={{
+                fontSize:8, fontWeight:800, letterSpacing:0.5, padding:"2px 6px",
+                borderRadius:5, background:"rgba(139,30,30,0.25)",
+                border:"1px solid var(--live-red)", color:"var(--chalk)",
+              }}>
+                LIVE
+              </span>
+            </Link>
+
+            <div style={{ padding: "8px 18px 4px 30px", fontSize: 9, color: "var(--chalk-dim)", fontWeight: 700, letterSpacing: 1 }}>
+              LEAGUES
+            </div>
+            {LEAGUES.map((l) => {
+              const active = onFootball && activeLeague === l.id;
+              return (
+                <Link
+                  key={l.id}
+                  to={`/football?league=${l.id}`}
+                  style={{ ...navItemStyle(active), fontSize: 12, padding: "8px 18px 8px 30px" }}
+                >
+                  <span>{l.flag}</span>
+                  <span>{l.name}</span>
+                </Link>
+              );
+            })}
+          </div>
+        )}
+
+        <div style={{ height: 1, background: "var(--pitch-line)", margin: "8px 18px" }} />
+
+        {otherLinks.map(l => {
           const active = pathname === l.to;
           return (
-            <Link key={l.to} to={l.to} style={{
-              display:"flex", alignItems:"center", gap:12,
-              padding:"12px 18px", fontSize:13,
-              color: active ? "var(--gold)" : "var(--chalk-dim)",
-              background: active ? "rgba(201,162,75,0.09)" : "transparent",
-              borderLeft:`3px solid ${active ? "var(--gold)" : "transparent"}`,
-              fontWeight: active ? 700 : 500,
-              transition:"background 0.15s ease, color 0.15s ease", textDecoration:"none",
-            }}
-              onMouseEnter={e => { if (!active) { e.currentTarget.style.background="rgba(201,162,75,0.05)"; e.currentTarget.style.color="var(--chalk)"; }}}
-              onMouseLeave={e => { if (!active) { e.currentTarget.style.background="transparent"; e.currentTarget.style.color="var(--chalk-dim)"; }}}
-            >
+            <Link key={l.to} to={l.to} style={navItemStyle(active)}>
               <span style={{ fontSize:18, flexShrink:0 }}>{l.icon}</span>
               <span style={{ flex:1 }}>{l.label}</span>
-              {l.badge && (
-                <span style={{
-                  fontSize:8, fontWeight:800, letterSpacing:0.5, padding:"2px 6px",
-                  borderRadius:5, background:"rgba(139,30,30,0.25)",
-                  border:"1px solid var(--live-red)", color:"var(--chalk)",
-                }}>
-                  {l.badge}
-                </span>
-              )}
               {active && (
                 <span style={{ width:5, height:5, borderRadius:"50%", background:"var(--gold)" }} />
               )}
@@ -118,35 +172,6 @@ export function Sidebar() {
           );
         })}
       </nav>
-
-      {/* ── LEAGUES ── */}
-      <div style={{ padding: "10px 0", borderTop: "1px solid var(--pitch-line)" }}>
-        <div style={{ padding: "0 18px 8px", fontSize: 9, color: "var(--chalk-dim)", fontWeight: 700, letterSpacing: 1 }}>
-          LEAGUES
-        </div>
-        {LEAGUES.map((l) => {
-          const active = pathname === "/football" && activeLeague === l.id;
-          return (
-            <Link
-              key={l.id}
-              to={`/football?league=${l.id}`}
-              style={{
-                display: "flex", alignItems: "center", gap: 10,
-                padding: "9px 18px", fontSize: 12,
-                color: active ? "var(--gold)" : "var(--chalk-dim)",
-                background: active ? "rgba(201,162,75,0.08)" : "transparent",
-                textDecoration: "none",
-                fontWeight: active ? 700 : 500,
-              }}
-              onMouseEnter={e => { if (!active) e.currentTarget.style.color = "var(--chalk)"; }}
-              onMouseLeave={e => { if (!active) e.currentTarget.style.color = "var(--chalk-dim)"; }}
-            >
-              <span>{l.flag}</span>
-              <span>{l.name}</span>
-            </Link>
-          );
-        })}
-      </div>
 
       {/* ── FOOTER ── */}
       <div style={{

@@ -10,6 +10,7 @@ export default function Football() {
   const { selections, addSelection } = useBetSlip();
   const [searchParams] = useSearchParams();
   const leagueFilter = searchParams.get("league");
+  const liveOnly = searchParams.get("live") === "1";
 
   useEffect(() => {
     initMatchManager();
@@ -17,9 +18,15 @@ export default function Football() {
     return unsubscribe;
   }, []);
 
-  const visibleMatches = leagueFilter
-    ? matches.filter((m) => m.leagueId === leagueFilter)
-    : matches;
+  let visibleMatches = matches;
+  if (leagueFilter) {
+    visibleMatches = visibleMatches.filter((m) => m.leagueId === leagueFilter);
+  }
+  if (liveOnly) {
+    visibleMatches = visibleMatches.filter(
+      (m) => m.status === "first_half" || m.status === "second_half" || m.status === "halftime"
+    );
+  }
 
   const grouped = visibleMatches.reduce((acc, m) => {
     acc[m.leagueName] = acc[m.leagueName] || [];
@@ -110,6 +117,12 @@ export default function Football() {
           </div>
         </div>
       </section>
+
+      {liveOnly && visibleMatches.length === 0 && (
+        <div style={{ padding: "0 28px 24px", color: "var(--chalk-dim)", fontSize: 13 }}>
+          No matches are live right now — check back in a moment as kickoffs roll through.
+        </div>
+      )}
 
       {Object.entries(grouped).map(([league, leagueMatches]) => (
         <section className="bb-league-section" key={league}>
