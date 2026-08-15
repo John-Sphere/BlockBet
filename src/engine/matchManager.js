@@ -124,6 +124,21 @@ export async function ensureMatchOnChain(localMatchId, homeTeam, awayTeam) {
   }
 }
 
+// Called the moment a match that was actually synced to chain (i.e.
+// someone could have bet on it) finishes — passes the real simulated
+// result to the server so it can resolve the on-chain match correctly,
+// instead of relying on the old cron job's random outcome.
+async function resolveMatchOnChain(homeTeam, awayTeam, result) {
+  try {
+    await fetch(
+      `/api/resolve-match?home=${encodeURIComponent(homeTeam)}&away=${encodeURIComponent(awayTeam)}&result=${result}`
+    );
+  } catch {
+    // Best-effort — if this fails, the match just stays unresolved
+    // until a future retry mechanism picks it up.
+  }
+}
+
 async function syncChainIds() {
   const chainMap = await fetchActiveChainMatches();
   if (!Object.keys(chainMap).length) return;
@@ -287,6 +302,9 @@ function tickMatch(match, now) {
           finishedAt:    now,
         };
         recordResult(finished);
+        if (finished.chainMatchId !== null && finished.chainMatchId !== undefined) {
+          resolveMatchOnChain(finished.homeTeam, finished.awayTeam, finished.result);
+        }
         return finished;
       }
       return updated;
