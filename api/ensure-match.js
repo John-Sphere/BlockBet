@@ -35,9 +35,13 @@ export default async function handler(req, res) {
     const contract = new ethers.Contract(process.env.BETTING_ADDRESS, ABI, wallet);
 
     // Check if this exact fixture already exists and is still open —
-    // this part is read-only, no collision risk.
+    // only scan recent matches, not the full history, since that grows
+    // heavier every round and eats into the RPC rate limit.
     const count = await contract.matchCount();
-    for (let i = 1; i <= Number(count); i++) {
+    const total = Number(count);
+    const MAX_SCAN = 100;
+    const startFrom = Math.max(1, total - MAX_SCAN + 1);
+    for (let i = total; i >= startFrom; i--) {
       const m = await contract.getMatch(i);
       const [mHome, mAway, , , , resolved] = m;
       if (mHome === home && mAway === away && !resolved) {

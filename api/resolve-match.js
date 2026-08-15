@@ -20,6 +20,12 @@ const ABI = [
   "function resolveMatch(uint256,uint8) public",
 ];
 
+const MAX_ATTEMPTS = 4;
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 export default async function handler(req, res) {
   const { home, away, result } = req.query;
   const resultNum = Number(result);
@@ -35,26 +41,45 @@ export default async function handler(req, res) {
 
     const count = await contract.matchCount();
     const total = Number(count);
-
-    // Search recent matches for this exact unresolved fixture — same
-    // "most recent first" approach as ensure-match, since the match
-    // we want is always one of the newer ones.
     const MAX_SCAN = 100;
     const startFrom = Math.max(1, total - MAX_SCAN + 1);
 
+    let targetMatchId = null;
     for (let i = total; i >= startFrom; i--) {
       const m = await contract.getMatch(i);
       const [mHome, mAway, , , , resolved] = m;
       if (mHome === home && mAway === away && !resolved) {
-        const tx = await contract.resolveMatch(i, resultNum);
-        await tx.wait();
-        return res.status(200).json({ matchId: i, result: resultNum, resolved: true });
+        targetMatchId = i;
+        break;
       }
     }
 
-    // Not found unresolved (either never synced to chain, or already
-    // resolved) — not an error, just nothing to do.
-    return res.status(200).json({ resolved: false, reason: "no matching unresolved match found" });
+    if (targetMatchId === null) {
+      return res.status(200).json({ resolved: false, reason: "no matching unresolved match found" });
+    }
+
+    // Several matches can finish at nearly the same real-world moment
+    // now that rounds are wall-clock synchronized, so multiple resolve
+    // requests can collide over transaction ordering — retry with a
+    // fresh nonce read, same approach as ensure-match.js.
+    let lastError;
+    for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+      try {
+        const nonce = await provider.getTransactionCount(wallet.address, "pending");
+        const tx = await contract.resolveMatch(targetMatchId, resultNum, { nonce });
+        await tx.wait();
+        return res.status(200).json({ matchId: targetMatchId, result: resultNum, resolved: true, attempt });
+      } catch (err) {
+        lastError = err;
+        const isNonceIssue =
+          err.code === "NONCE_EXPIRED" ||
+          err.code === "REPLACEMENT_UNDERPRICED" ||
+          /nonce/i.test(err.message || "");
+        if (!isNonceIssue || attempt === MAX_ATTEMPTS) throw err;
+        await sleep(300 * attempt);
+      }
+    }
+    throw lastError;
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }
