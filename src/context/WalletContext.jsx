@@ -3,10 +3,15 @@ import { ethers } from "ethers";
 
 const Ctx = createContext(null);
 
+// FIX: nativeCurrency.decimals must be 18 per MetaMask/EIP-3085 spec —
+// this represents the chain's native gas token, not USDC (which is a
+// separate ERC-20 used for betting, handled below via USDC_ADDR).
+// The old value of 6 (USDC's decimal count) made MetaMask silently
+// reject every wallet_addEthereumChain / switch request.
 const ARC_CHAIN = {
   chainId: "0x4BE",
   chainName: "Arc Testnet",
-  nativeCurrency: { name:"USDC", symbol:"USDC", decimals:6 },
+  nativeCurrency: { name: "Arc Testnet ETH", symbol: "ETH", decimals: 18 },
   rpcUrls: ["https://rpc.testnet.arc.network"],
   blockExplorerUrls: ["https://testnet.arcscan.app"],
 };
