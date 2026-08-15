@@ -29,7 +29,7 @@ const HALF_DURATION_MS  = 2  * 60 * 1000;
 const HT_DURATION_MS    = 1  * 60 * 1000;
 const RESULT_HOLD_MS    = 2  * 60 * 1000;
 const STAGGER_MS        = 20 * 1000;
-const CHAIN_SYNC_MS     = 15 * 1000;
+const CHAIN_SYNC_MS     = 45 * 1000; // was 15s — reduced to ease RPC rate-limit pressure
 
 // A full round needs to comfortably fit: the last (most-staggered)
 // match's kickoff delay + its full 90-minute cycle + the result-hold

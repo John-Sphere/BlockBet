@@ -17,6 +17,12 @@ const ABI = [
   "function getMatch(uint256) public view returns (string,string,uint256,uint256,uint256,bool,uint8)",
 ];
 
+// Only scan the most recent matches, not the full history — as
+// matchCount grows over a session, looping through everything on
+// every poll gets increasingly expensive and starves other features
+// (like My Bets) of RPC quota on Arc's rate-limited public endpoint.
+const MAX_SCAN = 80;
+
 function key(home, away) {
   return `${home}::${away}`;
 }
@@ -27,9 +33,11 @@ export async function fetchActiveChainMatches() {
     const provider = new ethers.JsonRpcProvider(RPC_URL);
     const contract = new ethers.Contract(CONTRACT, ABI, provider);
     const count = await contract.matchCount();
+    const total = Number(count);
+    const startFrom = Math.max(1, total - MAX_SCAN + 1);
 
     const map = {};
-    for (let i = 1; i <= Number(count); i++) {
+    for (let i = startFrom; i <= total; i++) {
       const m = await contract.getMatch(i);
       const [home, away, , , , finished] = m;
       if (finished) continue;
