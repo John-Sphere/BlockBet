@@ -8,7 +8,7 @@ export function Layout({ children }) {
   return (
     <div style={{ minHeight:"100vh", display:"flex", flexDirection:"column" }}>
       <Navbar />
-      <div style={{ display:"flex", flex:1 }}>
+      <div style={{ display:"flex", flex:1, paddingTop:"var(--nav-h)" }}>
         <Sidebar />
         <main style={{
           flex:1, minWidth:0, overflowX:"hidden",
