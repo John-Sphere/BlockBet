@@ -11,6 +11,7 @@ export default function Football() {
   const [searchParams] = useSearchParams();
   const leagueFilter = searchParams.get("league");
   const liveOnly = searchParams.get("live") === "1";
+  const hotOnly = searchParams.get("hot") === "1";
 
   useEffect(() => {
     initMatchManager();
@@ -26,6 +27,12 @@ export default function Football() {
     visibleMatches = visibleMatches.filter(
       (m) => m.status === "first_half" || m.status === "second_half" || m.status === "halftime"
     );
+  }
+  if (hotOnly) {
+    // "Hot games" = highest combined USDC staked across all three outcomes
+    visibleMatches = [...visibleMatches]
+      .sort((a, b) => (b.poolHome + b.poolDraw + b.poolAway) - (a.poolHome + a.poolDraw + a.poolAway))
+      .slice(0, 12);
   }
 
   const grouped = visibleMatches.reduce((acc, m) => {
@@ -121,6 +128,12 @@ export default function Football() {
       {liveOnly && visibleMatches.length === 0 && (
         <div style={{ padding: "0 28px 24px", color: "var(--chalk-dim)", fontSize: 13 }}>
           No matches are live right now — check back in a moment as kickoffs roll through.
+        </div>
+      )}
+
+      {hotOnly && (
+        <div style={{ padding: "0 28px 16px", color: "var(--chalk-dim)", fontSize: 13 }}>
+          Showing matches with the most USDC staked. Pools fill in as real bets come in.
         </div>
       )}
 

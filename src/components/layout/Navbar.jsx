@@ -1,6 +1,8 @@
 import { Link, NavLink } from "react-router-dom";
+import { useState, useEffect } from "react";
 import { useWallet } from "../../context/WalletContext";
 import { useApp } from "../../context/AppContext";
+import { subscribe, initMatchManager } from "../../engine/matchManager";
 import "./Navbar.css";
 
 export function Navbar() {
@@ -14,6 +16,18 @@ export function Navbar() {
     txPending,
   } = useWallet();
   const { toggleSidebar } = useApp();
+  const [liveCount, setLiveCount] = useState(0);
+
+  useEffect(() => {
+    initMatchManager();
+    const unsub = subscribe((matches) => {
+      const count = matches.filter(
+        (m) => m.status === "first_half" || m.status === "second_half" || m.status === "halftime"
+      ).length;
+      setLiveCount(count);
+    });
+    return unsub;
+  }, []);
 
   return (
     <header className="bb-navbar">
@@ -37,6 +51,10 @@ export function Navbar() {
       <nav className="bb-navbar-links">
         <NavLink to="/football" className="bb-navbar-link">
           Pitch
+        </NavLink>
+        <NavLink to="/football?live=1" className="bb-navbar-link bb-navbar-live">
+          Live
+          {liveCount > 0 && <span className="bb-navbar-live-badge">LIVE</span>}
         </NavLink>
         <NavLink to="/history" className="bb-navbar-link">
           History

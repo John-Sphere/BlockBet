@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation, useSearchParams } from "react-router-dom";
 import { useApp }    from "../../context/AppContext";
 import { useWallet } from "../../context/WalletContext";
 import { LEAGUES }   from "../../data/clubs";
+import { subscribe, initMatchManager } from "../../engine/matchManager";
 
 const OTHER_LINKS = [
   { to:"/history",     icon:"📊", label:"Match History" },
@@ -16,15 +17,28 @@ export function Sidebar() {
   const { sidebarOpen }           = useApp();
   const { connected, address, shortAddr, balance } = useWallet();
   const [footballOpen, setFootballOpen] = useState(true);
+  const [allMatchesOpen, setAllMatchesOpen] = useState(false);
+  const [liveCount, setLiveCount] = useState(0);
 
   const activeLeague = searchParams.get("league");
-  const isLiveView = searchParams.get("live") === "1";
+  const isHotView = searchParams.get("hot") === "1";
   const onFootball = pathname === "/football" || pathname === "/";
 
   const adminWallet = (import.meta.env.VITE_ADMIN_WALLET || "").toLowerCase();
   const isAdmin = connected && address && adminWallet && address.toLowerCase() === adminWallet;
 
   const otherLinks = OTHER_LINKS.filter(l => !l.adminOnly || isAdmin);
+
+  useEffect(() => {
+    initMatchManager();
+    const unsub = subscribe((matches) => {
+      const count = matches.filter(
+        (m) => m.status === "first_half" || m.status === "second_half" || m.status === "halftime"
+      ).length;
+      setLiveCount(count);
+    });
+    return unsub;
+  }, []);
 
   const navItemStyle = (active) => ({
     display:"flex", alignItems:"center", gap:12,
@@ -67,7 +81,6 @@ export function Sidebar() {
           </div>
         </div>
 
-        {/* USDC pill */}
         <div style={{
           display:"flex", alignItems:"center", gap:6,
           background:"var(--pitch-card)", border:"1px solid var(--pitch-line)",
@@ -99,61 +112,69 @@ export function Sidebar() {
       {/* ── NAV ── */}
       <nav style={{ flex:1, padding:"8px 0" }}>
 
-        {/* All Football Matches — expandable, leagues nested inside */}
+        {/* Football — expandable */}
         <button
           onClick={() => setFootballOpen((v) => !v)}
           style={{
             width:"100%", display:"flex", alignItems:"center", gap:12,
             padding:"12px 18px", fontSize:13, background:"none", border:"none", cursor:"pointer",
-            color: onFootball && !activeLeague && !isLiveView ? "var(--gold)" : "var(--chalk-dim)",
-            fontWeight: onFootball && !activeLeague && !isLiveView ? 700 : 500,
-            borderLeft: `3px solid ${onFootball && !activeLeague && !isLiveView ? "var(--gold)" : "transparent"}`,
+            color: onFootball && !activeLeague ? "var(--gold)" : "var(--chalk-dim)",
+            fontWeight: onFootball && !activeLeague ? 700 : 500,
+            borderLeft: `3px solid ${onFootball && !activeLeague ? "var(--gold)" : "transparent"}`,
           }}
         >
           <span style={{ fontSize:18, flexShrink:0 }}>⚽</span>
-          <span style={{ flex:1, textAlign:"left" }}>All Football Matches</span>
+          <span style={{ flex:1, textAlign:"left" }}>Football</span>
           <span style={{ fontSize:10, transform: footballOpen ? "rotate(90deg)" : "none", transition:"transform 0.15s ease" }}>▸</span>
         </button>
 
         {footballOpen && (
           <div style={{ paddingLeft: 6 }}>
-            <Link
-              to="/football"
-              style={{ ...navItemStyle(onFootball && !activeLeague && !isLiveView), fontSize: 12, padding: "9px 18px 9px 30px" }}
+            {/* All matches — clicking expands the league list nested beneath it */}
+            <button
+              onClick={() => setAllMatchesOpen((v) => !v)}
+              style={{
+                width:"100%", display:"flex", alignItems:"center", gap:10,
+                background:"none", border:"none", cursor:"pointer",
+                ...navItemStyle(onFootball && !activeLeague && !isHotView),
+                fontSize: 12, padding: "9px 18px 9px 30px",
+              }}
             >
-              <span>All matches</span>
-            </Link>
+              <span style={{ flex:1, textAlign:"left" }}>All matches</span>
+              <span style={{ fontSize:9, transform: allMatchesOpen ? "rotate(90deg)" : "none", transition:"transform 0.15s ease" }}>▸</span>
+            </button>
 
-            <Link
-              to="/football?live=1"
-              style={{ ...navItemStyle(onFootball && isLiveView), fontSize: 12, padding: "9px 18px 9px 30px" }}
-            >
-              <span style={{ flex:1 }}>Live matches</span>
-              <span style={{
-                fontSize:8, fontWeight:800, letterSpacing:0.5, padding:"2px 6px",
-                borderRadius:5, background:"rgba(139,30,30,0.25)",
-                border:"1px solid var(--live-red)", color:"var(--chalk)",
-              }}>
-                LIVE
-              </span>
-            </Link>
-
-            <div style={{ padding: "8px 18px 4px 30px", fontSize: 9, color: "var(--chalk-dim)", fontWeight: 700, letterSpacing: 1 }}>
-              LEAGUES
-            </div>
-            {LEAGUES.map((l) => {
-              const active = onFootball && activeLeague === l.id;
-              return (
+            {allMatchesOpen && (
+              <div>
                 <Link
-                  key={l.id}
-                  to={`/football?league=${l.id}`}
-                  style={{ ...navItemStyle(active), fontSize: 12, padding: "8px 18px 8px 30px" }}
+                  to="/football"
+                  style={{ ...navItemStyle(onFootball && !activeLeague && !isHotView), fontSize: 11.5, padding: "8px 18px 8px 42px" }}
                 >
-                  <span>{l.flag}</span>
-                  <span>{l.name}</span>
+                  <span>All leagues</span>
                 </Link>
-              );
-            })}
+                {LEAGUES.map((l) => {
+                  const active = onFootball && activeLeague === l.id;
+                  return (
+                    <Link
+                      key={l.id}
+                      to={`/football?league=${l.id}`}
+                      style={{ ...navItemStyle(active), fontSize: 11.5, padding: "8px 18px 8px 42px" }}
+                    >
+                      <span>{l.flag}</span>
+                      <span>{l.name}</span>
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
+
+            <Link
+              to="/football?hot=1"
+              style={{ ...navItemStyle(onFootball && isHotView), fontSize: 12, padding: "9px 18px 9px 30px" }}
+            >
+              <span>🔥</span>
+              <span>Hot games</span>
+            </Link>
           </div>
         )}
 

@@ -84,6 +84,23 @@
   border-bottom-color: var(--gold);
 }
 
+.bb-navbar-live {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.bb-navbar-live-badge {
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  padding: 2px 5px;
+  border-radius: 3px;
+  background: rgba(139,30,30,0.25);
+  border: 1px solid var(--live-red);
+  color: var(--chalk);
+}
+
 .bb-navbar-wallet {
   display: flex;
   align-items: center;
