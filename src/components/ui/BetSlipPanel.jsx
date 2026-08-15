@@ -152,6 +152,18 @@ export function BetSlipPanel() {
                     <div className="bet-slip-item-warning">Syncing to chain</div>
                   )}
 
+                  <div className="bet-slip-quick-stakes">
+                    {[10, 20, 50, 100].map((amt) => (
+                      <button
+                        key={amt}
+                        className={`bet-slip-quick-btn${Number(stakeFor(sel.matchId)) === amt ? " active" : ""}`}
+                        onClick={() => setStake(sel.matchId, String(amt))}
+                      >
+                        ${amt}
+                      </button>
+                    ))}
+                  </div>
+
                   <div className="bet-slip-item-row">
                     <input
                       type="number"
@@ -168,6 +180,10 @@ export function BetSlipPanel() {
                     >
                       {placing ? "…" : "Place"}
                     </button>
+                  </div>
+
+                  <div className="bet-slip-potential-win">
+                    Potential win: <strong>{(Number(stakeFor(sel.matchId) || 0) * (sel.odds || 0)).toFixed(2)} USDC</strong>
                   </div>
                 </div>
               );
@@ -214,6 +230,17 @@ export function BetSlipPanel() {
                 <span>Combined odds</span>
                 <span className="bet-slip-multi-odds-value">{combinedOdds.toFixed(2)}x</span>
               </div>
+              <div className="bet-slip-quick-stakes" style={{ width: "100%" }}>
+                {[10, 20, 50, 100].map((amt) => (
+                  <button
+                    key={amt}
+                    className={`bet-slip-quick-btn${Number(multiStake) === amt ? " active" : ""}`}
+                    onClick={() => setMultiStake(String(amt))}
+                  >
+                    ${amt}
+                  </button>
+                ))}
+              </div>
               <div style={{ display: "flex", gap: 8, width: "100%" }}>
                 <input
                   type="number"
@@ -230,6 +257,9 @@ export function BetSlipPanel() {
                 >
                   {!connected ? "Connect wallet" : placing ? "Placing…" : "Place multiple"}
                 </button>
+              </div>
+              <div className="bet-slip-potential-win">
+                Potential win: <strong>{(Number(multiStake || 0) * combinedOdds).toFixed(2)} USDC</strong>
               </div>
               {!allSynced && (
                 <div className="bet-slip-item-warning">Some picks are still syncing to chain</div>
