@@ -1,9 +1,19 @@
 /**
  * BLOCKBET Match Manager — Phase 2
  * Manages full lifecycle of virtual matches.
- * Every club in a league plays simultaneously each round (a real
- * matchday), fixtures rotate themselves via the shuffled round-robin
- * pool, and odds factor in each club's current league form.
+ *
+ * SHARED STATE ACROSS ALL VISITORS, WITHOUT A BACKEND:
+ * simulate.js already produces a fully deterministic result from a
+ * seed (same seed = same match, always). Previously each browser
+ * seeded itself using its own page-load time (Date.now()), so every
+ * visitor computed different fixtures and scores from the same code.
+ *
+ * Fixed here by anchoring everything to the real-world clock instead:
+ * time is divided into fixed-length "rounds" (ROUND_PERIOD_MS), and
+ * which fixtures play + when they kick off is a pure function of
+ * (league, current round number) — not of when any individual browser
+ * happened to load the page. Any two visitors loading at the same
+ * real moment compute the identical matches, scores, and timers.
  */
 
 import { simulateMatch }       from "./simulate.js";
@@ -21,25 +31,37 @@ const RESULT_HOLD_MS    = 2  * 60 * 1000;
 const STAGGER_MS        = 20 * 1000;
 const CHAIN_SYNC_MS     = 15 * 1000;
 
-// Full matchday — every club in a league plays at once, so the
-// number of simultaneous matches is half the club count (each match
-// uses 2 clubs). A 20-club league runs 10 matches, an 18-club league
-// runs 9.
+// A full round needs to comfortably fit: the last (most-staggered)
+// match's kickoff delay + its full 90-minute cycle + the result-hold
+// window, with margin. 12 minutes covers up to 10 staggered matches
+// (the max for a 20-club league) safely.
+const ROUND_PERIOD_MS = 12 * 60 * 1000;
+
 function matchesForLeague(leagueId) {
   const count = CLUBS.filter((c) => c.leagueId === leagueId).length;
   return Math.max(1, Math.floor(count / 2));
 }
 
+// The current round number, shared by every visitor since it's derived
+// purely from the real clock, not from when this browser loaded.
+function currentRoundEpoch() {
+  return Math.floor(Date.now() / ROUND_PERIOD_MS);
+}
+
+function roundStartTime(epoch) {
+  return epoch * ROUND_PERIOD_MS;
+}
+
 // ── MODULE STATE ────────────────────────────────────────────
-let matchState    = [];
-let listeners     = new Set();
-let initialized   = false;
-let tickInterval  = null;
-let chainInterval = null;
-let paused        = false;
-let adminOverrides= {};
-let fixtureCache  = {};
-let fixtureIndex  = {};
+let matchState     = [];
+let listeners       = new Set();
+let initialized      = false;
+let tickInterval     = null;
+let chainInterval    = null;
+let paused           = false;
+let adminOverrides   = {};
+let fixtureListCache = {}; // { leagueId: shuffledFixtures } — fixed order, not time-based
+let leagueRoundEpoch = {}; // { leagueId: epoch currently loaded }
 
 // ── SUBSCRIBE ───────────────────────────────────────────────
 export function subscribe(fn) {
@@ -83,14 +105,7 @@ export function updateMatchPool(matchId, selection, amount) {
   emit();
 }
 
-// Asks the server to create this exact fixture on-chain (or return its
-// existing ID if it's already there), then patches chainMatchId onto
-// the matching client-side match once the response comes back.
-//
-// Called on-demand (when someone actually clicks a match to bet on it)
-// rather than eagerly for every match on page load — firing 50+
-// simultaneous chain-write requests from one shared signing wallet
-// causes transaction ordering conflicts and most of them fail.
+// ── CHAIN SYNC (on-demand, called from BetSlipContext) ───────
 export async function ensureMatchOnChain(localMatchId, homeTeam, awayTeam) {
   try {
     const res = await fetch(
@@ -109,7 +124,6 @@ export async function ensureMatchOnChain(localMatchId, homeTeam, awayTeam) {
   }
 }
 
-// ── CHAIN SYNC (fallback, catches anything ensureMatchOnChain missed) ──
 async function syncChainIds() {
   const chainMap = await fetchActiveChainMatches();
   if (!Object.keys(chainMap).length) return;
@@ -125,9 +139,6 @@ async function syncChainIds() {
 }
 
 // ── CLUB OVERRIDE + FORM ─────────────────────────────────────
-// Admin overrides win first, then current table form nudges the
-// resulting "form" rating so clubs on a run of good/bad results see
-// their odds shift accordingly.
 function applyClubAdjustments(club) {
   const overridden = adminOverrides[club.id]
     ? { ...club, ratings: { ...club.ratings, ...adminOverrides[club.id].ratings } }
@@ -140,46 +151,48 @@ function applyClubAdjustments(club) {
   };
 }
 
-// ── FIXTURE POOL ────────────────────────────────────────────
-function getLeagueFixtures(leagueId) {
-  if (!fixtureCache[leagueId]) {
+// ── FIXTURE SELECTION — pure function of (league, round epoch) ──────
+// Fixed shuffle order (no time-based seed), so it's identical for
+// every visitor forever. Which fixtures play in a given round is a
+// sliding window into that fixed list, indexed purely by epoch —
+// no stored "cursor" that depends on how many times this specific
+// browser has advanced through rounds.
+function getLeagueFixtureList(leagueId) {
+  if (!fixtureListCache[leagueId]) {
     const raw = generateLeagueFixtures(leagueId);
-    fixtureCache[leagueId] = shuffleFixtures(raw, Date.now() ^ leagueId.length);
+    // Fixed seed derived only from the league id — same order for
+    // every visitor, forever, not tied to any clock.
+    let seed = 0;
+    for (let i = 0; i < leagueId.length; i++) seed = (seed * 31 + leagueId.charCodeAt(i)) | 0;
+    fixtureListCache[leagueId] = shuffleFixtures(raw, seed >>> 0);
   }
-  return fixtureCache[leagueId];
+  return fixtureListCache[leagueId];
 }
 
-// Pulls the next N fixtures for a league, reshuffling the pool once
-// it's been fully cycled through — this is the "shuffling itself"
-// behavior: every full round gets a fresh random order.
-function nextLeagueFixtures(leagueId, count) {
-  let fixtures = getLeagueFixtures(leagueId);
+function getFixturesForRound(leagueId, epoch, count) {
+  const fixtures = getLeagueFixtureList(leagueId);
   if (!fixtures.length) return [];
-  if (fixtureIndex[leagueId] === undefined) fixtureIndex[leagueId] = 0;
-
+  const startIdx = (epoch * count) % fixtures.length;
   const picked = [];
   for (let i = 0; i < count; i++) {
-    if (fixtureIndex[leagueId] >= fixtures.length) {
-      fixtures = shuffleFixtures(fixtures, Date.now() ^ (leagueId.length + i));
-      fixtureCache[leagueId] = fixtures;
-      fixtureIndex[leagueId] = 0;
-    }
-    picked.push(fixtures[fixtureIndex[leagueId]]);
-    fixtureIndex[leagueId]++;
+    picked.push(fixtures[(startIdx + i) % fixtures.length]);
   }
   return picked;
 }
 
 // ── CREATE MATCH ────────────────────────────────────────────
-function createMatch(leagueId, leagueName, leagueFlag, fixture, round, delayMs = 0) {
+// baseTime is the shared round start time (same for every visitor),
+// not each browser's own Date.now() — this is what makes kickoff
+// timers, and therefore live minute/score display, line up exactly
+// across every visitor watching the same round.
+function createMatch(leagueId, leagueName, leagueFlag, fixture, round, baseTime, delayMs = 0) {
   const home = applyClubAdjustments(fixture.home);
   const away = applyClubAdjustments(fixture.away);
   const odds = calculateOdds(home.ratings, away.ratings);
   const sim  = simulateMatch(home, away, round);
-  const now  = Date.now();
 
   return {
-    id:           `${leagueId}-${round}-${now}-${Math.random().toString(36).slice(2,6)}`,
+    id:           `${leagueId}-${round}-${fixture.home.id}-${fixture.away.id}`,
     leagueId,
     leagueName,
     leagueFlag:   leagueFlag || "🏆",
@@ -198,11 +211,11 @@ function createMatch(leagueId, leagueName, leagueFlag, fixture, round, delayMs =
     minute:       0,
     homeScore:    0,
     awayScore:    0,
-    bettingEndsAt: now + delayMs + BETTING_WINDOW_MS,
-    kickOffAt:     now + delayMs + BETTING_WINDOW_MS,
-    htAt:          now + delayMs + BETTING_WINDOW_MS + HALF_DURATION_MS,
-    secondHalfAt:  now + delayMs + BETTING_WINDOW_MS + HALF_DURATION_MS + HT_DURATION_MS,
-    ftAt:          now + delayMs + BETTING_WINDOW_MS + HALF_DURATION_MS * 2 + HT_DURATION_MS,
+    bettingEndsAt: baseTime + delayMs + BETTING_WINDOW_MS,
+    kickOffAt:     baseTime + delayMs + BETTING_WINDOW_MS,
+    htAt:          baseTime + delayMs + BETTING_WINDOW_MS + HALF_DURATION_MS,
+    secondHalfAt:  baseTime + delayMs + BETTING_WINDOW_MS + HALF_DURATION_MS + HT_DURATION_MS,
+    ftAt:          baseTime + delayMs + BETTING_WINDOW_MS + HALF_DURATION_MS * 2 + HT_DURATION_MS,
     finishedAt:    null,
     visibleEvents: [],
     timeline:      sim.timeline,
@@ -216,15 +229,15 @@ function createMatch(leagueId, leagueName, leagueFlag, fixture, round, delayMs =
   };
 }
 
-// ── REPLACE A FULL LEAGUE'S ROUND AT ONCE ───────────────────
-// Instead of replacing one finished match at a time, once every
-// match in a league's current round has finished, the whole league
-// kicks off its next round together — a proper matchday.
-function replaceLeagueRound(leagueId, leagueName, leagueFlag) {
+// Builds every match for one league's current round — deterministic
+// given only (leagueId, epoch), so any visitor computing this for the
+// same epoch gets byte-for-byte the same set of matches.
+function buildLeagueRound(leagueId, leagueName, leagueFlag, epoch) {
   const count = matchesForLeague(leagueId);
-  const fixtures = nextLeagueFixtures(leagueId, count);
+  const fixtures = getFixturesForRound(leagueId, epoch, count);
+  const baseTime = roundStartTime(epoch);
   return fixtures.map((fix, i) =>
-    createMatch(leagueId, leagueName, leagueFlag, fix, `r${Date.now()}-${i}`, i * STAGGER_MS)
+    createMatch(leagueId, leagueName, leagueFlag, fix, `epoch${epoch}-${i}`, baseTime, i * STAGGER_MS)
   );
 }
 
@@ -273,7 +286,7 @@ function tickMatch(match, now) {
           visibleEvents: sim.timeline,
           finishedAt:    now,
         };
-        recordResult(finished); // feeds the shared league table
+        recordResult(finished);
         return finished;
       }
       return updated;
@@ -304,25 +317,22 @@ function getVisibleEvents(timeline, upToMinute, isSecondHalf) {
 function tick() {
   if (paused) return;
   const now = Date.now();
+  const epoch = currentRoundEpoch();
 
   matchState = matchState.map(m => tickMatch(m, now));
 
-  // Once every match in a league has been sitting "finished" past
-  // the result-hold window, kick off that league's next full round
-  // together, rather than staggering one-by-one replacements.
+  // A league's round advances exactly when the real-world clock
+  // crosses into a new round period — identical moment for every
+  // visitor, so nobody's browser ever falls out of sync with anyone
+  // else's, regardless of when they loaded the page.
   LEAGUES.forEach(league => {
-    const leagueMatches = matchState.filter(m => m.leagueId === league.id);
-    if (!leagueMatches.length) return;
-    const allDone = leagueMatches.every(
-      m => m.status === "finished" && m.finishedAt && now - m.finishedAt > RESULT_HOLD_MS
-    );
-    if (allDone) {
-      const nextRound = replaceLeagueRound(league.id, league.name, league.flag);
-      matchState = [
-        ...matchState.filter(m => m.leagueId !== league.id),
-        ...nextRound,
-      ];
-    }
+    if (leagueRoundEpoch[league.id] === epoch) return;
+    leagueRoundEpoch[league.id] = epoch;
+    const fresh = buildLeagueRound(league.id, league.name, league.flag, epoch);
+    matchState = [
+      ...matchState.filter(m => m.leagueId !== league.id),
+      ...fresh,
+    ];
   });
 
   emit();
@@ -333,13 +343,11 @@ export function initMatchManager() {
   if (initialized) return;
   initialized = true;
 
+  const epoch = currentRoundEpoch();
   LEAGUES.forEach(league => {
-    const count = matchesForLeague(league.id);
-    const fixtures = nextLeagueFixtures(league.id, count);
-    fixtures.forEach((fix, i) => {
-      const match = createMatch(league.id, league.name, league.flag, fix, `r1-${i}`, i * STAGGER_MS);
-      matchState.push(match);
-    });
+    leagueRoundEpoch[league.id] = epoch;
+    const matches = buildLeagueRound(league.id, league.name, league.flag, epoch);
+    matchState.push(...matches);
   });
 
   tickInterval = setInterval(tick, 1000);
@@ -353,9 +361,9 @@ export function initMatchManager() {
 export function stopMatchManager() {
   clearInterval(tickInterval);
   clearInterval(chainInterval);
-  initialized  = false;
-  matchState   = [];
-  fixtureCache = {};
-  fixtureIndex = {};
-  paused       = false;
+  initialized      = false;
+  matchState        = [];
+  fixtureListCache  = {};
+  leagueRoundEpoch  = {};
+  paused            = false;
 }
