@@ -14,7 +14,12 @@ const BET_ABI = [
   "function claimAccumulator(uint256) public",
   "function checkAccumulatorOutcome(uint256) view returns (uint8)",
   "function getAccumulatorLegCount(uint256) view returns (uint256)",
+  "function getAccumulatorLeg(uint256,uint256) view returns (uint256,uint8)",
   "function accumulatorCount() view returns (uint256)",
+  "function bets(uint256,address) view returns (uint256,uint8,bool)",
+  "function accumulators(uint256) view returns (address,uint256,uint256,bool)",
+  "event BetPlaced(uint256 matchId, address bettor, uint8 prediction, uint256 amount)",
+  "event AccumulatorPlaced(uint256 accId, address bettor, uint256 legCount, uint256 stake, uint256 combinedOddsBps)",
 ];
 
 export function useBetting() {
@@ -91,9 +96,80 @@ export function useBetting() {
     return Number(outcome);
   }, [signer]);
 
+  // Reads this wallet's full bet history straight from the contract's
+  // event log — the contract itself doesn't keep an enumerable list of
+  // "all bets by this user", so events are the correct source of truth.
+  const getMyBets = useCallback(async (address) => {
+    if (!signer || !address) return { singles: [], accumulators: [] };
+    const contract = new ethers.Contract(CONTRACT, BET_ABI, signer);
+
+    const [betEvents, accEvents] = await Promise.all([
+      contract.queryFilter(contract.filters.BetPlaced(null, address)),
+      contract.queryFilter(contract.filters.AccumulatorPlaced(null, address)),
+    ]);
+
+    const singles = await Promise.all(
+      betEvents.map(async (ev) => {
+        const matchId = ev.args.matchId;
+        const prediction = Number(ev.args.prediction);
+        const amount = ev.args.amount;
+        const [homeTeam, awayTeam, , , , resolved, result] = await contract.getMatch(matchId);
+        const bet = await contract.bets(matchId, address);
+        return {
+          matchId: Number(matchId),
+          prediction,
+          amount: ethers.formatUnits(amount, 6),
+          homeTeam,
+          awayTeam,
+          resolved,
+          result: Number(result),
+          claimed: bet[2],
+          won: resolved && Number(result) === prediction,
+          txHash: ev.transactionHash,
+        };
+      })
+    );
+
+    const accumulators = await Promise.all(
+      accEvents.map(async (ev) => {
+        const accId = ev.args.accId;
+        const legCount = Number(ev.args.legCount);
+        const stake = ev.args.stake;
+        const combinedOddsBps = Number(ev.args.combinedOddsBps);
+        const outcome = await contract.checkAccumulatorOutcome(accId);
+        const accData = await contract.accumulators(accId);
+
+        const legs = await Promise.all(
+          Array.from({ length: legCount }, async (_, i) => {
+            const [matchId, prediction] = await contract.getAccumulatorLeg(accId, i);
+            const [homeTeam, awayTeam, , , , resolved, result] = await contract.getMatch(matchId);
+            return { matchId: Number(matchId), prediction: Number(prediction), homeTeam, awayTeam, resolved, result: Number(result) };
+          })
+        );
+
+        return {
+          accId: Number(accId),
+          legCount,
+          stake: ethers.formatUnits(stake, 6),
+          combinedOdds: combinedOddsBps / 10000,
+          outcome: Number(outcome), // 0=pending, 1=won, 2=lost
+          claimed: accData[3],
+          legs,
+          txHash: ev.transactionHash,
+        };
+      })
+    );
+
+    return {
+      singles: singles.reverse(),
+      accumulators: accumulators.reverse(),
+    };
+  }, [signer]);
+
   return {
     placeBet, claimWinnings,
     placeAccumulator, claimAccumulator, checkAccumulatorOutcome,
+    getMyBets,
     placing, claiming,
   };
 }

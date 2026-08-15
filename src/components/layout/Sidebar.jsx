@@ -6,9 +6,10 @@ import { LEAGUES }   from "../../data/clubs";
 import { subscribe, initMatchManager } from "../../engine/matchManager";
 
 const OTHER_LINKS = [
-  { to:"/history",     icon:"📊", label:"Match History" },
-  { to:"/leaderboard", icon:"🏆", label:"Table"          },
-  { to:"/admin",       icon:"⚙️", label:"Admin Panel", adminOnly:true },
+  { to:"/my-bets",      icon:"🎫", label:"My Bets"        },
+  { to:"/history",      icon:"📊", label:"Match History" },
+  { to:"/leaderboard",  icon:"🏆", label:"Table"          },
+  { to:"/admin",        icon:"⚙️", label:"Admin Panel", adminOnly:true },
 ];
 
 export function Sidebar() {

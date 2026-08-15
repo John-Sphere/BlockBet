@@ -1,0 +1,61 @@
+.mb-gate {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  min-height: 60vh; text-align: center; gap: 14px;
+  padding: 40px 20px;
+}
+.mb-gate h2 { font-size: 24px; font-weight: 700; color: var(--chalk); font-family: var(--font-display); }
+.mb-gate p { font-size: 14px; color: var(--chalk-dim); }
+
+.mb-page { padding: 32px 40px; }
+.mb-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; }
+.mb-title { font-size: 26px; font-weight: 700; color: var(--chalk); font-family: var(--font-display); }
+.mb-sub { font-size: 13px; color: var(--chalk-dim); margin-top: 4px; }
+
+.mb-list { display: flex; flex-direction: column; gap: 12px; }
+
+.mb-item { padding: 16px 18px !important; }
+
+.mb-item-teams {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 14px; font-weight: 700; color: var(--chalk);
+  margin-bottom: 10px;
+}
+
+.mb-item-row {
+  display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+  font-size: 13px; color: var(--chalk-dim);
+}
+
+.mb-item-row strong { color: var(--chalk); }
+
+.mb-claim-btn {
+  margin-top: 12px;
+  padding: 8px 18px;
+  font-size: 13px;
+}
+
+.mb-legs {
+  display: flex; flex-direction: column; gap: 6px;
+  background: var(--pitch-dark);
+  border: 1px solid var(--pitch-line);
+  border-radius: 4px;
+  padding: 8px 10px;
+}
+
+.mb-leg {
+  display: grid;
+  grid-template-columns: 1fr 70px 70px;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--chalk-dim);
+}
+
+.mb-leg-won { color: var(--win-green); font-weight: 700; }
+.mb-leg-lost { color: var(--loss-red); font-weight: 700; }
+.mb-leg-pending { color: var(--gold); font-weight: 700; }
+
+@media (max-width: 640px) {
+  .mb-page { padding: 20px 16px; }
+  .mb-item-row { gap: 10px; }
+}
