@@ -63,3 +63,19 @@
   align-items: center;
   justify-content: center;
 }
+/* ── MOBILE-SPECIFIC LAYOUT ──────────────────────────────────
+   Below 768px: the desktop sidebar becomes a slide-over drawer
+   instead of pushing content sideways, and page content gets bottom
+   padding so the fixed tab bar never covers it. This is a genuinely
+   different layout from desktop, not just a scaled-down version. */
+@media (max-width: 768px) {
+  .bb-main-content {
+    margin-left: 0 !important;
+    padding-bottom: 70px;
+  }
+
+  aside {
+    z-index: 500 !important;
+    box-shadow: 4px 0 24px -8px rgba(0,0,0,0.5);
+  }
+}

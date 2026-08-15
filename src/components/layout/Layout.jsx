@@ -1,6 +1,7 @@
 import { useApp }  from "../../context/AppContext";
 import { Navbar }  from "./Navbar";
 import { Sidebar } from "./Sidebar";
+import { MobileTabBar } from "./MobileTabBar";
 
 export function Layout({ children }) {
   const { sidebarOpen } = useApp();
@@ -10,14 +11,18 @@ export function Layout({ children }) {
       <Navbar />
       <div style={{ display:"flex", flex:1, paddingTop:"var(--nav-h)" }}>
         <Sidebar />
-        <main style={{
-          flex:1, minWidth:0, overflowX:"hidden",
-          marginLeft: sidebarOpen ? "var(--side-w)" : 0,
-          transition:"margin-left 0.3s ease",
-        }}>
+        <main
+          className="bb-main-content"
+          style={{
+            flex:1, minWidth:0, overflowX:"hidden",
+            marginLeft: sidebarOpen ? "var(--side-w)" : 0,
+            transition:"margin-left 0.3s ease",
+          }}
+        >
           {children}
         </main>
       </div>
+      <MobileTabBar />
     </div>
   );
 }
