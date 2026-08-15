@@ -96,6 +96,33 @@ export function useBetting() {
     return Number(outcome);
   }, [signer]);
 
+  // Arc's RPC rejects queryFilter calls that span too many blocks at
+  // once ("request exceeded max allowed range"). Search backward from
+  // the current block in bounded chunks instead of asking for the
+  // entire chain history in one call.
+  const CHUNK_SIZE = 1000;
+  const MAX_CHUNKS = 20; // covers 20,000 blocks of lookback
+
+  async function queryFilterChunked(contract, filter) {
+    const provider = contract.runner.provider;
+    const latest = await provider.getBlockNumber();
+    let events = [];
+    let toBlock = latest;
+
+    for (let i = 0; i < MAX_CHUNKS && toBlock > 0; i++) {
+      const fromBlock = Math.max(0, toBlock - CHUNK_SIZE + 1);
+      try {
+        const chunkEvents = await contract.queryFilter(filter, fromBlock, toBlock);
+        events = events.concat(chunkEvents);
+      } catch {
+        // This chunk itself failed (still too wide, or a transient
+        // RPC issue) — skip it rather than aborting the whole search.
+      }
+      toBlock = fromBlock - 1;
+    }
+    return events;
+  }
+
   // Reads this wallet's full bet history straight from the contract's
   // event log. Note: BetPlaced/AccumulatorPlaced don't mark any field
   // as "indexed" in the contract, so we can't filter by address at the
@@ -111,8 +138,8 @@ export function useBetting() {
     const contract = new ethers.Contract(CONTRACT, BET_ABI, signer);
     const target = address.toLowerCase();
 
-    const allBetEvents = await contract.queryFilter(contract.filters.BetPlaced());
-    const allAccEvents = await contract.queryFilter(contract.filters.AccumulatorPlaced());
+    const allBetEvents = await queryFilterChunked(contract, contract.filters.BetPlaced());
+    const allAccEvents = await queryFilterChunked(contract, contract.filters.AccumulatorPlaced());
 
     const betEvents = allBetEvents.filter((ev) => ev.args.bettor.toLowerCase() === target);
     const accEvents = allAccEvents.filter((ev) => ev.args.bettor.toLowerCase() === target);
