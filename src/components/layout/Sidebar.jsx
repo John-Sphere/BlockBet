@@ -6,7 +6,7 @@ import { LEAGUES }   from "../../data/clubs";
 import { subscribe, initMatchManager } from "../../engine/matchManager";
 
 const OTHER_LINKS = [
-  { to:"/my-bets",      icon:"🎫", label:"My Bets"        },
+  { to:"/my-bets",      icon:"🎫", label:"Open Bet"       },
   { to:"/history",      icon:"📊", label:"Match History" },
   { to:"/leaderboard",  icon:"🏆", label:"Table"          },
   { to:"/admin",        icon:"⚙️", label:"Admin Panel", adminOnly:true },
