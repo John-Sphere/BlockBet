@@ -1,6 +1,6 @@
-/* BLOCKBET — Tactics Board theme
-   Drop this in as src/styles/theme.css and import it first in main.jsx:
-   import './styles/theme.css'
+/* BLOCKBET — Tactics Board theme, luxury pass
+   Same palette as before, refined execution: richer type, softer
+   depth, subtle gold gradients instead of flat fills.
 */
 
 :root {
@@ -17,20 +17,25 @@
   /* Accent */
   --gold: #C9A24B;
   --gold-bright: #E0BE6C;
+  --gold-deep: #8C7233;
 
   /* Status */
   --live-red: #8B1E1E;
   --win-green: #4E9A5C;
   --loss-red: #A33A3A;
 
-  /* Type */
-  --font-display: Georgia, 'Times New Roman', serif;
-  --font-body: Arial, Helvetica, sans-serif;
+  /* Type — a premium serif for display headings, clean sans for body */
+  --font-display: 'Playfair Display', Georgia, 'Times New Roman', serif;
+  --font-body: 'Inter', Arial, Helvetica, sans-serif;
   --font-mono: 'Courier New', monospace;
 
   /* Radius / spacing */
-  --radius-card: 8px;
-  --radius-pill: 4px;
+  --radius-card: 10px;
+  --radius-pill: 5px;
+
+  /* Depth — soft, low-contrast shadows rather than hard drop shadows */
+  --shadow-card: 0 1px 2px rgba(0,0,0,0.25), 0 8px 24px -12px rgba(0,0,0,0.5);
+  --shadow-gold: 0 4px 14px -4px rgba(201,162,75,0.35);
 }
 
 * {
@@ -42,6 +47,7 @@ body {
   color: var(--chalk);
   font-family: var(--font-body);
   margin: 0;
+  -webkit-font-smoothing: antialiased;
 }
 
 a {
@@ -49,70 +55,88 @@ a {
   text-decoration: none;
 }
 
-/* Reusable pitch-line divider — a thin chalk stripe, used under section headers */
+h1, h2, h3 {
+  font-family: var(--font-display);
+  letter-spacing: 0.2px;
+}
+
+/* Thin gold hairline instead of a flat green rule — reads as more
+   deliberate/premium than a plain divider. */
 .pitch-divider {
   height: 1px;
-  background: var(--pitch-line);
+  background: linear-gradient(90deg, transparent, var(--pitch-line) 15%, var(--pitch-line) 85%, transparent);
   border: none;
-  margin: 20px 0;
+  margin: 24px 0;
 }
 
-/* Reusable label style — small caps letter-spaced tag, e.g. "LIVE FORMATION" */
 .eyebrow {
   font-size: 11px;
-  letter-spacing: 2px;
+  letter-spacing: 2.5px;
   color: var(--chalk-dim);
   text-transform: uppercase;
+  font-weight: 600;
 }
 
-/* Card base — used for match cards, stat cards, bet slip */
+/* Card base — soft elevation shadow instead of a flat border-only look */
 .pitch-card {
   background: var(--pitch-card);
   border: 1px solid var(--pitch-line);
   border-radius: var(--radius-card);
-  padding: 16px 18px;
+  padding: 18px 20px;
+  box-shadow: var(--shadow-card);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-/* Odds box — the three-way (home/draw/away) buttons */
+.pitch-card:hover {
+  border-color: rgba(201,162,75,0.3);
+}
+
+/* Odds box — subtle depth, gold gradient wash on selection instead of
+   a flat tint */
 .odds-box {
   flex: 1;
   background: var(--pitch-dark);
   border: 1px solid var(--pitch-line);
   border-radius: var(--radius-pill);
-  padding: 8px;
+  padding: 10px 8px;
   text-align: center;
   cursor: pointer;
-  transition: border-color 0.15s ease;
+  transition: border-color 0.2s ease, background 0.2s ease, transform 0.15s ease;
 }
 
 .odds-box:hover {
   border-color: var(--gold);
+  transform: translateY(-1px);
 }
 
 .odds-box.selected {
   border-color: var(--gold);
-  background: rgba(201, 162, 75, 0.08);
+  background: linear-gradient(180deg, rgba(201,162,75,0.14), rgba(201,162,75,0.04));
 }
 
 .odds-box .label {
   font-size: 10px;
   color: var(--chalk-dim);
-  margin-bottom: 2px;
+  margin-bottom: 3px;
   text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .odds-box .value {
   font-size: 16px;
   font-weight: 700;
   color: var(--chalk);
+  font-variant-numeric: tabular-nums;
 }
 
-/* Status pills */
+/* Status pills — slightly more refined padding/weight */
 .pill {
-  font-size: 11px;
-  padding: 2px 8px;
-  border-radius: 2px;
+  font-size: 10.5px;
+  padding: 3px 9px;
+  border-radius: 3px;
   display: inline-block;
+  letter-spacing: 0.3px;
+  font-weight: 600;
 }
 
 .pill-open {
@@ -130,21 +154,29 @@ a {
   color: var(--chalk-dim);
 }
 
-/* Primary button */
+/* Primary button — subtle gold gradient + lift on hover, reads as a
+   more premium surface than a flat fill */
 .btn-gold {
-  background: var(--gold);
+  background: linear-gradient(180deg, var(--gold-bright), var(--gold));
   color: var(--pitch-dark);
   border: none;
   border-radius: var(--radius-pill);
-  padding: 10px 20px;
+  padding: 11px 22px;
   font-weight: 700;
   font-size: 14px;
   cursor: pointer;
-  transition: background 0.15s ease;
+  box-shadow: var(--shadow-gold);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
 }
 
 .btn-gold:hover {
-  background: var(--gold-bright);
+  filter: brightness(1.06);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px -4px rgba(201,162,75,0.45);
+}
+
+.btn-gold:active {
+  transform: translateY(0);
 }
 
 .btn-outline {
@@ -152,11 +184,13 @@ a {
   color: var(--chalk);
   border: 1px solid var(--pitch-line);
   border-radius: var(--radius-pill);
-  padding: 10px 20px;
+  padding: 11px 22px;
   font-size: 14px;
   cursor: pointer;
+  transition: border-color 0.2s ease, color 0.2s ease;
 }
 
 .btn-outline:hover {
   border-color: var(--gold);
+  color: var(--gold-bright);
 }
