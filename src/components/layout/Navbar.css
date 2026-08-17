@@ -134,6 +134,28 @@
 .bb-navbar-wallet {
   display: flex;
   align-items: center;
+  gap: 10px;
+}
+
+.bb-faucet-link {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--gold);
+  border: 1px solid var(--gold);
+  border-radius: var(--radius-pill);
+  padding: 8px 14px;
+  white-space: nowrap;
+  transition: background 0.15s ease;
+}
+
+.bb-faucet-link:hover {
+  background: rgba(22,86,245,0.08);
+}
+
+@media (max-width: 640px) {
+  .bb-faucet-link {
+    display: none; /* keep the mobile navbar uncluttered — faucet is a secondary/dev action */
+  }
 }
 
 .bb-wrong-net {

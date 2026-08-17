@@ -99,6 +99,16 @@ export function Navbar() {
 
       {!isHome && (
         <div className="bb-navbar-wallet">
+          <a
+            href="https://faucet.circle.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="bb-faucet-link"
+            title="Get free testnet USDC on Arc Testnet"
+          >
+            💧 Get USDC
+          </a>
+
           {!connected ? (
             <button className="btn-gold" onClick={connect} disabled={txPending}>
               {txPending ? "Connecting…" : "Connect wallet"}
