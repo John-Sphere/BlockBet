@@ -170,20 +170,27 @@ export default function Football() {
                   </div>
 
                   {!isFinished && (
-                    <div className="bb-odds-row">
-                      {["home", "draw", "away"].map((side) => (
-                        <div
-                          key={side}
-                          className={`odds-box${isPicked(match.id, side) ? " selected" : ""}`}
-                          onClick={() => addSelection(match, side, oddsMap[side])}
-                          role="button"
-                          tabIndex={0}
-                        >
-                          <div className="label">{side}</div>
-                          <div className="value">{oddsMap[side]?.toFixed(2) ?? "-"}</div>
-                        </div>
-                      ))}
-                    </div>
+                    <>
+                      <div className="bb-odds-row">
+                        {["home", "draw", "away"].map((side) => (
+                          <div
+                            key={side}
+                            className={`odds-box${isPicked(match.id, side) ? " selected" : ""}`}
+                            onClick={() => addSelection(match, side, oddsMap[side])}
+                            role="button"
+                            tabIndex={0}
+                          >
+                            <div className="label">{side}</div>
+                            <div className="value">{oddsMap[side]?.toFixed(2) ?? "-"}</div>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="bb-odds-note">
+                        {match.hasRealPool
+                          ? "Live odds — reflects real USDC staked so far"
+                          : "Est. odds — updates once real bets come in"}
+                      </div>
+                    </>
                   )}
                 </div>
               );

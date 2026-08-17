@@ -1,10 +1,11 @@
 /**
  * chainSync.js
  * Reads matches from the on-chain FootballBetting contract (read-only,
- * no wallet needed) and returns a lookup of "home::away" -> chainMatchId
- * for active (unfinished) matches. matchManager.js uses this to fill in
- * chainMatchId on its client-generated matches once create-matches.js
- * has registered the corresponding fixture on-chain.
+ * no wallet needed) and returns a lookup of "home::away" -> match info
+ * (chainMatchId + real pool amounts) for active (unfinished) matches.
+ * matchManager.js uses this both to fill in chainMatchId and to power
+ * honest, pool-based odds display instead of a disconnected
+ * ratings-based number.
  */
 
 import { ethers } from "ethers";
@@ -39,9 +40,14 @@ export async function fetchActiveChainMatches() {
     const map = {};
     for (let i = startFrom; i <= total; i++) {
       const m = await contract.getMatch(i);
-      const [home, away, , , , finished] = m;
+      const [home, away, totalHome, totalDraw, totalAway, finished] = m;
       if (finished) continue;
-      map[key(home, away)] = i;
+      map[key(home, away)] = {
+        chainMatchId: i,
+        poolHome: Number(ethers.formatUnits(totalHome, 6)),
+        poolDraw: Number(ethers.formatUnits(totalDraw, 6)),
+        poolAway: Number(ethers.formatUnits(totalAway, 6)),
+      };
     }
     return map;
   } catch {

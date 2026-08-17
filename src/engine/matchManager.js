@@ -139,16 +139,48 @@ async function resolveMatchOnChain(homeTeam, awayTeam, result) {
   }
 }
 
+// Once real money is staked, the honest payout math is pool-based:
+// winners split the total pot proportional to their stake, not a
+// fixed multiplier. This converts real pool amounts into a "what
+// would this pay right now" odds number so the UI is never showing
+// something disconnected from what the contract will actually pay.
+// Returns null for a side with no pool yet — the UI falls back to
+// the ratings-based estimate for that side, clearly labeled.
+function poolOdds(poolHome, poolDraw, poolAway, side) {
+  const total = poolHome + poolDraw + poolAway;
+  if (total <= 0) return null;
+  const sidePool = side === "home" ? poolHome : side === "draw" ? poolDraw : poolAway;
+  if (sidePool <= 0) return null;
+  return +(total / sidePool).toFixed(2);
+}
+
 async function syncChainIds() {
   const chainMap = await fetchActiveChainMatches();
   if (!Object.keys(chainMap).length) return;
   let changed = false;
   matchState = matchState.map(m => {
-    if (m.chainMatchId !== null && m.chainMatchId !== undefined) return m;
-    const id = chainMap[matchKey(m.homeTeam, m.awayTeam)];
-    if (id === undefined) return m;
+    const info = chainMap[matchKey(m.homeTeam, m.awayTeam)];
+    if (!info) return m;
+
     changed = true;
-    return { ...m, chainMatchId: id };
+    const { chainMatchId, poolHome, poolDraw, poolAway } = info;
+    const hasRealPool = poolHome + poolDraw + poolAway > 0;
+
+    return {
+      ...m,
+      chainMatchId,
+      poolHome,
+      poolDraw,
+      poolAway,
+      // Once there's real money staked, prefer honest pool-derived
+      // odds over the ratings-based estimate; otherwise keep showing
+      // the estimate (Football.jsx labels it "Est." either way based
+      // on hasRealPool).
+      oddsHome: poolOdds(poolHome, poolDraw, poolAway, "home") ?? m.oddsHome,
+      oddsDraw: poolOdds(poolHome, poolDraw, poolAway, "draw") ?? m.oddsDraw,
+      oddsAway: poolOdds(poolHome, poolDraw, poolAway, "away") ?? m.oddsAway,
+      hasRealPool,
+    };
   });
   if (changed) emit();
 }
@@ -239,6 +271,7 @@ function createMatch(leagueId, leagueName, leagueFlag, fixture, round, baseTime,
     poolHome:      0,
     poolDraw:      0,
     poolAway:      0,
+    hasRealPool:   false,
     chainMatchId:  null,
     round,
   };

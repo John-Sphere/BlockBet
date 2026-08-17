@@ -267,6 +267,13 @@
   color: var(--win-green);
 }
 
+.bet-slip-pool-note {
+  font-size: 10.5px;
+  color: var(--chalk-dim);
+  margin-top: 4px;
+  line-height: 1.4;
+}
+
 @media (max-width: 768px) {
   .bet-slip-panel {
     right: 10px;

@@ -131,6 +131,12 @@
   gap: 8px;
 }
 
+.bb-odds-note {
+  font-size: 10.5px;
+  color: var(--chalk-dim);
+  margin-top: 6px;
+}
+
 @media (max-width: 640px) {
   .bb-hero-title {
     font-size: 24px;
