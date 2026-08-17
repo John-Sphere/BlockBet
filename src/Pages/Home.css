@@ -240,22 +240,25 @@
 
 @media (max-width: 900px) {
   .hp-hero {
-    grid-template-columns: 1fr;
-    gap: 20px;
-    padding: 24px 20px;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    padding: 20px 16px;
+    align-items: center;
   }
   .hp-hero-title {
-    font-size: 30px;
+    font-size: 24px;
+  }
+  .hp-hero-sub {
+    font-size: 13px;
+  }
+  .hp-trust-row {
+    display: none; /* not enough room alongside the image on small screens */
   }
   .hp-hero-visual {
-    order: -1; /* image first, big and prominent, text follows */
     aspect-ratio: 4 / 5;
     background: var(--gold-deep);
-    max-width: 420px;
-    margin: 0 auto;
   }
   .hp-hero-photo {
-    height: 100%;
     object-fit: cover;
   }
   .hp-features {

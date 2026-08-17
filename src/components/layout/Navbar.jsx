@@ -48,7 +48,7 @@ export function Navbar() {
   }
 
   return (
-    <header className="bb-navbar">
+    <header className={`bb-navbar${isHome ? " bb-navbar--home" : ""}`}>
       <div className="bb-navbar-left">
         {!isHome && (
           <button
