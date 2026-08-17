@@ -15,6 +15,13 @@ function IconGlobe({ size = 20, ...props }) { return <svg width={size} height={s
 function IconBarChart({ size = 20, ...props }) { return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>; }
 function IconClock({ size = 20, ...props }) { return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>; }
 
+// Social/resource icons for the footer link row
+function IconDiscord({ size = 20, ...props }) { return <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" {...props}><path d="M20.3 4.4A19.8 19.8 0 0 0 15.4 3c-.2.4-.5 1-.7 1.4a18.3 18.3 0 0 0-5.4 0C9.1 4 8.8 3.4 8.6 3a19.8 19.8 0 0 0-5 1.4C.6 8.6-.1 12.6.2 16.6a20 20 0 0 0 6 3c.5-.7.9-1.4 1.3-2.2-.7-.3-1.4-.6-2-1l.5-.4a14.3 14.3 0 0 0 12 0l.5.4c-.6.4-1.3.7-2 1 .4.8.8 1.5 1.3 2.2a20 20 0 0 0 6-3c.4-4.6-.7-8.6-3-12.2ZM8.5 14.3c-1 0-1.8-.9-1.8-2s.8-2 1.8-2 1.8.9 1.8 2-.8 2-1.8 2Zm7 0c-1 0-1.8-.9-1.8-2s.8-2 1.8-2 1.8.9 1.8 2-.8 2-1.8 2Z"/></svg>; }
+function IconBook({ size = 20, ...props }) { return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/></svg>; }
+function IconX({ size = 20, ...props }) { return <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" {...props}><path d="M13.6 10.6 20.4 3h-2l-5.7 6.5L8 3H2.5l7 10.2-7 8h2l6.1-6.9 5 6.9H21l-7.4-10.6Zm-2.2 2.5-.7-1L5 4.5h2.2l4.5 6.5.7 1 5.9 8.4h-2.2l-4.8-6.9Z"/></svg>; }
+function IconGitHub({ size = 20, ...props }) { return <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" {...props}><path d="M12 2a10 10 0 0 0-3.2 19.5c.5.1.7-.2.7-.5v-1.7c-2.8.6-3.4-1.3-3.4-1.3-.4-1.2-1.1-1.5-1.1-1.5-.9-.6.1-.6.1-.6 1 .1 1.5 1 1.5 1 .9 1.6 2.4 1.1 3 .9.1-.7.4-1.1.6-1.4-2.2-.2-4.6-1.1-4.6-5 0-1 .4-1.9 1-2.6-.1-.3-.4-1.3.1-2.6 0 0 .8-.3 2.7 1a9.3 9.3 0 0 1 5 0c1.9-1.3 2.7-1 2.7-1 .5 1.3.2 2.3.1 2.6.6.7 1 1.6 1 2.6 0 3.9-2.4 4.8-4.6 5 .3.3.6.9.6 1.9v2.8c0 .3.2.6.7.5A10 10 0 0 0 12 2Z"/></svg>; }
+function IconMedium({ size = 20, ...props }) { return <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" {...props}><path d="M3 5.5c0-.3-.1-.6-.3-.8L1 2.4V2h6l4.6 10.2L15.6 2H21v.4l-1.5 1.5c-.1.1-.2.3-.1.5v12.2c0 .2 0 .4.1.5l1.5 1.5v.4h-7.4v-.4l1.5-1.5c.2-.2.2-.2.2-.5V6.7l-4.3 11h-.6L4.9 6.7v7.4c0 .4.1.7.4 1l2 2.4v.4H1v-.4l2-2.4c.3-.3.4-.6.3-1V5.5Z"/></svg>; }
+
 const FEATURES = [
   {
     icon: IconLink,
@@ -51,6 +58,16 @@ const STATS = [
   { icon: IconGlobe, num: "6", label: "Leagues", sub: "Premier League, La Liga, Serie A & more" },
   { icon: IconBarChart, num: "Live", label: "Matches", sub: "Full matchdays, simulated live" },
   { icon: IconClock, num: "24/7", label: "Live", sub: "New matchdays, non-stop action" },
+];
+
+// Discord, GitHub, and Medium aren't set up yet — href: null renders
+// them as dimmed, non-clickable placeholders instead of dead links.
+const SOCIAL_LINKS = [
+  { icon: IconDiscord, label: "Discord", href: null },
+  { icon: IconBook,    label: "Documentation", href: "https://blockbet.mintlify.app" },
+  { icon: IconX,       label: "X", href: "https://x.com/block_on_bet" },
+  { icon: IconGitHub,  label: "GitHub", href: null },
+  { icon: IconMedium,  label: "Medium", href: null },
 ];
 
 export default function Home() {
@@ -155,7 +172,36 @@ export default function Home() {
           <p>Join players already betting smarter with transparency, security, and innovation.</p>
         </div>
         <div className="hp-banner-action">
-          <Link to="/football" className="hp-banner-btn">Start betting now &rarr;</Link>
+          <div className="hp-social-row">
+            {SOCIAL_LINKS.map((s) => {
+              const Icon = s.icon;
+              if (!s.href) {
+                return (
+                  <span
+                    key={s.label}
+                    className="hp-social-link hp-social-link--soon"
+                    aria-label={`${s.label} — coming soon`}
+                    title={`${s.label} — coming soon`}
+                  >
+                    <Icon size={18} />
+                  </span>
+                );
+              }
+              return (
+                <a
+                  key={s.label}
+                  href={s.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hp-social-link"
+                  aria-label={s.label}
+                  title={s.label}
+                >
+                  <Icon size={18} />
+                </a>
+              );
+            })}
+          </div>
           <div className="hp-banner-sub">Built on Arc. Secured by blockchain. Backed by USDC.</div>
         </div>
       </section>
