@@ -45,7 +45,7 @@ export function Sidebar() {
     display:"flex", alignItems:"center", gap:12,
     padding:"12px 18px", fontSize:13,
     color: active ? "var(--gold)" : "var(--chalk-dim)",
-    background: active ? "rgba(201,162,75,0.09)" : "transparent",
+    background: active ? "rgba(22,86,245,0.08)" : "transparent",
     borderLeft:`3px solid ${active ? "var(--gold)" : "transparent"}`,
     fontWeight: active ? 700 : 500,
     transition:"background 0.15s ease, color 0.15s ease", textDecoration:"none",
@@ -66,7 +66,7 @@ export function Sidebar() {
       <div style={{
         padding:"20px 18px", borderBottom:"1px solid var(--pitch-line)",
       }}>
-        <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:14 }}>
+        <Link to="/" style={{ display:"flex", alignItems:"center", gap:10, marginBottom:14 }}>
           <div style={{
             width:36, height:36, borderRadius:9,
             border:"1.5px solid var(--gold)",
@@ -80,7 +80,7 @@ export function Sidebar() {
             <div style={{ fontSize:16, fontWeight:900, letterSpacing:1, color:"var(--chalk)" }}>BLOCKBET</div>
             <div style={{ fontSize:9, color:"var(--chalk-dim)", letterSpacing:2 }}>VIRTUAL SPORTSBOOK</div>
           </div>
-        </div>
+        </Link>
 
         <div style={{
           display:"flex", alignItems:"center", gap:6,
@@ -112,6 +112,12 @@ export function Sidebar() {
 
       {/* ── NAV ── */}
       <nav style={{ flex:1, padding:"8px 0" }}>
+
+        {/* Home */}
+        <Link to="/" style={navItemStyle(pathname === "/")}>
+          <span style={{ fontSize:18, flexShrink:0 }}>🏠</span>
+          <span style={{ flex:1 }}>Home</span>
+        </Link>
 
         {/* Football — expandable */}
         <button

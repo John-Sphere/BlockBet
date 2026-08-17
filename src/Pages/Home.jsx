@@ -100,14 +100,44 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Placeholder for a hero image — swap the background/content of
-            .hp-hero-visual in Home.css for a real photo or illustration
-            when you have one. */}
+        {/* Original illustrated player silhouette — not a real photo, to
+            avoid any licensing/likeness issues, but still gives a real
+            sense of a player mid-action rather than a text placeholder. */}
         <div className="hp-hero-visual">
-          <div className="hp-hero-visual-inner">
-            <span className="hp-hero-visual-number">10</span>
-            <span className="hp-hero-visual-label">BLOCKBET</span>
-          </div>
+          <svg viewBox="0 0 400 500" className="hp-player-svg" aria-hidden="true">
+            {/* ground shadow */}
+            <ellipse cx="200" cy="460" rx="120" ry="16" fill="rgba(255,255,255,0.12)" />
+
+            {/* back leg, planted */}
+            <path d="M195 300 L188 400 L178 455 L205 455 L210 400 L212 300 Z" fill="rgba(255,255,255,0.28)" />
+
+            {/* torso, leaning into the kick */}
+            <path d="M175 160 C170 190 172 230 185 300 L235 300 C242 235 238 190 228 158 C222 140 182 140 175 160 Z" fill="rgba(255,255,255,0.42)" />
+
+            {/* back arm */}
+            <path d="M180 175 C160 185 145 210 140 245 L155 250 C165 218 178 198 195 185 Z" fill="rgba(255,255,255,0.3)" />
+
+            {/* front arm, raised for balance */}
+            <path d="M222 165 C245 155 265 140 275 115 L262 105 C250 128 235 142 212 152 Z" fill="rgba(255,255,255,0.42)" />
+
+            {/* head */}
+            <circle cx="205" cy="135" r="28" fill="rgba(255,255,255,0.42)" />
+
+            {/* kicking leg, extended toward the ball */}
+            <path d="M225 300 C255 305 285 315 305 335 L320 375 L295 388 L278 350 C260 335 240 322 220 315 Z" fill="rgba(255,255,255,0.42)" />
+
+            {/* the ball */}
+            <circle cx="335" cy="392" r="22" fill="rgba(255,255,255,0.85)" />
+            <g stroke="rgba(11,63,204,0.5)" strokeWidth="2" fill="none">
+              <path d="M335 372 L335 412 M317 380 L353 404 M317 404 L353 380" />
+            </g>
+
+            {/* motion lines behind the kicking foot */}
+            <g stroke="rgba(255,255,255,0.3)" strokeWidth="4" strokeLinecap="round">
+              <line x1="245" y1="340" x2="270" y2="335" />
+              <line x1="248" y1="355" x2="275" y2="352" />
+            </g>
+          </svg>
         </div>
       </section>
 
