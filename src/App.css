@@ -79,3 +79,8 @@
     box-shadow: 4px 0 24px -8px rgba(0,0,0,0.5);
   }
 }
+@media (max-width: 768px) {
+  .bb-main-content--no-tabbar {
+    padding-bottom: 0 !important;
+  }
+}

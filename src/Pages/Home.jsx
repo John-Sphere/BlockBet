@@ -72,7 +72,6 @@ export default function Home() {
           </p>
           <div className="hp-hero-actions">
             <Link to="/football" className="btn-gold hp-cta">Start betting &rarr;</Link>
-            <Link to="/football" className="btn-outline hp-cta">Explore matches &rarr;</Link>
           </div>
 
           <div className="hp-trust-row">

@@ -50,37 +50,41 @@ export function Navbar() {
   return (
     <header className="bb-navbar">
       <div className="bb-navbar-left">
-        <button
-          className="bb-navbar-menu"
-          onClick={toggleSidebar}
-          aria-label="Toggle sidebar"
-        >
-          <span />
-          <span />
-          <span />
-        </button>
+        {!isHome && (
+          <button
+            className="bb-navbar-menu"
+            onClick={toggleSidebar}
+            aria-label="Toggle sidebar"
+          >
+            <span />
+            <span />
+            <span />
+          </button>
+        )}
 
         <Link to="/" className="bb-navbar-brand">
           <img src="/logo.png" alt="BLOCKBET" className="bb-navbar-logo" />
-          <div className="bb-navbar-tag">Virtual Football Sportsbook</div>
+          <div className="bb-navbar-tag">BlockBet</div>
         </Link>
       </div>
 
-      <nav className="bb-navbar-links">
-        <NavLink to="/football" className="bb-navbar-link">
-          Pitch
-        </NavLink>
-        <NavLink to="/football?live=1" className="bb-navbar-link bb-navbar-live">
-          Live
-          {liveCount > 0 && <span className="bb-navbar-live-badge">LIVE</span>}
-        </NavLink>
-        <NavLink to="/history" className="bb-navbar-link">
-          History
-        </NavLink>
-        <NavLink to="/leaderboard" className="bb-navbar-link">
-          Table
-        </NavLink>
-      </nav>
+      {!isHome && (
+        <nav className="bb-navbar-links">
+          <NavLink to="/football" className="bb-navbar-link">
+            Pitch
+          </NavLink>
+          <NavLink to="/football?live=1" className="bb-navbar-link bb-navbar-live">
+            Live
+            {liveCount > 0 && <span className="bb-navbar-live-badge">LIVE</span>}
+          </NavLink>
+          <NavLink to="/history" className="bb-navbar-link">
+            History
+          </NavLink>
+          <NavLink to="/leaderboard" className="bb-navbar-link">
+            Table
+          </NavLink>
+        </nav>
+      )}
 
       {!isHome && (
         <div className="bb-navbar-wallet">

@@ -13,12 +13,12 @@ export function Layout({ children }) {
     <div style={{ minHeight:"100vh", display:"flex", flexDirection:"column" }}>
       <Navbar />
       <div style={{ display:"flex", flex:1, paddingTop:"var(--nav-h)" }}>
-        <Sidebar />
+        {!isHome && <Sidebar />}
         <main
           className={`bb-main-content${isHome ? " bb-main-content--no-tabbar" : ""}`}
           style={{
             flex:1, minWidth:0, overflowX:"hidden",
-            marginLeft: sidebarOpen ? "var(--side-w)" : 0,
+            marginLeft: (!isHome && sidebarOpen) ? "var(--side-w)" : 0,
             transition:"margin-left 0.3s ease",
           }}
         >

@@ -240,33 +240,23 @@
 
 @media (max-width: 900px) {
   .hp-hero {
-    grid-template-columns: 1fr 0.9fr;
-    gap: 16px;
-    padding: 24px 16px;
-    align-items: start;
+    grid-template-columns: 1fr;
+    gap: 20px;
+    padding: 24px 20px;
   }
   .hp-hero-title {
-    font-size: 24px;
-  }
-  .hp-hero-sub {
-    font-size: 13px;
-  }
-  .hp-hero-actions .btn-gold,
-  .hp-hero-actions .btn-outline {
-    padding: 9px 14px;
-    font-size: 12px;
-  }
-  .hp-trust-row {
-    display: none; /* not enough room alongside the image on small screens */
+    font-size: 30px;
   }
   .hp-hero-visual {
-    aspect-ratio: auto;
-    background: none;
-    border-radius: 14px;
+    order: -1; /* image first, big and prominent, text follows */
+    aspect-ratio: 4 / 5;
+    background: var(--gold-deep);
+    max-width: 420px;
+    margin: 0 auto;
   }
   .hp-hero-photo {
-    height: auto;
-    object-fit: contain;
+    height: 100%;
+    object-fit: cover;
   }
   .hp-features {
     padding: 40px 20px;
@@ -287,31 +277,6 @@
     text-align: center;
   }
   .hp-banner-action {
-    text-align: center;
-  }
-}
-
-@media (max-width: 560px) {
-  .hp-hero {
-    grid-template-columns: 1fr 120px;
-    gap: 12px;
-  }
-  .hp-hero-title {
-    font-size: 18px;
-  }
-  .hp-hero-sub {
-    font-size: 12px;
-    -webkit-line-clamp: 3;
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-  }
-  .hp-hero-actions {
-    flex-direction: column;
-    gap: 8px;
-  }
-  .hp-hero-actions .btn-gold,
-  .hp-hero-actions .btn-outline {
     text-align: center;
   }
 }
