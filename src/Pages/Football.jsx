@@ -143,39 +143,45 @@ export default function Football() {
           <div className="eyebrow" style={{ marginBottom: 10 }}>
             {league}
           </div>
-          <div className="bb-match-grid">
+          <div className="bb-match-list">
             {leagueMatches.map((match) => {
               const isLive = match.status === "first_half" || match.status === "second_half" || match.status === "halftime";
               const isFinished = match.status === "finished";
               const oddsMap = { home: match.oddsHome, draw: match.oddsDraw, away: match.oddsAway };
 
               return (
-                <div className="bb-match-card" key={match.id}>
-                  <div className="bb-match-header">
+                <div className="bb-match-row" key={match.id}>
+                  <div className="bb-match-meta">
+                    {isLive ? (
+                      <span className="bb-match-meta-live">● {match.minute}'</span>
+                    ) : (
+                      <span className="bb-match-meta-time">Betting open</span>
+                    )}
+                  </div>
+
+                  <div className="bb-match-body">
                     <div
-                      className="bb-match-teams"
+                      className="bb-match-teamscol"
                       onClick={() => navigate(`/match/${match.id}`)}
                       role="button"
                       tabIndex={0}
                     >
-                      <ClubBadge name={match.homeTeam} size={22} />
-                      {match.homeTeam}
-                      <span className="vs">vs</span>
-                      <ClubBadge name={match.awayTeam} size={22} />
-                      {match.awayTeam}
+                      <div className="bb-match-teamline">
+                        <ClubBadge name={match.homeTeam} size={20} />
+                        <span className="bb-match-teamname">{match.homeTeam}</span>
+                        {(isLive || isFinished) && <span className="bb-match-teamscore">{match.homeScore}</span>}
+                      </div>
+                      <div className="bb-match-teamline">
+                        <ClubBadge name={match.awayTeam} size={20} />
+                        <span className="bb-match-teamname">{match.awayTeam}</span>
+                        {(isLive || isFinished) && <span className="bb-match-teamscore">{match.awayScore}</span>}
+                      </div>
                     </div>
-                    {isLive ? (
-                      <span className="pill pill-live">● Live {match.minute}'</span>
-                    ) : isFinished ? (
-                      <span className="pill pill-finished">
-                        {match.homeScore} - {match.awayScore}
-                      </span>
-                    ) : null}
-                  </div>
 
-                  {!isFinished && (
-                    <>
-                      <div className="bb-odds-row">
+                    {isFinished ? (
+                      <div className="bb-match-ft">FT</div>
+                    ) : (
+                      <div className="bb-odds-row bb-odds-row--compact">
                         {["home", "draw", "away"].map((side) => (
                           <div
                             key={side}
@@ -189,12 +195,15 @@ export default function Football() {
                           </div>
                         ))}
                       </div>
-                      <div className="bb-odds-note">
-                        {match.hasRealPool
-                          ? "Live odds — reflects real USDC staked so far"
-                          : "Est. odds — updates once real bets come in"}
-                      </div>
-                    </>
+                    )}
+                  </div>
+
+                  {!isFinished && (
+                    <div className="bb-odds-note">
+                      {match.hasRealPool
+                        ? "Live odds — reflects real USDC staked so far"
+                        : "Est. odds — updates once real bets come in"}
+                    </div>
                   )}
                 </div>
               );
