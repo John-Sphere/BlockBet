@@ -5,6 +5,7 @@ import { BetSlipProvider } from "./context/BetSlipContext";
 import { BetSlipPanel } from "./components/ui/BetSlipPanel";
 import "./App.css";
 
+const Home        = lazy(() => import("./Pages/Home"));
 const Football    = lazy(() => import("./Pages/Football"));
 const Admin       = lazy(() => import("./Pages/Admin"));
 const LeagueTable = lazy(() => import("./Pages/LeagueTable"));
@@ -52,7 +53,7 @@ export default function App() {
       <Layout>
         <Suspense fallback={<Loader />}>
           <Routes>
-            <Route path="/"            element={<Football />}     />
+            <Route path="/"            element={<Home />}         />
             <Route path="/football"    element={<Football />}     />
             <Route path="/history"     element={<MatchHistory />} />
             <Route path="/leaderboard" element={<LeagueTable />}  />

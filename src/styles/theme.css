@@ -1,48 +1,46 @@
-/* BLOCKBET — Tactics Board theme, luxury pass
-   Same palette as before, refined execution: richer type, softer
-   depth, subtle gold gradients instead of flat fills.
+/* BLOCKBET — White / Azure theme
+   Same variable names as before (so every component that already
+   references them updates automatically) but new values, moving away
+   from the dark tactics-board palette to a clean white/azure look.
 */
 
 :root {
-  /* Pitch surfaces */
-  --pitch-dark: #0A1D12;
-  --pitch-mid: #0F2818;
-  --pitch-card: #16321F;
-  --pitch-line: #2A4530;
+  /* Surfaces */
+  --pitch-dark: #FFFFFF;
+  --pitch-mid: #FFFFFF;
+  --pitch-card: #FFFFFF;
+  --pitch-line: #E5E9F2;
 
   /* Text */
-  --chalk: #E8E4D8;
-  --chalk-dim: #8FA98C;
+  --chalk: #0B1526;
+  --chalk-dim: #64748B;
 
-  /* Accent */
-  --gold: #C9A24B;
-  --gold-bright: #E0BE6C;
-  --gold-deep: #8C7233;
+  /* Accent — azure blue */
+  --gold: #1656F5;
+  --gold-bright: #3B72FF;
+  --gold-deep: #0B3FCC;
 
   /* Status */
-  --live-red: #8B1E1E;
-  --win-green: #4E9A5C;
-  --loss-red: #A33A3A;
+  --live-red: #DC2626;
+  --win-green: #16A34A;
+  --loss-red: #DC2626;
 
-  /* Type — a premium serif for display headings, clean sans for body */
-  --font-display: 'Playfair Display', Georgia, 'Times New Roman', serif;
+  /* Type — bold sans display, matching the new brand direction */
+  --font-display: 'Poppins', 'Inter', Arial, sans-serif;
   --font-body: 'Inter', Arial, Helvetica, sans-serif;
   --font-mono: 'Courier New', monospace;
 
   /* Radius / spacing */
-  --radius-card: 10px;
-  --radius-pill: 5px;
+  --radius-card: 12px;
+  --radius-pill: 8px;
 
-  /* Layout dimensions — Sidebar.jsx and Layout.jsx position themselves
-     relative to these. They were never defined before, which caused
-     the sidebar to snap to the very top of the page and cover the
-     navbar instead of sitting below it. */
+  /* Layout dimensions */
   --nav-h: 65px;
   --side-w: 250px;
 
-  /* Depth — soft, low-contrast shadows rather than hard drop shadows */
-  --shadow-card: 0 1px 2px rgba(0,0,0,0.25), 0 8px 24px -12px rgba(0,0,0,0.5);
-  --shadow-gold: 0 4px 14px -4px rgba(201,162,75,0.35);
+  /* Depth — soft shadows suited to a light theme */
+  --shadow-card: 0 1px 2px rgba(15,23,42,0.04), 0 8px 24px -12px rgba(15,23,42,0.12);
+  --shadow-gold: 0 8px 20px -6px rgba(22,86,245,0.35);
 }
 
 * {
@@ -64,27 +62,24 @@ a {
 
 h1, h2, h3 {
   font-family: var(--font-display);
-  letter-spacing: 0.2px;
+  letter-spacing: -0.02em;
 }
 
-/* Thin gold hairline instead of a flat green rule — reads as more
-   deliberate/premium than a plain divider. */
 .pitch-divider {
   height: 1px;
-  background: linear-gradient(90deg, transparent, var(--pitch-line) 15%, var(--pitch-line) 85%, transparent);
+  background: var(--pitch-line);
   border: none;
   margin: 24px 0;
 }
 
 .eyebrow {
-  font-size: 11px;
-  letter-spacing: 2.5px;
-  color: var(--chalk-dim);
+  font-size: 12px;
+  letter-spacing: 1.5px;
+  color: var(--gold);
   text-transform: uppercase;
-  font-weight: 600;
+  font-weight: 700;
 }
 
-/* Card base — soft elevation shadow instead of a flat border-only look */
 .pitch-card {
   background: var(--pitch-card);
   border: 1px solid var(--pitch-line);
@@ -95,14 +90,12 @@ h1, h2, h3 {
 }
 
 .pitch-card:hover {
-  border-color: rgba(201,162,75,0.3);
+  border-color: rgba(22,86,245,0.25);
 }
 
-/* Odds box — subtle depth, gold gradient wash on selection instead of
-   a flat tint */
 .odds-box {
   flex: 1;
-  background: var(--pitch-dark);
+  background: #F7F9FC;
   border: 1px solid var(--pitch-line);
   border-radius: var(--radius-pill);
   padding: 10px 8px;
@@ -118,7 +111,7 @@ h1, h2, h3 {
 
 .odds-box.selected {
   border-color: var(--gold);
-  background: linear-gradient(180deg, rgba(201,162,75,0.14), rgba(201,162,75,0.04));
+  background: rgba(22,86,245,0.08);
 }
 
 .odds-box .label {
@@ -136,11 +129,10 @@ h1, h2, h3 {
   font-variant-numeric: tabular-nums;
 }
 
-/* Status pills — slightly more refined padding/weight */
 .pill {
   font-size: 10.5px;
   padding: 3px 9px;
-  border-radius: 3px;
+  border-radius: 20px;
   display: inline-block;
   letter-spacing: 0.3px;
   font-weight: 600;
@@ -153,7 +145,7 @@ h1, h2, h3 {
 
 .pill-live {
   background: var(--live-red);
-  color: var(--chalk);
+  color: #FFFFFF;
 }
 
 .pill-finished {
@@ -161,14 +153,12 @@ h1, h2, h3 {
   color: var(--chalk-dim);
 }
 
-/* Primary button — subtle gold gradient + lift on hover, reads as a
-   more premium surface than a flat fill */
 .btn-gold {
-  background: linear-gradient(180deg, var(--gold-bright), var(--gold));
-  color: var(--pitch-dark);
+  background: linear-gradient(135deg, var(--gold-bright), var(--gold));
+  color: #FFFFFF;
   border: none;
   border-radius: var(--radius-pill);
-  padding: 11px 22px;
+  padding: 12px 24px;
   font-weight: 700;
   font-size: 14px;
   cursor: pointer;
@@ -177,9 +167,9 @@ h1, h2, h3 {
 }
 
 .btn-gold:hover {
-  filter: brightness(1.06);
+  filter: brightness(1.05);
   transform: translateY(-1px);
-  box-shadow: 0 6px 18px -4px rgba(201,162,75,0.45);
+  box-shadow: 0 10px 24px -6px rgba(22,86,245,0.45);
 }
 
 .btn-gold:active {
@@ -189,15 +179,16 @@ h1, h2, h3 {
 .btn-outline {
   background: transparent;
   color: var(--chalk);
-  border: 1px solid var(--pitch-line);
+  border: 1.5px solid var(--pitch-line);
   border-radius: var(--radius-pill);
-  padding: 11px 22px;
+  padding: 12px 24px;
   font-size: 14px;
+  font-weight: 600;
   cursor: pointer;
   transition: border-color 0.2s ease, color 0.2s ease;
 }
 
 .btn-outline:hover {
   border-color: var(--gold);
-  color: var(--gold-bright);
+  color: var(--gold);
 }
