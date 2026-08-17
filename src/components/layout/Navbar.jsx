@@ -1,4 +1,4 @@
-import { Link, NavLink } from "react-router-dom";
+import { Link, NavLink, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { useWallet } from "../../context/WalletContext";
 import { useApp } from "../../context/AppContext";
@@ -14,9 +14,13 @@ export function Navbar() {
     shortAddr,
     balance,
     txPending,
+    ensureArcNetwork,
   } = useWallet();
-  const { toggleSidebar } = useApp();
+  const { toggleSidebar, addToast } = useApp();
+  const { pathname } = useLocation();
+  const isHome = pathname === "/";
   const [liveCount, setLiveCount] = useState(0);
+  const [switching, setSwitching] = useState(false);
 
   useEffect(() => {
     initMatchManager();
@@ -28,6 +32,20 @@ export function Navbar() {
     });
     return unsub;
   }, []);
+
+  async function handleSwitchNetwork() {
+    setSwitching(true);
+    try {
+      const ok = await ensureArcNetwork();
+      if (!ok) {
+        addToast("Couldn't switch network. Check MetaMask for a pending request, or switch manually.", "error");
+      }
+    } catch (e) {
+      addToast(e?.message || "Network switch failed.", "error");
+    } finally {
+      setSwitching(false);
+    }
+  }
 
   return (
     <header className="bb-navbar">
@@ -64,26 +82,28 @@ export function Navbar() {
         </NavLink>
       </nav>
 
-      <div className="bb-navbar-wallet">
-        {!connected ? (
-          <button className="btn-gold" onClick={connect} disabled={txPending}>
-            {txPending ? "Connecting…" : "Connect wallet"}
-          </button>
-        ) : wrongNet ? (
-          <button className="btn-outline bb-wrong-net" onClick={connect}>
-            Switch to Arc Testnet
-          </button>
-        ) : (
-          <div className="bb-wallet-pill">
-            <span className="bb-wallet-balance">
-              {Number(balance ?? 0).toFixed(2)} USDC
-            </span>
-            <span className="bb-wallet-addr" onClick={disconnect} title="Disconnect">
-              {shortAddr}
-            </span>
-          </div>
-        )}
-      </div>
+      {!isHome && (
+        <div className="bb-navbar-wallet">
+          {!connected ? (
+            <button className="btn-gold" onClick={connect} disabled={txPending}>
+              {txPending ? "Connecting…" : "Connect wallet"}
+            </button>
+          ) : wrongNet ? (
+            <button className="btn-outline bb-wrong-net" onClick={handleSwitchNetwork} disabled={switching}>
+              {switching ? "Switching…" : "Switch to Arc Testnet"}
+            </button>
+          ) : (
+            <div className="bb-wallet-pill">
+              <span className="bb-wallet-balance">
+                {Number(balance ?? 0).toFixed(2)} USDC
+              </span>
+              <span className="bb-wallet-addr" onClick={disconnect} title="Disconnect">
+                {shortAddr}
+              </span>
+            </div>
+          )}
+        </div>
+      )}
     </header>
   );
 }

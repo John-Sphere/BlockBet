@@ -1,3 +1,4 @@
+import { useLocation } from "react-router-dom";
 import { useApp }  from "../../context/AppContext";
 import { Navbar }  from "./Navbar";
 import { Sidebar } from "./Sidebar";
@@ -5,6 +6,8 @@ import { MobileTabBar } from "./MobileTabBar";
 
 export function Layout({ children }) {
   const { sidebarOpen } = useApp();
+  const { pathname } = useLocation();
+  const isHome = pathname === "/";
 
   return (
     <div style={{ minHeight:"100vh", display:"flex", flexDirection:"column" }}>
@@ -12,7 +15,7 @@ export function Layout({ children }) {
       <div style={{ display:"flex", flex:1, paddingTop:"var(--nav-h)" }}>
         <Sidebar />
         <main
-          className="bb-main-content"
+          className={`bb-main-content${isHome ? " bb-main-content--no-tabbar" : ""}`}
           style={{
             flex:1, minWidth:0, overflowX:"hidden",
             marginLeft: sidebarOpen ? "var(--side-w)" : 0,

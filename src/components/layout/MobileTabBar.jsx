@@ -1,4 +1,4 @@
-import { NavLink } from "react-router-dom";
+import { NavLink, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { useApp } from "../../context/AppContext";
 import { useBetSlip } from "../../context/BetSlipContext";
@@ -10,6 +10,7 @@ import "./MobileTabBar.css";
 export function MobileTabBar() {
   const { toggleSidebar } = useApp();
   const { selections, setOpen: openSlip } = useBetSlip();
+  const { pathname } = useLocation();
   const [liveCount, setLiveCount] = useState(0);
 
   useEffect(() => {
@@ -22,6 +23,10 @@ export function MobileTabBar() {
     });
     return unsub;
   }, []);
+
+  // Landing page should feel clean, no app chrome before someone
+  // actually enters the product.
+  if (pathname === "/") return null;
 
   return (
     <nav className="bb-tabbar">
