@@ -112,6 +112,25 @@
   color: var(--chalk);
 }
 
+.bb-theme-toggle {
+  background: var(--pitch-card);
+  border: 1px solid var(--pitch-line);
+  border-radius: 50%;
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+
+.bb-theme-toggle:hover {
+  border-color: var(--gold);
+  transform: scale(1.05);
+}
+
 .bb-navbar-wallet {
   display: flex;
   align-items: center;

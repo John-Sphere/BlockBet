@@ -10,6 +10,7 @@
   --pitch-mid: #FFFFFF;
   --pitch-card: #FFFFFF;
   --pitch-line: #E5E9F2;
+  --surface-alt: #F7F9FC;
 
   /* Text */
   --chalk: #0B1526;
@@ -41,6 +42,32 @@
   /* Depth — soft shadows suited to a light theme */
   --shadow-card: 0 1px 2px rgba(15,23,42,0.04), 0 8px 24px -12px rgba(15,23,42,0.12);
   --shadow-gold: 0 8px 20px -6px rgba(22,86,245,0.35);
+}
+
+/* ── DARK MODE ──────────────────────────────────────────────
+   Same variable names, same azure accent (kept consistent as the
+   brand color in both modes) — only backgrounds/text/shadows flip.
+   Toggled by AppContext setting data-theme="dark" on <html>. */
+[data-theme="dark"] {
+  --pitch-dark: #0B1120;
+  --pitch-mid: #111827;
+  --pitch-card: #151E33;
+  --pitch-line: #26324A;
+  --surface-alt: #1A2438;
+
+  --chalk: #F1F5F9;
+  --chalk-dim: #94A3B8;
+
+  --gold: #4C8DFF;
+  --gold-bright: #6EA8FF;
+  --gold-deep: #1D4FD8;
+
+  --live-red: #EF4444;
+  --win-green: #22C55E;
+  --loss-red: #EF4444;
+
+  --shadow-card: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px -12px rgba(0,0,0,0.6);
+  --shadow-gold: 0 8px 20px -6px rgba(76,141,255,0.4);
 }
 
 * {
@@ -95,7 +122,7 @@ h1, h2, h3 {
 
 .odds-box {
   flex: 1;
-  background: #F7F9FC;
+  background: var(--surface-alt);
   border: 1px solid var(--pitch-line);
   border-radius: var(--radius-pill);
   padding: 10px 8px;

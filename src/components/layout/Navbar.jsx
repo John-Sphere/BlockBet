@@ -16,7 +16,7 @@ export function Navbar() {
     txPending,
     ensureArcNetwork,
   } = useWallet();
-  const { toggleSidebar, addToast } = useApp();
+  const { toggleSidebar, addToast, theme, toggleTheme } = useApp();
   const { pathname } = useLocation();
   const isHome = pathname === "/";
   const [liveCount, setLiveCount] = useState(0);
@@ -85,6 +85,15 @@ export function Navbar() {
           </NavLink>
         </nav>
       )}
+
+      <button
+        className="bb-theme-toggle"
+        onClick={toggleTheme}
+        aria-label={theme === "light" ? "Switch to dark mode" : "Switch to light mode"}
+        title={theme === "light" ? "Switch to dark mode" : "Switch to light mode"}
+      >
+        {theme === "light" ? "🌙" : "☀️"}
+      </button>
 
       {!isHome && (
         <div className="bb-navbar-wallet">
