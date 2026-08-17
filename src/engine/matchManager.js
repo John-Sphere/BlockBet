@@ -18,24 +18,25 @@
 
 import { simulateMatch }       from "./simulate.js";
 import { calculateOdds }       from "./oddsEngine.js";
+import { calculateExtraMarkets } from "./marketsEngine.js";
 import { generateLeagueFixtures, shuffleFixtures } from "./fixtureGenerator.js";
 import { LEAGUES, CLUBS }      from "../data/clubs.js";
 import { fetchActiveChainMatches, matchKey } from "./chainSync.js";
 import { recordResult, getFormRating } from "./standings.js";
 
 // ── TIMING ─────────────────────────────────────────────────
-const BETTING_WINDOW_MS = 2  * 60 * 1000;
-const HALF_DURATION_MS  = 2  * 60 * 1000;
-const HT_DURATION_MS    = 1  * 60 * 1000;
-const RESULT_HOLD_MS    = 2  * 60 * 1000;
-const STAGGER_MS        = 20 * 1000;
-const CHAIN_SYNC_MS     = 45 * 1000; // was 15s — reduced to ease RPC rate-limit pressure
+const BETTING_WINDOW_MS = 2   * 60 * 1000;
+const HALF_DURATION_MS  = 3.5 * 60 * 1000; // was 2 min — slowed down per request
+const HT_DURATION_MS    = 1.5 * 60 * 1000; // was 1 min
+const RESULT_HOLD_MS    = 2   * 60 * 1000;
+const STAGGER_MS        = 20  * 1000;
+const CHAIN_SYNC_MS     = 45  * 1000;
 
 // A full round needs to comfortably fit: the last (most-staggered)
 // match's kickoff delay + its full 90-minute cycle + the result-hold
-// window, with margin. 12 minutes covers up to 10 staggered matches
-// (the max for a 20-club league) safely.
-const ROUND_PERIOD_MS = 12 * 60 * 1000;
+// window, with margin. Recalculated for the slower half duration —
+// 18 minutes covers up to 10 staggered matches safely.
+const ROUND_PERIOD_MS = 18 * 60 * 1000;
 
 function matchesForLeague(leagueId) {
   const count = CLUBS.filter((c) => c.leagueId === leagueId).length;
@@ -236,6 +237,7 @@ function createMatch(leagueId, leagueName, leagueFlag, fixture, round, baseTime,
   const home = applyClubAdjustments(fixture.home);
   const away = applyClubAdjustments(fixture.away);
   const odds = calculateOdds(home.ratings, away.ratings);
+  const extraMarkets = calculateExtraMarkets(home.ratings, away.ratings);
   const sim  = simulateMatch(home, away, round);
 
   return {
@@ -246,14 +248,17 @@ function createMatch(leagueId, leagueName, leagueFlag, fixture, round, baseTime,
     homeTeam:     home.name,
     homeClubId:   home.id,
     homeLogo:     home.logo,
+    homeRatings:  home.ratings,
     awayTeam:     away.name,
     awayClubId:   away.id,
     awayLogo:     away.logo,
+    awayRatings:  away.ratings,
     _sim:         sim,
     oddsHome:     odds.home,
     oddsDraw:     odds.draw,
     oddsAway:     odds.away,
     probabilities: odds.probabilities,
+    extraMarkets,
     status:       "betting",
     minute:       0,
     homeScore:    0,

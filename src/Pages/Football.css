@@ -117,6 +117,11 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  cursor: pointer;
+}
+
+.bb-match-teams:hover {
+  color: var(--gold);
 }
 
 .bb-match-teams .vs {

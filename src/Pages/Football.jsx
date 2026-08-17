@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { subscribe, initMatchManager } from "../engine/matchManager";
 import { ClubBadge } from "../components/ui/ClubBadge";
 import { useBetSlip } from "../context/BetSlipContext";
@@ -9,6 +9,7 @@ export default function Football() {
   const [matches, setMatches] = useState([]);
   const { selections, addSelection } = useBetSlip();
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const leagueFilter = searchParams.get("league");
   const liveOnly = searchParams.get("live") === "1";
   const hotOnly = searchParams.get("hot") === "1";
@@ -151,7 +152,12 @@ export default function Football() {
               return (
                 <div className="bb-match-card" key={match.id}>
                   <div className="bb-match-header">
-                    <div className="bb-match-teams">
+                    <div
+                      className="bb-match-teams"
+                      onClick={() => navigate(`/match/${match.id}`)}
+                      role="button"
+                      tabIndex={0}
+                    >
                       <ClubBadge name={match.homeTeam} size={22} />
                       {match.homeTeam}
                       <span className="vs">vs</span>
@@ -164,9 +170,7 @@ export default function Football() {
                       <span className="pill pill-finished">
                         {match.homeScore} - {match.awayScore}
                       </span>
-                    ) : (
-                      <span className="pill pill-open">Betting open</span>
-                    )}
+                    ) : null}
                   </div>
 
                   {!isFinished && (

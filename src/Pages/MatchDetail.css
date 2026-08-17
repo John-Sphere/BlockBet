@@ -1,0 +1,177 @@
+.md-page {
+  padding: 24px 32px 60px;
+  max-width: 700px;
+}
+
+.md-back {
+  background: none;
+  border: none;
+  color: var(--chalk-dim);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: 20px;
+}
+
+.md-back:hover {
+  color: var(--gold);
+}
+
+.md-notfound {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--chalk-dim);
+}
+
+.md-notfound p {
+  margin-bottom: 16px;
+}
+
+.md-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 24px;
+  background: var(--pitch-card);
+  border: 1px solid var(--pitch-line);
+  border-radius: var(--radius-card);
+  margin-bottom: 24px;
+}
+
+.md-header-team {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  text-align: center;
+}
+
+.md-header-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--chalk);
+}
+
+.md-header-mid {
+  text-align: center;
+  min-width: 100px;
+}
+
+.md-score {
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--chalk);
+}
+
+.md-vs {
+  font-size: 14px;
+  color: var(--chalk-dim);
+  font-weight: 600;
+}
+
+.md-league {
+  font-size: 11px;
+  color: var(--chalk-dim);
+  margin-top: 4px;
+}
+
+.md-section {
+  margin-bottom: 28px;
+}
+
+.md-preview-note {
+  font-size: 12px;
+  color: var(--chalk-dim);
+  margin: 0 0 14px;
+}
+
+.md-market-group {
+  margin-bottom: 14px;
+}
+
+.md-market-label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--chalk);
+  margin-bottom: 6px;
+}
+
+.md-market-row {
+  display: flex;
+  gap: 8px;
+}
+
+.md-market-box {
+  flex: 1;
+  background: var(--surface-alt);
+  border: 1px solid var(--pitch-line);
+  border-radius: var(--radius-pill);
+  padding: 8px 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12.5px;
+  color: var(--chalk-dim);
+}
+
+.md-market-box strong {
+  color: var(--chalk);
+  font-size: 14px;
+}
+
+.md-stat-row {
+  display: grid;
+  grid-template-columns: 30px 1fr 30px;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.md-stat-value {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--chalk);
+  text-align: center;
+}
+
+.md-stat-bars {
+  display: grid;
+  grid-template-columns: 1fr 90px 1fr;
+  align-items: center;
+  gap: 8px;
+}
+
+.md-stat-label {
+  font-size: 10.5px;
+  color: var(--chalk-dim);
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.md-stat-bar-wrap {
+  height: 6px;
+  background: var(--pitch-line);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.md-stat-bar-wrap--home {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.md-stat-bar {
+  height: 100%;
+  border-radius: 3px;
+}
+
+.md-stat-bar--home {
+  background: var(--gold);
+}
+
+.md-stat-bar--away {
+  background: var(--chalk-dim);
+}
