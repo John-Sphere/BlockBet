@@ -12,6 +12,13 @@ const OTHER_LINKS = [
   { to:"/admin",        icon:"⚙️", label:"Admin Panel", adminOnly:true },
 ];
 
+const OTHER_SPORTS = [
+  { to:"/coming-soon/basketball", icon:"🏀", label:"Basketball" },
+  { to:"/coming-soon/tennis",     icon:"🎾", label:"Tennis" },
+  { to:"/coming-soon/darts",      icon:"🎯", label:"Darts" },
+  { to:"/coming-soon/casino",     icon:"🎰", label:"Casino" },
+];
+
 export function Sidebar() {
   const { pathname }              = useLocation();
   const [searchParams]            = useSearchParams();
@@ -184,6 +191,24 @@ export function Sidebar() {
             </Link>
           </div>
         )}
+
+        <div style={{ height: 1, background: "var(--pitch-line)", margin: "8px 18px" }} />
+
+        {OTHER_SPORTS.map(s => {
+          const active = pathname === s.to;
+          return (
+            <Link key={s.to} to={s.to} style={navItemStyle(active)}>
+              <span style={{ fontSize:18, flexShrink:0 }}>{s.icon}</span>
+              <span style={{ flex:1 }}>{s.label}</span>
+              <span style={{
+                fontSize:8, fontWeight:800, letterSpacing:0.3, padding:"2px 5px",
+                borderRadius:5, border:"1px solid var(--pitch-line)", color:"var(--chalk-dim)",
+              }}>
+                SOON
+              </span>
+            </Link>
+          );
+        })}
 
         <div style={{ height: 1, background: "var(--pitch-line)", margin: "8px 18px" }} />
 
