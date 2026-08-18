@@ -411,6 +411,15 @@ export function initMatchManager() {
   chainInterval = setInterval(syncChainIds, CHAIN_SYNC_MS);
   syncChainIds();
 
+  // Freeze matches while the device has no connection — the display
+  // shouldn't silently keep advancing when there's no real way to
+  // reach the chain anyway. Resumes automatically once back online.
+  if (typeof window !== "undefined") {
+    if (!navigator.onLine) paused = true;
+    window.addEventListener("offline", pauseEngine);
+    window.addEventListener("online", resumeEngine);
+  }
+
   emit();
 }
 
