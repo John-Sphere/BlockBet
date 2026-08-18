@@ -107,22 +107,48 @@ export function updateMatchPool(matchId, selection, amount) {
 }
 
 // ── CHAIN SYNC (on-demand, called from BetSlipContext) ───────
-export async function ensureMatchOnChain(localMatchId, homeTeam, awayTeam) {
-  try {
-    const res = await fetch(
-      `/api/ensure-match?home=${encodeURIComponent(homeTeam)}&away=${encodeURIComponent(awayTeam)}`
-    );
-    if (!res.ok) return null;
-    const data = await res.json();
-    if (data.matchId === undefined) return null;
-    matchState = matchState.map((m) =>
-      m.id === localMatchId ? { ...m, chainMatchId: data.matchId } : m
-    );
-    emit();
-    return data.matchId;
-  } catch {
-    return null;
+// Retries a couple of times before giving up — a single network blip
+// or transient server hiccup shouldn't leave a match permanently
+// stuck on "Syncing to chain" with no second chance.
+//
+// Also queued: if someone adds several matches to their bet slip in
+// quick succession, firing all those sync requests at once causes
+// them to collide with each other over transaction ordering on the
+// server. Chaining them through this queue makes them run one at a
+// time from this browser instead.
+let syncQueue = Promise.resolve();
+
+export function ensureMatchOnChain(localMatchId, homeTeam, awayTeam) {
+  const run = syncQueue.then(() => ensureMatchOnChainInner(localMatchId, homeTeam, awayTeam));
+  // Keep the queue alive even if this particular call fails, so one
+  // failure doesn't block everything queued after it.
+  syncQueue = run.catch(() => {});
+  return run;
+}
+
+async function ensureMatchOnChainInner(localMatchId, homeTeam, awayTeam) {
+  const MAX_ATTEMPTS = 3;
+
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    try {
+      const res = await fetch(
+        `/api/ensure-match?home=${encodeURIComponent(homeTeam)}&away=${encodeURIComponent(awayTeam)}`
+      );
+      if (!res.ok) throw new Error(`ensure-match responded ${res.status}`);
+      const data = await res.json();
+      if (data.matchId === undefined) throw new Error("no matchId in response");
+
+      matchState = matchState.map((m) =>
+        m.id === localMatchId ? { ...m, chainMatchId: data.matchId } : m
+      );
+      emit();
+      return data.matchId;
+    } catch (err) {
+      if (attempt === MAX_ATTEMPTS) return null;
+      await new Promise((resolve) => setTimeout(resolve, 800 * attempt));
+    }
   }
+  return null;
 }
 
 // Called the moment a match that was actually synced to chain (i.e.
