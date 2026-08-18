@@ -106,7 +106,7 @@ export function Navbar() {
             className="bb-faucet-link"
             title="Get free testnet USDC on Arc Testnet"
           >
-            💧 Get USDC
+            💧<span className="bb-faucet-text"> Get USDC</span>
           </a>
 
           {!connected ? (
