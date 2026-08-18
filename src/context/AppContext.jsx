@@ -10,7 +10,7 @@ function getInitialTheme() {
   return window.matchMedia?.("(prefers-color-scheme: dark)").matches ? "dark" : "light";
 }
 
-const init = { sidebarOpen: true, toasts: [], theme: getInitialTheme() };
+const init = { sidebarOpen: false, toasts: [], theme: getInitialTheme() };
 
 function reducer(state, action) {
   switch (action.type) {

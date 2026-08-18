@@ -154,7 +154,8 @@
 
 @media (max-width: 640px) {
   .bb-faucet-link {
-    display: none; /* keep the mobile navbar uncluttered — faucet is a secondary/dev action */
+    padding: 6px 10px;
+    font-size: 11px;
   }
 }
 
