@@ -3,6 +3,7 @@ import { useApp }  from "../../context/AppContext";
 import { Navbar }  from "./Navbar";
 import { Sidebar } from "./Sidebar";
 import { MobileTabBar } from "./MobileTabBar";
+import { OfflineBanner } from "./OfflineBanner";
 
 export function Layout({ children }) {
   const { sidebarOpen } = useApp();
@@ -12,6 +13,7 @@ export function Layout({ children }) {
   return (
     <div style={{ minHeight:"100vh", display:"flex", flexDirection:"column" }}>
       <Navbar />
+      <OfflineBanner />
       <div style={{ display:"flex", flex:1, paddingTop:"var(--nav-h)" }}>
         {!isHome && <Sidebar />}
         <main
