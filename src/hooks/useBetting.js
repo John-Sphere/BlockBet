@@ -100,8 +100,19 @@ export function useBetting() {
   // once ("request exceeded max allowed range"). Search backward from
   // the current block in bounded chunks instead of asking for the
   // entire chain history in one call.
+  //
+  // MetaMask's own RPC connection separately rate-limits rapid bursts
+  // of requests — with two event types x many chunks, firing them
+  // back-to-back with no pause was tripping that limit. A short delay
+  // between each chunk, and a smaller total lookback, keeps this
+  // comfortably under whatever burst limit MetaMask enforces.
   const CHUNK_SIZE = 1000;
-  const MAX_CHUNKS = 20; // covers 20,000 blocks of lookback
+  const MAX_CHUNKS = 8; // covers 8,000 blocks of lookback
+  const CHUNK_DELAY_MS = 250;
+
+  function sleep(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
 
   async function queryFilterChunked(contract, filter) {
     const provider = contract.runner.provider;
@@ -119,6 +130,7 @@ export function useBetting() {
         // RPC issue) — skip it rather than aborting the whole search.
       }
       toBlock = fromBlock - 1;
+      if (toBlock > 0) await sleep(CHUNK_DELAY_MS);
     }
     return events;
   }
@@ -163,6 +175,7 @@ export function useBetting() {
         won: resolved && Number(result) === prediction,
         txHash: ev.transactionHash,
       });
+      await sleep(150);
     }
 
     const accumulators = [];
@@ -179,6 +192,7 @@ export function useBetting() {
         const [matchId, prediction] = await contract.getAccumulatorLeg(accId, i);
         const [homeTeam, awayTeam, , , , resolved, result] = await contract.getMatch(matchId);
         legs.push({ matchId: Number(matchId), prediction: Number(prediction), homeTeam, awayTeam, resolved, result: Number(result) });
+        await sleep(150);
       }
 
       accumulators.push({
@@ -191,6 +205,7 @@ export function useBetting() {
         legs,
         txHash: ev.transactionHash,
       });
+      await sleep(150);
     }
 
     return {
