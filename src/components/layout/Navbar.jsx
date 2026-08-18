@@ -77,11 +77,8 @@ export function Navbar() {
             Live
             {liveCount > 0 && <span className="bb-navbar-live-badge">LIVE</span>}
           </NavLink>
-          <NavLink to="/history" className="bb-navbar-link">
-            History
-          </NavLink>
-          <NavLink to="/leaderboard" className="bb-navbar-link">
-            Table
+          <NavLink to="/football?hot=1" className="bb-navbar-link">
+            🔥 Hot games
           </NavLink>
         </nav>
       )}

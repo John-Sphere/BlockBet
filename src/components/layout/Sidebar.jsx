@@ -181,14 +181,6 @@ export function Sidebar() {
                 })}
               </div>
             )}
-
-            <Link
-              to="/football?hot=1"
-              style={{ ...navItemStyle(onFootball && isHotView), fontSize: 12, padding: "9px 18px 9px 30px" }}
-            >
-              <span>🔥</span>
-              <span>Hot games</span>
-            </Link>
           </div>
         )}
 
