@@ -3,16 +3,6 @@
   position: relative;
 }
 
-.bb-hero-squad-image {
-  width: 100%;
-  max-height: 360px;
-  object-fit: cover;
-  object-position: top center;
-  border-radius: var(--radius-card);
-  margin-bottom: 20px;
-  display: block;
-}
-
 .bb-hero-title {
   color: var(--chalk);
   font-family: var(--font-display);
