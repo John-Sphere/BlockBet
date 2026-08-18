@@ -1,0 +1,82 @@
+.wp-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 600;
+  background: rgba(11, 21, 38, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.wp-modal {
+  background: var(--pitch-card);
+  border: 1px solid var(--pitch-line);
+  border-radius: var(--radius-card);
+  width: 320px;
+  max-width: calc(100vw - 40px);
+  overflow: hidden;
+}
+
+.wp-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--pitch-line);
+  font-weight: 700;
+  color: var(--chalk);
+  font-size: 15px;
+}
+
+.wp-close {
+  background: none;
+  border: none;
+  color: var(--chalk-dim);
+  font-size: 22px;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.wp-close:hover {
+  color: var(--chalk);
+}
+
+.wp-list {
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.wp-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--pitch-dark);
+  border: 1px solid var(--pitch-line);
+  border-radius: var(--radius-pill);
+  padding: 12px 14px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--chalk);
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+}
+
+.wp-item:hover {
+  border-color: var(--gold);
+}
+
+.wp-item-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+
+.wp-item-icon--fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+}
