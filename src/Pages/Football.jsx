@@ -49,16 +49,7 @@ export default function Football() {
   return (
     <div>
       <section className="bb-hero">
-        <div className="eyebrow">Live formation · Arc testnet</div>
-        <h1 className="bb-hero-title">
-          Read the pitch.
-          <br />
-          <span>Back the play.</span>
-        </h1>
-        <p className="bb-hero-sub">
-          Odds set from real club form, drawn out like a manager's
-          chalkboard. Settle instantly in USDC.
-        </p>
+        <img src="/squad-hero.jpg" alt="BLOCKBET" className="bb-hero-squad-image" />
 
         <svg width="100%" height="110" viewBox="0 0 400 110" aria-hidden="true">
           {/* Pitch outline */}
