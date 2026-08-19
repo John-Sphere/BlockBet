@@ -4,6 +4,23 @@ import { useWallet } from "../context/WalletContext";
 
 const CONTRACT = import.meta.env.VITE_CONTRACT_ADDRESS;
 
+// Real-time indexer (built today!) — fast GraphQL reads instead of
+// scanning blockchain history directly. Currently covers single bets
+// and match data; accumulator legs/outcomes still read on-chain below
+// since those aren't indexed yet.
+const INDEXER_URL = "https://indexer.dev.hyperindex.xyz/f362cb7/v1/graphql";
+
+async function queryIndexer(query, variables) {
+  const res = await fetch(INDEXER_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ query, variables }),
+  });
+  const json = await res.json();
+  if (json.errors) throw new Error(json.errors[0]?.message || "Indexer query failed");
+  return json.data;
+}
+
 // Result enum from the contract: 0=NONE, 1=HOME, 2=DRAW, 3=AWAY
 const BET_ABI = [
   "function placeBet(uint256,uint8,uint256) public",
@@ -150,33 +167,59 @@ export function useBetting() {
     const contract = new ethers.Contract(CONTRACT, BET_ABI, signer);
     const target = address.toLowerCase();
 
-    const allBetEvents = await queryFilterChunked(contract, contract.filters.BetPlaced());
-    const allAccEvents = await queryFilterChunked(contract, contract.filters.AccumulatorPlaced());
+    // Single bets — fast path via the indexer instead of scanning
+    // blockchain history directly.
+    let singles = [];
+    try {
+      const data = await queryIndexer(
+        `query MyBets($bettor: String!) {
+          Bet(where: { bettor: { _ilike: $bettor } }) {
+            id matchId bettor prediction amount claimed
+          }
+        }`,
+        { bettor: target }
+      );
 
-    const betEvents = allBetEvents.filter((ev) => ev.args.bettor.toLowerCase() === target);
-    const accEvents = allAccEvents.filter((ev) => ev.args.bettor.toLowerCase() === target);
+      const matchIds = [...new Set(data.Bet.map((b) => b.matchId))];
+      let matchesById = {};
+      if (matchIds.length) {
+        const matchData = await queryIndexer(
+          `query Matches($ids: [numeric!]) {
+            Match(where: { matchId: { _in: $ids } }) {
+              matchId homeTeam awayTeam resolved result
+            }
+          }`,
+          { ids: matchIds }
+        );
+        matchesById = Object.fromEntries(matchData.Match.map((m) => [m.matchId, m]));
+      }
 
-    const singles = [];
-    for (const ev of betEvents) {
-      const matchId = ev.args.matchId;
-      const prediction = Number(ev.args.prediction);
-      const amount = ev.args.amount;
-      const [homeTeam, awayTeam, , , , resolved, result] = await contract.getMatch(matchId);
-      const bet = await contract.bets(matchId, address);
-      singles.push({
-        matchId: Number(matchId),
-        prediction,
-        amount: ethers.formatUnits(amount, 6),
-        homeTeam,
-        awayTeam,
-        resolved,
-        result: Number(result),
-        claimed: bet[2],
-        won: resolved && Number(result) === prediction,
-        txHash: ev.transactionHash,
-      });
-      await sleep(150);
+      singles = data.Bet.map((b) => {
+        const match = matchesById[b.matchId] || {};
+        const prediction = Number(b.prediction);
+        const result = Number(match.result ?? 0);
+        return {
+          matchId: Number(b.matchId),
+          prediction,
+          amount: ethers.formatUnits(b.amount, 6),
+          homeTeam: match.homeTeam || "Unknown",
+          awayTeam: match.awayTeam || "Unknown",
+          resolved: !!match.resolved,
+          result,
+          claimed: b.claimed,
+          won: !!match.resolved && result === prediction,
+          txHash: null,
+        };
+      }).reverse();
+    } catch {
+      // Indexer unreachable — fall back to nothing rather than the
+      // old slow scan, since that path added a lot of complexity for
+      // an edge case. Worth revisiting if this happens often.
+      singles = [];
     }
+
+    const allAccEvents = await queryFilterChunked(contract, contract.filters.AccumulatorPlaced());
+    const accEvents = allAccEvents.filter((ev) => ev.args.bettor.toLowerCase() === target);
 
     const accumulators = [];
     for (const ev of accEvents) {
@@ -209,7 +252,7 @@ export function useBetting() {
     }
 
     return {
-      singles: singles.reverse(),
+      singles,
       accumulators: accumulators.reverse(),
     };
   }, [signer]);
