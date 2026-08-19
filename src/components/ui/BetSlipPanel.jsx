@@ -11,7 +11,7 @@ export function BetSlipPanel() {
   const { selections, removeSelection, clearAll, open, setOpen } = useBetSlip();
   const { placeBet, placeAccumulator, placing } = useBetting();
   const { addToast } = useApp();
-  const { connected, connect } = useWallet();
+  const { connected, connect, balance } = useWallet();
 
   const [mode, setMode] = useState("single");
   const [stakes, setStakes] = useState({});
@@ -52,11 +52,16 @@ export function BetSlipPanel() {
       addToast("Enter a stake amount first.", "error");
       return;
     }
+    if (Number(amount) > Number(balance)) {
+      addToast(`Not enough USDC \u2014 you have ${Number(balance).toFixed(2)}, need ${Number(amount).toFixed(2)}.`, "error");
+      return;
+    }
     try {
       const result = await placeBet({
         matchId: sel.chainMatchId,
         selection: SELECTION_CODE[sel.side],
         amount,
+        odds: sel.odds,
       });
       if (result?.success) {
         addToast(`Bet placed on ${sel.side === "draw" ? "draw" : sel.side === "home" ? sel.homeTeam : sel.awayTeam}.`, "success");
@@ -88,6 +93,10 @@ export function BetSlipPanel() {
     }
     if (!multiStake || Number(multiStake) <= 0) {
       addToast("Enter a stake amount first.", "error");
+      return;
+    }
+    if (Number(multiStake) > Number(balance)) {
+      addToast(`Not enough USDC \u2014 you have ${Number(balance).toFixed(2)}, need ${Number(multiStake).toFixed(2)}.`, "error");
       return;
     }
     try {

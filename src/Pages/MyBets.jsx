@@ -30,7 +30,7 @@ function accStatus(acc) {
   return { label: "Lost", tone: "danger" };
 }
 
-function SingleCard({ bet, onClaim, claiming }) {
+function SingleCard({ bet, onClaim, claiming, onCashOut, cashingOut }) {
   const status = singleStatus(bet);
   return (
     <Card className="mb-item">
@@ -49,6 +49,11 @@ function SingleCard({ bet, onClaim, claiming }) {
       {bet.resolved && bet.won && !bet.claimed && (
         <button className="btn-gold mb-claim-btn" onClick={() => onClaim(bet.matchId)} disabled={claiming}>
           {claiming ? "Claiming…" : "Claim winnings"}
+        </button>
+      )}
+      {!bet.resolved && !bet.cashedOut && (
+        <button className="btn-outline mb-claim-btn" onClick={() => onCashOut(bet.matchId)} disabled={cashingOut}>
+          {cashingOut ? "Cashing out…" : "Cash out for stake back"}
         </button>
       )}
     </Card>
@@ -88,7 +93,7 @@ function AccCard({ acc, onClaim, claiming }) {
 
 export default function MyBets() {
   const { connected, address, connect } = useWallet();
-  const { getMyBets, claimWinnings, claimAccumulator, claiming } = useBetting();
+  const { getMyBets, claimWinnings, claimAccumulator, cashOutBet, claiming, cashingOut } = useBetting();
   const { addToast } = useApp();
 
   const [tab, setTab] = useState("open"); // "open" | "history"
@@ -123,6 +128,18 @@ export default function MyBets() {
       }
     } catch (e) {
       addToast(e?.message || "Claim failed.", "error");
+    }
+  }
+
+  async function handleCashOut(matchId) {
+    try {
+      const result = await cashOutBet(matchId);
+      if (result?.success) {
+        addToast(`Cashed out ${result.amount} USDC.`, "success");
+        load();
+      }
+    } catch (e) {
+      addToast(e?.message || "Cash out failed.", "error");
     }
   }
 
@@ -208,7 +225,7 @@ export default function MyBets() {
           <div className="eyebrow" style={{ marginBottom: 10 }}>Single bets</div>
           <div className="mb-list">
             {shownSingles.map((bet) => (
-              <SingleCard key={bet.matchId + bet.txHash} bet={bet} onClaim={handleClaimSingle} claiming={claiming} />
+              <SingleCard key={bet.matchId + bet.txHash} bet={bet} onClaim={handleClaimSingle} claiming={claiming} onCashOut={handleCashOut} cashingOut={cashingOut} />
             ))}
           </div>
         </>

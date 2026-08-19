@@ -8,7 +8,7 @@ const CONTRACT = import.meta.env.VITE_CONTRACT_ADDRESS;
 // scanning blockchain history directly. Currently covers single bets
 // and match data; accumulator legs/outcomes still read on-chain below
 // since those aren't indexed yet.
-const INDEXER_URL = "https://indexer.dev.hyperindex.xyz/f362cb7/v1/graphql";
+const INDEXER_URL = "https://indexer.dev.hyperindex.xyz/c5d5150/v1/graphql";
 
 async function queryIndexer(query, variables) {
   const res = await fetch(INDEXER_URL, {
@@ -23,8 +23,9 @@ async function queryIndexer(query, variables) {
 
 // Result enum from the contract: 0=NONE, 1=HOME, 2=DRAW, 3=AWAY
 const BET_ABI = [
-  "function placeBet(uint256,uint8,uint256) public",
+  "function placeBet(uint256,uint8,uint256,uint256) public",
   "function claimWinnings(uint256) public",
+  "function cashOutBet(uint256,uint256,uint256,bytes32,bytes) public",
   "function getMatch(uint256) view returns (string,string,uint256,uint256,uint256,bool,uint8)",
   "function matchCount() view returns (uint256)",
   "function placeAccumulator(uint256[],uint8[],uint256,uint256) public",
@@ -33,9 +34,10 @@ const BET_ABI = [
   "function getAccumulatorLegCount(uint256) view returns (uint256)",
   "function getAccumulatorLeg(uint256,uint256) view returns (uint256,uint8)",
   "function accumulatorCount() view returns (uint256)",
-  "function bets(uint256,address) view returns (uint256,uint8,bool)",
+  "function bets(uint256,address) view returns (uint256,uint8,uint256,bool,bool)",
   "function accumulators(uint256) view returns (address,uint256,uint256,bool)",
-  "event BetPlaced(uint256 matchId, address bettor, uint8 prediction, uint256 amount)",
+  "event BetPlaced(uint256 matchId, address bettor, uint8 prediction, uint256 amount, uint256 oddsBps)",
+  "event BetCashedOut(uint256 matchId, address bettor, uint256 amount)",
   "event AccumulatorPlaced(uint256 accId, address bettor, uint256 legCount, uint256 stake, uint256 combinedOddsBps)",
 ];
 
@@ -43,21 +45,55 @@ export function useBetting() {
   const { signer, approveUsdc, refreshBalance, usdcAddress } = useWallet();
   const [placing,  setPlacing]  = useState(false);
   const [claiming, setClaiming] = useState(false);
+  const [cashingOut, setCashingOut] = useState(false);
 
-  const placeBet = useCallback(async ({ matchId, selection, amount }) => {
+  // odds: the decimal odds shown on screen (e.g. 2.19) — locked in as
+  // basis points at placement time (2.19 -> 21900), matching how
+  // accumulators already worked.
+  const placeBet = useCallback(async ({ matchId, selection, amount, odds }) => {
     if (!signer) throw new Error("Wallet not connected");
     if (!amount || Number(amount) <= 0) throw new Error("Invalid stake amount");
+    if (!odds || Number(odds) <= 0) throw new Error("Invalid odds");
     setPlacing(true);
     try {
       await approveUsdc(CONTRACT, amount);
       const contract = new ethers.Contract(CONTRACT, BET_ABI, signer);
       const amtUnits = ethers.parseUnits(String(amount), 6);
-      const tx = await contract.placeBet(matchId, selection, amtUnits);
+      const oddsBps = Math.round(Number(odds) * 10000);
+      const tx = await contract.placeBet(matchId, selection, amtUnits, oddsBps);
       const receipt = await tx.wait();
       await refreshBalance();
       return { success:true, txHash:receipt.hash };
     } finally { setPlacing(false); }
   }, [signer, approveUsdc, refreshBalance]);
+
+  // Fetches a signed cashout quote from the server, then submits it
+  // to the contract. Two network round-trips: get the quote, then
+  // spend it — the quote itself is only valid for a couple minutes.
+  const cashOutBet = useCallback(async (matchId) => {
+    if (!signer) throw new Error("Wallet not connected");
+    const address = await signer.getAddress();
+    setCashingOut(true);
+    try {
+      const res = await fetch(`/api/cashout-quote?matchId=${matchId}&address=${address}`);
+      const quote = await res.json();
+      if (!res.ok) throw new Error(quote.error || "Couldn't get a cashout quote");
+
+      const contract = new ethers.Contract(CONTRACT, BET_ABI, signer);
+      const tx = await contract.cashOutBet(
+        matchId,
+        quote.offeredAmount,
+        quote.deadline,
+        quote.nonce,
+        quote.signature
+      );
+      const receipt = await tx.wait();
+      await refreshBalance();
+      return { success: true, txHash: receipt.hash, amount: ethers.formatUnits(quote.offeredAmount, 6) };
+    } finally {
+      setCashingOut(false);
+    }
+  }, [signer, refreshBalance]);
 
   const claimWinnings = useCallback(async (matchId) => {
     if (!signer) throw new Error("Wallet not connected");
@@ -174,7 +210,7 @@ export function useBetting() {
       const data = await queryIndexer(
         `query MyBets($bettor: String!) {
           Bet(where: { bettor: { _ilike: $bettor } }) {
-            id matchId bettor prediction amount claimed
+            id matchId bettor prediction amount claimed oddsBps cashedOut
           }
         }`,
         { bettor: target }
@@ -207,6 +243,7 @@ export function useBetting() {
           resolved: !!match.resolved,
           result,
           claimed: b.claimed,
+          cashedOut: b.cashedOut,
           won: !!match.resolved && result === prediction,
           txHash: null,
         };
@@ -258,9 +295,9 @@ export function useBetting() {
   }, [signer]);
 
   return {
-    placeBet, claimWinnings,
+    placeBet, claimWinnings, cashOutBet,
     placeAccumulator, claimAccumulator, checkAccumulatorOutcome,
     getMyBets,
-    placing, claiming,
+    placing, claiming, cashingOut,
   };
 }
