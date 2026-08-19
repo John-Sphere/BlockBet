@@ -23,6 +23,7 @@ import { generateLeagueFixtures, shuffleFixtures } from "./fixtureGenerator.js";
 import { LEAGUES, CLUBS }      from "../data/clubs.js";
 import { fetchActiveChainMatches, matchKey } from "./chainSync.js";
 import { recordResult, getFormRating } from "./standings.js";
+import { startLiveSync, stopLiveSync } from "./liveEvents.js";
 
 // ── TIMING ─────────────────────────────────────────────────
 const BETTING_WINDOW_MS = 2   * 60 * 1000;
@@ -30,7 +31,7 @@ const HALF_DURATION_MS  = 3.5 * 60 * 1000; // was 2 min — slowed down per requ
 const HT_DURATION_MS    = 1.5 * 60 * 1000; // was 1 min
 const RESULT_HOLD_MS    = 2   * 60 * 1000;
 const STAGGER_MS        = 20  * 1000;
-const CHAIN_SYNC_MS     = 45  * 1000;
+const CHAIN_SYNC_MS     = 3 * 60 * 1000; // fallback only now that WebSocket handles real-time updates
 
 // A full round needs to comfortably fit: the last (most-staggered)
 // match's kickoff delay + its full 90-minute cycle + the result-hold
@@ -210,6 +211,40 @@ async function syncChainIds() {
     };
   });
   if (changed) emit();
+}
+
+// Called instantly the moment a BetPlaced event streams in over the
+// WebSocket — from ANY visitor's bet, not just this browser's own.
+// This is what makes odds feel genuinely live instead of updating
+// once every 45 seconds.
+function applyLiveBetEvent(chainMatchId, selection, amountUsdc) {
+  let changed = false;
+  matchState = matchState.map((m) => {
+    if (m.chainMatchId !== chainMatchId) return m;
+    changed = true;
+    const poolHome = m.poolHome + (selection === 1 ? amountUsdc : 0);
+    const poolDraw = m.poolDraw + (selection === 2 ? amountUsdc : 0);
+    const poolAway = m.poolAway + (selection === 3 ? amountUsdc : 0);
+    return {
+      ...m,
+      poolHome, poolDraw, poolAway,
+      oddsHome: poolOdds(poolHome, poolDraw, poolAway, "home") ?? m.oddsHome,
+      oddsDraw: poolOdds(poolHome, poolDraw, poolAway, "draw") ?? m.oddsDraw,
+      oddsAway: poolOdds(poolHome, poolDraw, poolAway, "away") ?? m.oddsAway,
+      hasRealPool: true,
+    };
+  });
+  if (changed) emit();
+}
+
+// Called instantly when a MatchResolved event streams in — mainly
+// useful so My Bets / claim-eligibility reflects reality immediately
+// rather than waiting for the next periodic check.
+function applyLiveResolution(chainMatchId) {
+  matchState = matchState.map((m) =>
+    m.chainMatchId === chainMatchId ? { ...m, chainResolved: true } : m
+  );
+  emit();
 }
 
 // ── CLUB OVERRIDE + FORM ─────────────────────────────────────
@@ -434,6 +469,16 @@ export function initMatchManager() {
 
   tickInterval = setInterval(tick, 1000);
 
+  // WebSocket-based live sync — updates instantly as anyone's bets
+  // land on-chain, rather than waiting for the next periodic check.
+  startLiveSync({
+    onBet: applyLiveBetEvent,
+    onResolved: applyLiveResolution,
+  });
+
+  // Kept as a fallback: the WebSocket handles real-time updates now,
+  // so this can run far less often — it exists purely to catch
+  // anything missed during a brief WebSocket disconnect/reconnect.
   chainInterval = setInterval(syncChainIds, CHAIN_SYNC_MS);
   syncChainIds();
 
@@ -452,6 +497,7 @@ export function initMatchManager() {
 export function stopMatchManager() {
   clearInterval(tickInterval);
   clearInterval(chainInterval);
+  stopLiveSync();
   initialized      = false;
   matchState        = [];
   fixtureListCache  = {};
