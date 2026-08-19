@@ -14,13 +14,40 @@ import { ethers } from "ethers";
 const ABI = [
   "function createMatch(string,string) public",
   "function matchCount() public view returns (uint256)",
-  "function getMatch(uint256) public view returns (string,string,uint256,uint256,uint256,bool,uint8)",
 ];
 
 const MAX_ATTEMPTS = 4;
+const INDEXER_URL = "https://indexer.dev.hyperindex.xyz/f362cb7/v1/graphql";
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+// Checks whether this fixture already exists via the indexer — one
+// fast database query instead of scanning up to 100 matches directly
+// on-chain, which was the majority of the delay before a bet could
+// sync. Falls back to "not found" (letting the flow create it fresh)
+// if the indexer itself is unreachable, rather than failing outright.
+async function findExistingMatch(home, away) {
+  try {
+    const res = await fetch(INDEXER_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        query: `query Find($home: String!, $away: String!) {
+          Match(where: { homeTeam: { _eq: $home }, awayTeam: { _eq: $away }, resolved: { _eq: false } }, limit: 1) {
+            matchId
+          }
+        }`,
+        variables: { home, away },
+      }),
+    });
+    const json = await res.json();
+    const match = json?.data?.Match?.[0];
+    return match ? Number(match.matchId) : null;
+  } catch {
+    return null;
+  }
 }
 
 export default async function handler(req, res) {
@@ -34,19 +61,9 @@ export default async function handler(req, res) {
     const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
     const contract = new ethers.Contract(process.env.BETTING_ADDRESS, ABI, wallet);
 
-    // Check if this exact fixture already exists and is still open —
-    // only scan recent matches, not the full history, since that grows
-    // heavier every round and eats into the RPC rate limit.
-    const count = await contract.matchCount();
-    const total = Number(count);
-    const MAX_SCAN = 100;
-    const startFrom = Math.max(1, total - MAX_SCAN + 1);
-    for (let i = total; i >= startFrom; i--) {
-      const m = await contract.getMatch(i);
-      const [mHome, mAway, , , , resolved] = m;
-      if (mHome === home && mAway === away && !resolved) {
-        return res.status(200).json({ matchId: i, created: false });
-      }
+    const existingMatchId = await findExistingMatch(home, away);
+    if (existingMatchId !== null) {
+      return res.status(200).json({ matchId: existingMatchId, created: false });
     }
 
     // Doesn't exist yet — create it, retrying on nonce/transaction
