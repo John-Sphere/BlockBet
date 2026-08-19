@@ -3,7 +3,6 @@ import { useState, useEffect } from "react";
 import { useWallet } from "../../context/WalletContext";
 import { useApp } from "../../context/AppContext";
 import { subscribe, initMatchManager } from "../../engine/matchManager";
-import { WalletPickerModal } from "../ui/WalletPickerModal";
 import "./Navbar.css";
 
 export function Navbar() {
@@ -11,19 +10,18 @@ export function Navbar() {
     connect,
     disconnect,
     connected,
+    connecting,
     wrongNet,
     shortAddr,
     balance,
     txPending,
     ensureArcNetwork,
-    availableWallets,
   } = useWallet();
   const { toggleSidebar, addToast, theme, toggleTheme } = useApp();
   const { pathname } = useLocation();
   const isHome = pathname === "/";
   const [liveCount, setLiveCount] = useState(0);
   const [switching, setSwitching] = useState(false);
-  const [showWalletPicker, setShowWalletPicker] = useState(false);
 
   useEffect(() => {
     initMatchManager();
@@ -41,24 +39,12 @@ export function Navbar() {
     try {
       const ok = await ensureArcNetwork();
       if (!ok) {
-        addToast("Couldn't switch network. Check MetaMask for a pending request, or switch manually.", "error");
+        addToast("Couldn't switch network. Check your wallet for a pending request, or switch manually.", "error");
       }
     } catch (e) {
       addToast(e?.message || "Network switch failed.", "error");
     } finally {
       setSwitching(false);
-    }
-  }
-
-  function handleConnectClick() {
-    // Only worth showing a picker if there's genuinely more than one
-    // wallet to choose between — otherwise just connect directly.
-    if (availableWallets.length > 1) {
-      setShowWalletPicker(true);
-    } else if (availableWallets.length === 1) {
-      connect(availableWallets[0].info.uuid);
-    } else {
-      connect();
     }
   }
 
@@ -122,8 +108,8 @@ export function Navbar() {
           </a>
 
           {!connected ? (
-            <button className="btn-gold" onClick={handleConnectClick} disabled={txPending}>
-              {txPending ? "Connecting…" : "Connect wallet"}
+            <button className="btn-gold" onClick={connect} disabled={txPending || connecting}>
+              {connecting ? "Connecting…" : "Connect wallet"}
             </button>
           ) : wrongNet ? (
             <button className="btn-outline bb-wrong-net" onClick={handleSwitchNetwork} disabled={switching}>
@@ -140,10 +126,6 @@ export function Navbar() {
             </div>
           )}
         </div>
-      )}
-
-      {showWalletPicker && (
-        <WalletPickerModal onClose={() => setShowWalletPicker(false)} />
       )}
     </header>
   );

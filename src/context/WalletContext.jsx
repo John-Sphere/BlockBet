@@ -1,20 +1,10 @@
-import { createContext, useContext, useState, useCallback, useEffect, useRef } from "react";
+import { createContext, useContext, useCallback, useEffect, useState } from "react";
 import { ethers } from "ethers";
+import { useAppKit } from "@reown/appkit/react";
+import { useAccount, useDisconnect, useWalletClient, useSwitchChain } from "wagmi";
+import { arcTestnet } from "../config/appkit";
 
 const Ctx = createContext(null);
-
-// Per Arc's official docs: Arc genuinely uses USDC as its native gas
-// token, represented at 18 decimals (not the 6 decimals the separate
-// USDC ERC-20 contract below uses for actual bet amounts — those are
-// two different things: this is what pays gas, USDC_ADDR below is
-// the token used inside the app for betting).
-const ARC_CHAIN = {
-  chainId: "0x4CEF52",
-  chainName: "Arc Testnet",
-  nativeCurrency: { name: "USDC", symbol: "USDC", decimals: 18 },
-  rpcUrls: ["https://rpc.testnet.arc.io"],
-  blockExplorerUrls: ["https://testnet.arcscan.app"],
-};
 
 const USDC_ADDR = "0x3600000000000000000000000000000000000000";
 const USDC_ABI  = [
@@ -22,36 +12,34 @@ const USDC_ABI  = [
   "function approve(address,uint256) returns (bool)",
 ];
 
+// Converts a wagmi/viem WalletClient into a real ethers.js Signer —
+// this is the bridge that lets every existing file (useBetting.js,
+// etc.) keep using plain ethers.Contract calls exactly as before,
+// completely unaware that the connection itself now goes through
+// wagmi/AppKit under the hood.
+function walletClientToSigner(walletClient) {
+  const { account, chain, transport } = walletClient;
+  const network = { chainId: chain.id, name: chain.name };
+  const provider = new ethers.BrowserProvider(transport, network);
+  return new ethers.JsonRpcSigner(provider, account.address);
+}
+
 export function WalletProvider({ children }) {
-  const [provider,   setProvider]   = useState(null);
-  const [signer,     setSigner]     = useState(null);
-  const [address,    setAddress]    = useState("");
-  const [shortAddr,  setShortAddr]  = useState("");
-  const [balance,    setBalance]    = useState("0.00");
-  const [connected,  setConnected]  = useState(false);
+  const { open } = useAppKit();
+  const { address, isConnected, chainId } = useAccount();
+  const { disconnect: wagmiDisconnect } = useDisconnect();
+  const { data: walletClient } = useWalletClient();
+  const { switchChainAsync } = useSwitchChain();
+
+  const [signer, setSigner] = useState(null);
+  const [provider, setProvider] = useState(null);
+  const [balance, setBalance] = useState("0.00");
   const [connecting, setConnecting] = useState(false);
-  const [wrongNet,   setWrongNet]   = useState(false);
-  const [txPending,  setTxPending]  = useState(false);
+  const [txPending, setTxPending] = useState(false);
 
-  // ── EIP-6963: detect every wallet extension installed, not just
-  // assume window.ethereum is MetaMask ──────────────────────────
-  const [availableWallets, setAvailableWallets] = useState([]);
-  const activeRawProvider = useRef(null); // the actual EIP-1193 object in use
-  const listenersAttached = useRef(null); // which raw provider currently has listeners
-
-  useEffect(() => {
-    function onAnnounce(event) {
-      setAvailableWallets((prev) => {
-        if (prev.some((w) => w.info.uuid === event.detail.info.uuid)) return prev;
-        return [...prev, event.detail];
-      });
-    }
-    window.addEventListener("eip6963:announceProvider", onAnnounce);
-    window.dispatchEvent(new Event("eip6963:requestProvider"));
-    return () => window.removeEventListener("eip6963:announceProvider", onAnnounce);
-  }, []);
-
-  const isArc = (cid) => parseInt(cid, 16) === 5042002;
+  const shortAddr = address ? address.slice(0,6) + "…" + address.slice(-4) : "";
+  const connected = isConnected && !!address;
+  const wrongNet = connected && chainId !== arcTestnet.id;
 
   const loadBalance = useCallback(async (addr, prov) => {
     try {
@@ -61,123 +49,50 @@ export function WalletProvider({ children }) {
     } catch { setBalance("0.00"); }
   }, []);
 
-  const ensureArcNetwork = useCallback(async () => {
-    const raw = activeRawProvider.current;
-    if (!raw) return false;
-    try {
-      await raw.request({
-        method:"wallet_switchEthereumChain",
-        params:[{ chainId: ARC_CHAIN.chainId }],
-      });
-      setWrongNet(false); return true;
-    } catch (e) {
-      if (e.code === 4902) {
-        try {
-          await raw.request({ method:"wallet_addEthereumChain", params:[ARC_CHAIN] });
-          setWrongNet(false); return true;
-        } catch { return false; }
-      }
-      return false;
-    }
-  }, []);
-
-  const handleAccountsChanged = useCallback(async (accs) => {
-    const raw = activeRawProvider.current;
-    if (!accs.length || !raw) { disconnect(); return; }
-    const prov = new ethers.BrowserProvider(raw);
-    const s    = await prov.getSigner();
-    setProvider(prov); setSigner(s);
-    setAddress(accs[0]);
-    setShortAddr(accs[0].slice(0,6) + "…" + accs[0].slice(-4));
-    await loadBalance(accs[0], prov);
-  }, [loadBalance]);
-
-  // Attaches accountsChanged/chainChanged listeners to whichever raw
-  // provider is currently active, detaching from any previous one so
-  // switching wallets doesn't leave stale listeners behind.
-  function attachListeners(raw) {
-    if (listenersAttached.current === raw) return;
-    if (listenersAttached.current) {
-      listenersAttached.current.removeListener?.("accountsChanged", handleAccountsChanged);
-    }
-    raw.on?.("accountsChanged", handleAccountsChanged);
-    raw.on?.("chainChanged", () => window.location.reload());
-    listenersAttached.current = raw;
-  }
-
+  // Whenever wagmi's wallet client changes (connect, account switch,
+  // network switch), rebuild the ethers signer/provider that the rest
+  // of the app actually uses.
   useEffect(() => {
-    const savedWalletId = localStorage.getItem("bb_wallet_id");
-    if (savedWalletId) silentReconnect(savedWalletId);
-    // Re-run once wallets have had a chance to announce themselves.
-  }, [availableWallets.length]);
-
-  function findRawProvider(walletId) {
-    if (walletId === "legacy") return window.ethereum || null;
-    const match = availableWallets.find((w) => w.info.uuid === walletId);
-    return match ? match.provider : null;
-  }
-
-  async function silentReconnect(walletId) {
-    const raw = findRawProvider(walletId);
-    if (!raw) return;
-    try {
-      const accs = await raw.request({ method:"eth_accounts" });
-      if (!accs.length) return;
-      attachListeners(raw);
-      activeRawProvider.current = raw;
-      const prov = new ethers.BrowserProvider(raw);
-      const net  = await prov.getNetwork();
-      setWrongNet(!isArc("0x" + net.chainId.toString(16)));
-      const s    = await prov.getSigner();
-      setProvider(prov); setSigner(s); setConnected(true);
-      setAddress(accs[0]);
-      setShortAddr(accs[0].slice(0,6) + "…" + accs[0].slice(-4));
-      await loadBalance(accs[0], prov);
-    } catch {}
-  }
-
-  // walletId: the uuid of a detected EIP-6963 wallet, or omitted to
-  // fall back to window.ethereum (legacy single-wallet behavior) —
-  // used when only one wallet is installed, so there's nothing to
-  // pick between.
-  const connect = useCallback(async (walletId) => {
-    const raw = walletId ? findRawProvider(walletId) : (window.ethereum || null);
-    if (!raw) {
-      window.open("https://metamask.io/download/", "_blank");
-      return { error:"No wallet found. Please install one." };
+    if (!walletClient || !address) {
+      setSigner(null);
+      setProvider(null);
+      return;
     }
+    const s = walletClientToSigner(walletClient);
+    setSigner(s);
+    setProvider(s.provider);
+    loadBalance(address, s.provider);
+  }, [walletClient, address, loadBalance]);
+
+  // Opens AppKit's connection modal — shows every detected browser
+  // extension wallet plus a WalletConnect QR option, all in one UI.
+  const connect = useCallback(async () => {
     setConnecting(true);
     try {
-      attachListeners(raw);
-      activeRawProvider.current = raw;
-      const prov = new ethers.BrowserProvider(raw);
-      await prov.send("eth_requestAccounts", []);
-      const net  = await prov.getNetwork();
-      const cid  = "0x" + net.chainId.toString(16);
-      if (!isArc(cid)) { await ensureArcNetwork(); }
-      else setWrongNet(false);
-      const s   = await prov.getSigner();
-      const a   = await s.getAddress();
-      setProvider(prov); setSigner(s); setConnected(true);
-      setAddress(a);
-      setShortAddr(a.slice(0,6) + "…" + a.slice(-4));
-      localStorage.setItem("bb_wallet", "1");
-      localStorage.setItem("bb_wallet_id", walletId || "legacy");
-      await loadBalance(a, prov);
-      return { success:true };
+      await open();
+      return { success: true };
     } catch (e) {
-      if (e.code === 4001) return { error:"Connection rejected." };
-      return { error:"Failed to connect wallet." };
-    } finally { setConnecting(false); }
-  }, [ensureArcNetwork, loadBalance, availableWallets]);
+      return { error: "Failed to open wallet connection." };
+    } finally {
+      setConnecting(false);
+    }
+  }, [open]);
 
-  function disconnect() {
-    setProvider(null); setSigner(null); setAddress(""); setShortAddr("");
-    setBalance("0.00"); setConnected(false); setWrongNet(false);
-    activeRawProvider.current = null;
-    localStorage.removeItem("bb_wallet");
-    localStorage.removeItem("bb_wallet_id");
-  }
+  const disconnect = useCallback(() => {
+    wagmiDisconnect();
+    setSigner(null);
+    setProvider(null);
+    setBalance("0.00");
+  }, [wagmiDisconnect]);
+
+  const ensureArcNetwork = useCallback(async () => {
+    try {
+      await switchChainAsync({ chainId: arcTestnet.id });
+      return true;
+    } catch {
+      return false;
+    }
+  }, [switchChainAsync]);
 
   const approveUsdc = useCallback(async (spender, amount) => {
     if (!signer) throw new Error("Wallet not connected");
@@ -185,8 +100,11 @@ export function WalletProvider({ children }) {
     setTxPending(true);
     try {
       const tx = await usdc.approve(spender, ethers.parseUnits(String(amount), 6));
-      await tx.wait(); return tx;
-    } finally { setTxPending(false); }
+      await tx.wait();
+      return tx;
+    } finally {
+      setTxPending(false);
+    }
   }, [signer]);
 
   const refreshBalance = useCallback(async () => {
@@ -201,7 +119,6 @@ export function WalletProvider({ children }) {
       connect, disconnect, ensureArcNetwork,
       approveUsdc, refreshBalance,
       usdcAddress: USDC_ADDR,
-      availableWallets, // list of { info: {uuid,name,icon,rdns}, provider } for the picker UI
     }}>
       {children}
     </Ctx.Provider>
