@@ -86,12 +86,16 @@ export function Navbar() {
 
       {isHome && (
         <button
-          className="bb-theme-toggle"
+          className={`bb-theme-switch ${theme === "dark" ? "bb-theme-switch--dark" : ""}`}
           onClick={toggleTheme}
+          role="switch"
+          aria-checked={theme === "dark"}
           aria-label={theme === "light" ? "Switch to dark mode" : "Switch to light mode"}
           title={theme === "light" ? "Switch to dark mode" : "Switch to light mode"}
         >
-          {theme === "light" ? "Dark" : "Light"}
+          <span className="bb-theme-switch-label bb-theme-switch-label--left">Light</span>
+          <span className="bb-theme-switch-label bb-theme-switch-label--right">Dark</span>
+          <span className="bb-theme-switch-thumb" />
         </button>
       )}
 

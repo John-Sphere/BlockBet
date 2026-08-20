@@ -115,23 +115,56 @@
   color: var(--chalk);
 }
 
-.bb-theme-toggle {
+.bb-theme-switch {
+  position: relative;
+  width: 84px;
+  height: 34px;
   background: var(--pitch-card);
   border: 1px solid var(--pitch-line);
-  border-radius: 50%;
-  width: 38px;
-  height: 38px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 16px;
+  border-radius: 20px;
   cursor: pointer;
-  transition: border-color 0.15s ease, transform 0.15s ease;
+  padding: 0;
+  transition: background 0.2s ease, border-color 0.2s ease;
 }
 
-.bb-theme-toggle:hover {
+.bb-theme-switch:hover {
   border-color: var(--gold);
-  transform: scale(1.05);
+}
+
+.bb-theme-switch-label {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  color: var(--chalk-dim);
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.bb-theme-switch-label--left {
+  left: 9px;
+}
+
+.bb-theme-switch-label--right {
+  right: 8px;
+}
+
+.bb-theme-switch-thumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--gold-bright), var(--gold));
+  box-shadow: 0 2px 6px -1px rgba(0,0,0,0.35);
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.bb-theme-switch--dark .bb-theme-switch-thumb {
+  transform: translateX(50px);
 }
 
 .bb-navbar-wallet {
@@ -190,6 +223,20 @@
   .btn-gold {
     padding: 9px 14px;
     font-size: 12px;
+  }
+  .bb-theme-switch {
+    width: 68px;
+    height: 30px;
+  }
+  .bb-theme-switch-thumb {
+    width: 22px;
+    height: 22px;
+  }
+  .bb-theme-switch--dark .bb-theme-switch-thumb {
+    transform: translateX(38px);
+  }
+  .bb-theme-switch-label {
+    font-size: 9px;
   }
 }
 
