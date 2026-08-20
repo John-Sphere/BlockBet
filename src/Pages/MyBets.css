@@ -66,6 +66,16 @@
 
 .mb-item-row strong { color: var(--chalk); }
 
+.mb-potential-win {
+  font-size: 13px;
+  color: var(--chalk-dim);
+  margin-top: 8px;
+}
+
+.mb-potential-win strong {
+  color: var(--win-green);
+}
+
 .mb-claim-btn {
   margin-top: 12px;
   padding: 8px 18px;

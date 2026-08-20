@@ -44,8 +44,16 @@ function SingleCard({ bet, onClaim, claiming, onCashOut, cashingOut }) {
       <div className="mb-item-row">
         <span>Pick: <strong>{PREDICTION_LABEL[bet.prediction]}</strong></span>
         <span>Stake: <strong>{bet.amount} USDC</strong></span>
+        {bet.odds > 0 && (
+          <span>Odds: <strong>{bet.odds.toFixed(2)}x</strong></span>
+        )}
         <Badge tone={status.tone}>{status.label}</Badge>
       </div>
+      {!bet.resolved && bet.potentialWin && (
+        <div className="mb-potential-win">
+          Potential win: <strong>{bet.potentialWin} USDC</strong>
+        </div>
+      )}
       {bet.resolved && bet.won && !bet.claimed && (
         <button className="btn-gold mb-claim-btn" onClick={() => onClaim(bet.matchId)} disabled={claiming}>
           {claiming ? "Claiming…" : "Claim winnings"}
@@ -82,6 +90,11 @@ function AccCard({ acc, onClaim, claiming }) {
       <div className="mb-item-row" style={{ marginTop: 8 }}>
         <span>Stake: <strong>{acc.stake} USDC</strong></span>
       </div>
+      {acc.outcome === 0 && (
+        <div className="mb-potential-win">
+          Potential win: <strong>{(Number(acc.stake) * acc.combinedOdds).toFixed(2)} USDC</strong>
+        </div>
+      )}
       {acc.outcome === 1 && !acc.claimed && (
         <button className="btn-gold mb-claim-btn" onClick={() => onClaim(acc.accId)} disabled={claiming}>
           {claiming ? "Claiming…" : "Claim winnings"}

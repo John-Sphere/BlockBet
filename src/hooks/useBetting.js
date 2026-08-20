@@ -195,10 +195,13 @@ export function useBetting() {
         const match = matchesById[b.matchId] || {};
         const prediction = Number(b.prediction);
         const result = Number(match.result ?? 0);
+        const odds = Number(b.oddsBps) / 10000;
         return {
           matchId: Number(b.matchId),
           prediction,
           amount: ethers.formatUnits(b.amount, 6),
+          odds,
+          potentialWin: (Number(ethers.formatUnits(b.amount, 6)) * odds).toFixed(2),
           homeTeam: match.homeTeam || "Unknown",
           awayTeam: match.awayTeam || "Unknown",
           resolved: !!match.resolved,
