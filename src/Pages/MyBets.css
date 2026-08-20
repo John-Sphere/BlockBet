@@ -76,6 +76,36 @@
   color: var(--win-green);
 }
 
+.mb-cashout-block {
+  margin-top: 12px;
+}
+
+.mb-cashout-live {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--surface-alt);
+  border: 1px solid var(--pitch-line);
+  border-radius: var(--radius-pill);
+  padding: 8px 12px;
+  font-size: 12px;
+  color: var(--chalk-dim);
+  margin-bottom: 8px;
+}
+
+.mb-cashout-value {
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.mb-cashout-up .mb-cashout-value {
+  color: var(--win-green);
+}
+
+.mb-cashout-down .mb-cashout-value {
+  color: var(--loss-red);
+}
+
 .mb-claim-btn {
   margin-top: 12px;
   padding: 8px 18px;

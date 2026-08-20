@@ -12,9 +12,38 @@ import { ClubBadge } from "../components/ui/ClubBadge";
 import { useWallet } from "../context/WalletContext";
 import { useBetting } from "../hooks/useBetting";
 import { useApp } from "../context/AppContext";
+import { subscribe, initMatchManager } from "../engine/matchManager";
 import "./MyBets.css";
 
 const PREDICTION_LABEL = { 1: "Home", 2: "Draw", 3: "Away" };
+
+// Same pricing model as api/cashout-quote.js — kept in sync so the
+// live estimate shown here matches what you'd actually get when you
+// click. The server independently recalculates and signs the real
+// value at cashout time; this is purely a live display.
+const MARGIN = 0.85;
+const LOSING_FLOOR = 0.05;
+
+function estimateCashout(bet, liveMatch) {
+  if (!liveMatch) return null;
+  const stakeAmount = Number(bet.amount);
+  const potentialWin = Number(bet.potentialWin);
+  const minute = liveMatch.minute ?? 0;
+  const certainty = Math.max(0, Math.min(1, minute / 90));
+
+  let currentResult;
+  if (liveMatch.homeScore > liveMatch.awayScore) currentResult = 1;
+  else if (liveMatch.awayScore > liveMatch.homeScore) currentResult = 3;
+  else currentResult = 2;
+
+  const onTrack = currentResult === bet.prediction;
+
+  const value = onTrack
+    ? stakeAmount + (potentialWin - stakeAmount) * certainty * MARGIN
+    : stakeAmount * Math.max(LOSING_FLOOR, 1 - certainty * MARGIN);
+
+  return { value: value.toFixed(2), onTrack, minute, homeScore: liveMatch.homeScore, awayScore: liveMatch.awayScore };
+}
 
 function singleStatus(bet) {
   if (!bet.resolved) return { label: "Pending", tone: "open" };
@@ -30,8 +59,9 @@ function accStatus(acc) {
   return { label: "Lost", tone: "danger" };
 }
 
-function SingleCard({ bet, onClaim, claiming, onCashOut, cashingOut }) {
+function SingleCard({ bet, onClaim, claiming, onCashOut, cashingOut, liveMatch }) {
   const status = singleStatus(bet);
+  const estimate = estimateCashout(bet, liveMatch);
   return (
     <Card className="mb-item">
       <div className="mb-item-teams">
@@ -60,9 +90,22 @@ function SingleCard({ bet, onClaim, claiming, onCashOut, cashingOut }) {
         </button>
       )}
       {!bet.resolved && !bet.cashedOut && (
-        <button className="btn-outline mb-claim-btn" onClick={() => onCashOut(bet.matchId)} disabled={cashingOut}>
-          {cashingOut ? "Cashing out…" : "Cash out for stake back"}
-        </button>
+        <div className="mb-cashout-block">
+          {estimate ? (
+            <div className={`mb-cashout-live ${estimate.onTrack ? "mb-cashout-up" : "mb-cashout-down"}`}>
+              <span>Live: {estimate.homeScore}–{estimate.awayScore} ({estimate.minute}')</span>
+              <span className="mb-cashout-value">{estimate.value} USDC</span>
+            </div>
+          ) : (
+            <div className="mb-cashout-live">
+              <span>Before kickoff</span>
+              <span className="mb-cashout-value">{bet.amount} USDC</span>
+            </div>
+          )}
+          <button className="btn-outline mb-claim-btn" onClick={() => onCashOut(bet.matchId)} disabled={cashingOut}>
+            {cashingOut ? "Cashing out…" : `Cash out for ~${estimate ? estimate.value : bet.amount} USDC`}
+          </button>
+        </div>
       )}
     </Card>
   );
@@ -113,6 +156,19 @@ export default function MyBets() {
   const [loading, setLoading] = useState(false);
   const [singles, setSingles] = useState([]);
   const [accumulators, setAccumulators] = useState([]);
+  const [liveMatches, setLiveMatches] = useState([]);
+
+  // Live match state, used to show a live-updating cashout estimate
+  // on each pending bet — cross-referenced by team names below.
+  useEffect(() => {
+    initMatchManager();
+    const unsub = subscribe((matches) => setLiveMatches(matches));
+    return unsub;
+  }, []);
+
+  function findLiveMatch(homeTeam, awayTeam) {
+    return liveMatches.find((m) => m.homeTeam === homeTeam && m.awayTeam === awayTeam) || null;
+  }
 
   const load = useCallback(async () => {
     if (!connected || !address) return;
@@ -238,7 +294,15 @@ export default function MyBets() {
           <div className="eyebrow" style={{ marginBottom: 10 }}>Single bets</div>
           <div className="mb-list">
             {shownSingles.map((bet) => (
-              <SingleCard key={bet.matchId + bet.txHash} bet={bet} onClaim={handleClaimSingle} claiming={claiming} onCashOut={handleCashOut} cashingOut={cashingOut} />
+              <SingleCard
+                key={bet.matchId + bet.txHash}
+                bet={bet}
+                onClaim={handleClaimSingle}
+                claiming={claiming}
+                onCashOut={handleCashOut}
+                cashingOut={cashingOut}
+                liveMatch={findLiveMatch(bet.homeTeam, bet.awayTeam)}
+              />
             ))}
           </div>
         </>
