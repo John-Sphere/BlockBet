@@ -200,7 +200,9 @@ export default function Football() {
 
                   {!isFinished && (
                     <div className="bb-odds-note">
-                      Fixed odds — locked in the moment you place your bet.
+                      {isLive
+                        ? "Live odds — moving with the match, locked in the moment you bet."
+                        : "Fixed odds — locked in the moment you place your bet."}
                     </div>
                   )}
                 </div>

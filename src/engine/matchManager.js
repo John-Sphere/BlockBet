@@ -17,7 +17,7 @@
  */
 
 import { simulateMatch }       from "./simulate.js";
-import { calculateOdds }       from "./oddsEngine.js";
+import { calculateOdds, calculateLiveOdds } from "./oddsEngine.js";
 import { calculateExtraMarkets } from "./marketsEngine.js";
 import { generateLeagueFixtures, shuffleFixtures } from "./fixtureGenerator.js";
 import { LEAGUES, CLUBS }      from "../data/clubs.js";
@@ -298,7 +298,7 @@ function createMatch(leagueId, leagueName, leagueFlag, fixture, round, baseTime,
     id:           `${leagueId}-${round}-${fixture.home.id}-${fixture.away.id}`,
     leagueId,
     leagueName,
-    leagueFlag:   leagueFlag || "🏆",
+    leagueFlag:   leagueFlag || "",
     homeTeam:     home.name,
     homeClubId:   home.id,
     homeLogo:     home.logo,
@@ -363,7 +363,11 @@ function tickMatch(match, now) {
       const vis       = getVisibleEvents(match.timeline, minute, false);
       const homeScore = vis.filter(e => e.type === "goal" && e.team === "home").length;
       const awayScore = vis.filter(e => e.type === "goal" && e.team === "away").length;
-      const updated   = { ...match, minute, visibleEvents: vis, homeScore, awayScore };
+      const liveOdds  = calculateLiveOdds(match.probabilities, minute, homeScore, awayScore);
+      const updated   = {
+        ...match, minute, visibleEvents: vis, homeScore, awayScore,
+        oddsHome: liveOdds.home, oddsDraw: liveOdds.draw, oddsAway: liveOdds.away,
+      };
       if (now >= match.htAt) return { ...updated, status: "halftime", minute: 45 };
       return updated;
     }
@@ -379,7 +383,11 @@ function tickMatch(match, now) {
       const vis       = getVisibleEvents(match.timeline, minute, true);
       const homeScore = vis.filter(e => e.type === "goal" && e.team === "home").length;
       const awayScore = vis.filter(e => e.type === "goal" && e.team === "away").length;
-      const updated   = { ...match, minute, visibleEvents: vis, homeScore, awayScore };
+      const liveOdds  = calculateLiveOdds(match.probabilities, minute, homeScore, awayScore);
+      const updated   = {
+        ...match, minute, visibleEvents: vis, homeScore, awayScore,
+        oddsHome: liveOdds.home, oddsDraw: liveOdds.draw, oddsAway: liveOdds.away,
+      };
       if (now >= match.ftAt) {
         const sim = match._sim;
         const finished = {
