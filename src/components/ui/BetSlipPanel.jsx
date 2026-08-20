@@ -192,9 +192,9 @@ export function BetSlipPanel() {
                   </div>
 
                   <div className="bet-slip-potential-win">
-                    Potential win (at today's pool): <strong>{(Number(stakeFor(sel.matchId) || 0) * (sel.odds || 0)).toFixed(2)} USDC</strong>
+                    Potential win: <strong>{(Number(stakeFor(sel.matchId) || 0) * (sel.odds || 0)).toFixed(2)} USDC</strong>
                     <div className="bet-slip-pool-note">
-                      Single bets pay out from the real pool at settlement — this changes as more people bet. Your Multiple bets lock in odds at placement.
+                      Odds are locked in the moment you place this bet — guaranteed, regardless of what anyone else bets.
                     </div>
                   </div>
                 </div>

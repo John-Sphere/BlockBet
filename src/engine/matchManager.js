@@ -197,16 +197,13 @@ async function syncChainIds() {
     return {
       ...m,
       chainMatchId,
+      // Kept as informational stats (e.g. "X USDC staked on this
+      // outcome") — no longer used to calculate the displayed odds,
+      // since single bets are fixed-odds now: whatever's shown when
+      // you click is locked in, regardless of pool volume.
       poolHome,
       poolDraw,
       poolAway,
-      // Once there's real money staked, prefer honest pool-derived
-      // odds over the ratings-based estimate; otherwise keep showing
-      // the estimate (Football.jsx labels it "Est." either way based
-      // on hasRealPool).
-      oddsHome: poolOdds(poolHome, poolDraw, poolAway, "home") ?? m.oddsHome,
-      oddsDraw: poolOdds(poolHome, poolDraw, poolAway, "draw") ?? m.oddsDraw,
-      oddsAway: poolOdds(poolHome, poolDraw, poolAway, "away") ?? m.oddsAway,
       hasRealPool,
     };
   });
@@ -215,22 +212,18 @@ async function syncChainIds() {
 
 // Called instantly the moment a BetPlaced event streams in over the
 // WebSocket — from ANY visitor's bet, not just this browser's own.
-// This is what makes odds feel genuinely live instead of updating
-// once every 45 seconds.
+// Updates the informational pool totals live; doesn't touch the
+// displayed odds since those are fixed at placement time now.
 function applyLiveBetEvent(chainMatchId, selection, amountUsdc) {
   let changed = false;
   matchState = matchState.map((m) => {
     if (m.chainMatchId !== chainMatchId) return m;
     changed = true;
-    const poolHome = m.poolHome + (selection === 1 ? amountUsdc : 0);
-    const poolDraw = m.poolDraw + (selection === 2 ? amountUsdc : 0);
-    const poolAway = m.poolAway + (selection === 3 ? amountUsdc : 0);
     return {
       ...m,
-      poolHome, poolDraw, poolAway,
-      oddsHome: poolOdds(poolHome, poolDraw, poolAway, "home") ?? m.oddsHome,
-      oddsDraw: poolOdds(poolHome, poolDraw, poolAway, "draw") ?? m.oddsDraw,
-      oddsAway: poolOdds(poolHome, poolDraw, poolAway, "away") ?? m.oddsAway,
+      poolHome: m.poolHome + (selection === 1 ? amountUsdc : 0),
+      poolDraw: m.poolDraw + (selection === 2 ? amountUsdc : 0),
+      poolAway: m.poolAway + (selection === 3 ? amountUsdc : 0),
       hasRealPool: true,
     };
   });

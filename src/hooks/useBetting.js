@@ -149,45 +149,6 @@ export function useBetting() {
     return Number(outcome);
   }, [signer]);
 
-  // Arc's RPC rejects queryFilter calls that span too many blocks at
-  // once ("request exceeded max allowed range"). Search backward from
-  // the current block in bounded chunks instead of asking for the
-  // entire chain history in one call.
-  //
-  // MetaMask's own RPC connection separately rate-limits rapid bursts
-  // of requests — with two event types x many chunks, firing them
-  // back-to-back with no pause was tripping that limit. A short delay
-  // between each chunk, and a smaller total lookback, keeps this
-  // comfortably under whatever burst limit MetaMask enforces.
-  const CHUNK_SIZE = 1000;
-  const MAX_CHUNKS = 8; // covers 8,000 blocks of lookback
-  const CHUNK_DELAY_MS = 250;
-
-  function sleep(ms) {
-    return new Promise((resolve) => setTimeout(resolve, ms));
-  }
-
-  async function queryFilterChunked(contract, filter) {
-    const provider = contract.runner.provider;
-    const latest = await provider.getBlockNumber();
-    let events = [];
-    let toBlock = latest;
-
-    for (let i = 0; i < MAX_CHUNKS && toBlock > 0; i++) {
-      const fromBlock = Math.max(0, toBlock - CHUNK_SIZE + 1);
-      try {
-        const chunkEvents = await contract.queryFilter(filter, fromBlock, toBlock);
-        events = events.concat(chunkEvents);
-      } catch {
-        // This chunk itself failed (still too wide, or a transient
-        // RPC issue) — skip it rather than aborting the whole search.
-      }
-      toBlock = fromBlock - 1;
-      if (toBlock > 0) await sleep(CHUNK_DELAY_MS);
-    }
-    return events;
-  }
-
   // Reads this wallet's full bet history straight from the contract's
   // event log. Note: BetPlaced/AccumulatorPlaced don't mark any field
   // as "indexed" in the contract, so we can't filter by address at the
@@ -255,37 +216,48 @@ export function useBetting() {
       singles = [];
     }
 
-    const allAccEvents = await queryFilterChunked(contract, contract.filters.AccumulatorPlaced());
-    const accEvents = allAccEvents.filter((ev) => ev.args.bettor.toLowerCase() === target);
+    // Accumulator list — fast path via the indexer instead of
+    // scanning blockchain history. Outcome and leg details still come
+    // from the contract directly since the indexer doesn't track
+    // those yet (see the known limitation noted when we built it).
+    let accList = [];
+    try {
+      const data = await queryIndexer(
+        `query MyAccumulators($bettor: String!) {
+          Accumulator(where: { bettor: { _ilike: $bettor } }) {
+            accId stake combinedOddsBps claimed legCount
+          }
+        }`,
+        { bettor: target }
+      );
+      accList = data.Accumulator;
+    } catch {
+      accList = [];
+    }
 
     const accumulators = [];
-    for (const ev of accEvents) {
-      const accId = ev.args.accId;
-      const legCount = Number(ev.args.legCount);
-      const stake = ev.args.stake;
-      const combinedOddsBps = Number(ev.args.combinedOddsBps);
+    for (const a of accList) {
+      const accId = a.accId;
+      const legCount = Number(a.legCount);
       const outcome = await contract.checkAccumulatorOutcome(accId);
-      const accData = await contract.accumulators(accId);
 
       const legs = [];
       for (let i = 0; i < legCount; i++) {
         const [matchId, prediction] = await contract.getAccumulatorLeg(accId, i);
         const [homeTeam, awayTeam, , , , resolved, result] = await contract.getMatch(matchId);
         legs.push({ matchId: Number(matchId), prediction: Number(prediction), homeTeam, awayTeam, resolved, result: Number(result) });
-        await sleep(150);
       }
 
       accumulators.push({
         accId: Number(accId),
         legCount,
-        stake: ethers.formatUnits(stake, 6),
-        combinedOdds: combinedOddsBps / 10000,
+        stake: ethers.formatUnits(a.stake, 6),
+        combinedOdds: Number(a.combinedOddsBps) / 10000,
         outcome: Number(outcome),
-        claimed: accData[3],
+        claimed: a.claimed,
         legs,
-        txHash: ev.transactionHash,
+        txHash: null,
       });
-      await sleep(150);
     }
 
     return {

@@ -2,10 +2,9 @@
  * chainSync.js
  * Reads matches from the on-chain FootballBetting contract (read-only,
  * no wallet needed) and returns a lookup of "home::away" -> match info
- * (chainMatchId + real pool amounts) for active (unfinished) matches.
- * matchManager.js uses this both to fill in chainMatchId and to power
- * honest, pool-based odds display instead of a disconnected
- * ratings-based number.
+ * (chainMatchId + total USDC staked per side, for informational
+ * display only — single bets are fixed-odds now, so this no longer
+ * drives the displayed odds).
  */
 
 import { ethers } from "ethers";

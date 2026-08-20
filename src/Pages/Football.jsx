@@ -200,9 +200,7 @@ export default function Football() {
 
                   {!isFinished && (
                     <div className="bb-odds-note">
-                      {match.hasRealPool
-                        ? "Live odds — reflects real USDC staked so far"
-                        : "Est. odds — updates once real bets come in"}
+                      Fixed odds — locked in the moment you place your bet.
                     </div>
                   )}
                 </div>
