@@ -6,17 +6,17 @@ import { LEAGUES }   from "../../data/clubs";
 import { subscribe, initMatchManager } from "../../engine/matchManager";
 
 const OTHER_LINKS = [
-  { to:"/my-bets",      icon:"🎫", label:"Open Bet"       },
-  { to:"/history",      icon:"📊", label:"Match History" },
-  { to:"/leaderboard",  icon:"🏆", label:"Table"          },
-  { to:"/admin",        icon:"⚙️", label:"Admin Panel", adminOnly:true },
+  { to:"/my-bets",      label:"Open Bet"       },
+  { to:"/history",      label:"Match History" },
+  { to:"/leaderboard",  label:"Table"          },
+  { to:"/admin",        label:"Admin Panel", adminOnly:true },
 ];
 
 const OTHER_SPORTS = [
-  { to:"/coming-soon/basketball", icon:"🏀", label:"Basketball" },
-  { to:"/coming-soon/tennis",     icon:"🎾", label:"Tennis" },
-  { to:"/coming-soon/darts",      icon:"🎯", label:"Darts" },
-  { to:"/coming-soon/casino",     icon:"🎰", label:"Casino" },
+  { to:"/coming-soon/basketball", label:"Basketball" },
+  { to:"/coming-soon/tennis",     label:"Tennis" },
+  { to:"/coming-soon/darts",      label:"Darts" },
+  { to:"/coming-soon/casino",     label:"Casino" },
 ];
 
 export function Sidebar() {
@@ -94,7 +94,6 @@ export function Sidebar() {
           background:"var(--pitch-card)", border:"1px solid var(--pitch-line)",
           borderRadius:8, padding:"6px 10px",
         }}>
-          <span style={{ fontSize:14 }}>💵</span>
           <div>
             <div style={{ fontSize:9, color:"var(--chalk-dim)", fontWeight:700, letterSpacing:1 }}>POWERED BY</div>
             <div style={{ fontSize:13, color:"var(--gold)", fontWeight:800 }}>USDC • Arc Testnet</div>
@@ -110,7 +109,7 @@ export function Sidebar() {
           borderRadius:12, padding:"12px 14px",
         }}>
           <div style={{ fontSize:9, color:"var(--chalk-dim)", fontWeight:700, letterSpacing:1, marginBottom:6 }}>MY WALLET</div>
-          <div style={{ fontSize:12, color:"var(--chalk)", fontWeight:700, marginBottom:4 }}>🦊 {shortAddr}</div>
+          <div style={{ fontSize:12, color:"var(--chalk)", fontWeight:700, marginBottom:4 }}>{shortAddr}</div>
           <div style={{ fontSize:18, fontWeight:900, color:"var(--gold)" }}>
             {balance} <span style={{ fontSize:11, color:"var(--chalk-dim)", fontWeight:600 }}>USDC</span>
           </div>
@@ -122,7 +121,6 @@ export function Sidebar() {
 
         {/* Home */}
         <Link to="/" style={navItemStyle(pathname === "/")}>
-          <span style={{ fontSize:18, flexShrink:0 }}>🏠</span>
           <span style={{ flex:1 }}>Home</span>
         </Link>
 
@@ -137,7 +135,6 @@ export function Sidebar() {
             borderLeft: `3px solid ${onFootball && !activeLeague ? "var(--gold)" : "transparent"}`,
           }}
         >
-          <span style={{ fontSize:18, flexShrink:0 }}>⚽</span>
           <span style={{ flex:1, textAlign:"left" }}>Football</span>
           <span style={{ fontSize:10, transform: footballOpen ? "rotate(90deg)" : "none", transition:"transform 0.15s ease" }}>▸</span>
         </button>
@@ -174,7 +171,6 @@ export function Sidebar() {
                       to={`/football?league=${l.id}`}
                       style={{ ...navItemStyle(active), fontSize: 11.5, padding: "8px 18px 8px 42px" }}
                     >
-                      <span>{l.flag}</span>
                       <span>{l.name}</span>
                     </Link>
                   );
@@ -190,7 +186,6 @@ export function Sidebar() {
           const active = pathname === s.to;
           return (
             <Link key={s.to} to={s.to} style={navItemStyle(active)}>
-              <span style={{ fontSize:18, flexShrink:0 }}>{s.icon}</span>
               <span style={{ flex:1 }}>{s.label}</span>
               <span style={{
                 fontSize:8, fontWeight:800, letterSpacing:0.3, padding:"2px 5px",
@@ -208,7 +203,6 @@ export function Sidebar() {
           const active = pathname === l.to;
           return (
             <Link key={l.to} to={l.to} style={navItemStyle(active)}>
-              <span style={{ fontSize:18, flexShrink:0 }}>{l.icon}</span>
               <span style={{ flex:1 }}>{l.label}</span>
               {active && (
                 <span style={{ width:5, height:5, borderRadius:"50%", background:"var(--gold)" }} />
@@ -224,7 +218,7 @@ export function Sidebar() {
         fontSize:10, color:"var(--chalk-dim)",
       }}>
         <div style={{ marginBottom:2, fontWeight:600, color:"var(--chalk)" }}>BlockBet v2.0 — Phase 2</div>
-        <div>⛓️ Arc Testnet • 💵 USDC Native</div>
+        <div>Arc Testnet • USDC Native</div>
       </div>
     </aside>
   );

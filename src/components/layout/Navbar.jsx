@@ -79,7 +79,7 @@ export function Navbar() {
             {liveCount > 0 && <span className="bb-navbar-live-badge">LIVE</span>}
           </NavLink>
           <NavLink to="/football?hot=1" className="bb-navbar-link">
-            🔥 Hot games
+            Hot games
           </NavLink>
         </nav>
       )}
@@ -91,7 +91,7 @@ export function Navbar() {
           aria-label={theme === "light" ? "Switch to dark mode" : "Switch to light mode"}
           title={theme === "light" ? "Switch to dark mode" : "Switch to light mode"}
         >
-          {theme === "light" ? "🌙" : "☀️"}
+          {theme === "light" ? "Dark" : "Light"}
         </button>
       )}
 

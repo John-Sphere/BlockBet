@@ -52,7 +52,6 @@ export function AppProvider({ children }) {
       <div className="toast-container">
         {state.toasts.map(t => (
           <div key={t.id} className={`toast toast-${t.type}`}>
-            <span>{{ success:"✅", error:"❌", info:"ℹ️", warning:"⚠️" }[t.type]}</span>
             <span>{t.msg}</span>
           </div>
         ))}

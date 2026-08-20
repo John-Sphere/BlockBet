@@ -6,12 +6,12 @@
 // tweak any club's ratings from the Admin panel.
 
 export const LEAGUES = [
-  { id: "premier-league",   name: "Premier League",   flag: "🏴" },
-  { id: "la-liga",          name: "La Liga",           flag: "🇪🇸" },
-  { id: "serie-a",          name: "Serie A",           flag: "🇮🇹" },
-  { id: "bundesliga",       name: "Bundesliga",        flag: "🇩🇪" },
-  { id: "ligue-1",          name: "Ligue 1",           flag: "🇫🇷" },
-  { id: "saudi-pro-league", name: "Saudi Pro League",  flag: "🇸🇦" },
+  { id: "premier-league",   name: "Premier League" },
+  { id: "la-liga",          name: "La Liga" },
+  { id: "serie-a",          name: "Serie A" },
+  { id: "bundesliga",       name: "Bundesliga" },
+  { id: "ligue-1",          name: "Ligue 1" },
+  { id: "saudi-pro-league", name: "Saudi Pro League" },
 ];
 
 // Ratings scale down gradually from the top of the table to the bottom,

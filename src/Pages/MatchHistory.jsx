@@ -16,7 +16,7 @@ import { LEAGUES } from "../data/clubs";
 import "./MatchHistory.css";
 
 function eventIcon(type) {
-  return { goal:"⚽", yellow_card:"🟨", red_card:"🟥", halftime:"⏸️", fulltime:"🏁" }[type] || "📌";
+  return { goal:"GOAL", yellow_card:"YC", red_card:"RC", halftime:"HT", fulltime:"FT" }[type] || "";
 }
 
 function barPct(a, b) {

@@ -31,18 +31,15 @@ export function MobileTabBar() {
   return (
     <nav className="bb-tabbar">
       <NavLink to="/football" className="bb-tabbar-item" end>
-        <span className="bb-tabbar-icon">⚽</span>
         <span>Pitch</span>
       </NavLink>
 
       <button className="bb-tabbar-item" onClick={toggleSidebar}>
-        <span className="bb-tabbar-icon">☰</span>
         <span>Menu</span>
       </button>
 
       <NavLink to="/football?live=1" className="bb-tabbar-item bb-tabbar-center">
         <span className="bb-tabbar-center-icon">
-          🔴
           {liveCount > 0 && <span className="bb-tabbar-dot" />}
         </span>
         <span>Live</span>
@@ -53,7 +50,6 @@ export function MobileTabBar() {
         onClick={() => openSlip(true)}
       >
         <span className="bb-tabbar-icon">
-          🎫
           {selections.length > 0 && (
             <span className="bb-tabbar-badge">{selections.length}</span>
           )}
@@ -62,7 +58,6 @@ export function MobileTabBar() {
       </button>
 
       <NavLink to="/my-bets" className="bb-tabbar-item">
-        <span className="bb-tabbar-icon">👤</span>
         <span>Me</span>
       </NavLink>
     </nav>
