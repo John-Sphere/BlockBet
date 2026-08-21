@@ -1,110 +1,132 @@
-/* BLOCKBET — White / Azure theme
-   Same variable names as before (so every component that already
-   references them updates automatically) but new values, moving away
-   from the dark tactics-board palette to a clean white/azure look.
+/* BLOCKBET — Pro theme
+   Ported directly from the provided reference design. Deep navy base,
+   blue primary accent, green for live/positive, red for negative,
+   amber for secondary/display-only tags. Sora for display type,
+   Inter for body, IBM Plex Mono for numbers/odds/addresses.
 */
 
 :root {
-  /* Surfaces */
+  --pitch-dark: #090C15;
+  --pitch-mid: #10141F;
+  --pitch-card: #10141F;
+  --surface-alt: #161C2C;
+  --surface-raised: #1D2438;
+  --pitch-line: #242B40;
+  --border-soft: #191F30;
+
+  --chalk: #EEF1F8;
+  --chalk-dim: #8891A8;
+  --text-faint: #4E5570;
+
+  --gold: #4C86FF;
+  --gold-bright: #7DA6FF;
+  --gold-deep: #2A4A8C;
+  --gold-bg: rgba(76,134,255,0.12);
+  --gold-glow: rgba(76,134,255,0.35);
+
+  --live-red: #33D17A;
+  --live-bg: rgba(51,209,122,0.12);
+  --live-glow: rgba(51,209,122,0.45);
+  --win-green: #33D17A;
+  --loss-red: #FF5C5C;
+  --amber: #E8A23D;
+
+  --font-display: 'Sora', 'Inter', Arial, sans-serif;
+  --font-body: 'Inter', Arial, Helvetica, sans-serif;
+  --font-mono: 'IBM Plex Mono', 'Courier New', monospace;
+
+  --radius-card: 12px;
+  --radius-pill: 9px;
+
+  --nav-h: 60px;
+  --side-w: 236px;
+
+  --shadow-card: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px -12px rgba(0,0,0,0.5);
+  --shadow-gold: 0 6px 20px -6px rgba(76,134,255,0.35);
+  --shadow-raised: 0 4px 12px rgba(0,0,0,0.35), 0 20px 48px -18px rgba(0,0,0,0.65);
+}
+
+/* Light mode kept as an alternate for anyone who prefers it — the
+   dark navy above is the primary, intended experience. */
+[data-theme="light"] {
   --pitch-dark: #FFFFFF;
   --pitch-mid: #FFFFFF;
   --pitch-card: #FFFFFF;
-  --pitch-line: #E5E9F2;
   --surface-alt: #F7F9FC;
+  --surface-raised: #EEF2FA;
+  --pitch-line: #E5E9F2;
+  --border-soft: #EDF0F7;
 
-  /* Text */
   --chalk: #0B1526;
   --chalk-dim: #64748B;
+  --text-faint: #94A3B8;
 
-  /* Accent — azure blue */
   --gold: #1656F5;
   --gold-bright: #3B72FF;
   --gold-deep: #0B3FCC;
+  --gold-bg: rgba(22,86,245,0.08);
+  --gold-glow: rgba(22,86,245,0.3);
 
-  /* Status */
-  --live-red: #DC2626;
+  --live-red: #16A34A;
+  --live-bg: rgba(22,163,74,0.1);
+  --live-glow: rgba(22,163,74,0.35);
   --win-green: #16A34A;
   --loss-red: #DC2626;
+  --amber: #C77700;
 
-  /* Type — bold sans display, matching the new brand direction */
-  --font-display: 'Poppins', 'Inter', Arial, sans-serif;
-  --font-body: 'Inter', Arial, Helvetica, sans-serif;
-  --font-mono: 'Courier New', monospace;
-
-  /* Radius / spacing */
-  --radius-card: 12px;
-  --radius-pill: 8px;
-
-  /* Layout dimensions */
-  --nav-h: 65px;
-  --side-w: 250px;
-
-  /* Depth — soft shadows suited to a light theme */
   --shadow-card: 0 1px 2px rgba(15,23,42,0.04), 0 8px 24px -12px rgba(15,23,42,0.12);
-  --shadow-gold: 0 8px 20px -6px rgba(22,86,245,0.35);
+  --shadow-gold: 0 8px 20px -6px rgba(22,86,245,0.3);
+  --shadow-raised: 0 4px 12px rgba(15,23,42,0.06), 0 20px 40px -16px rgba(15,23,42,0.15);
 }
 
-/* ── DARK MODE ──────────────────────────────────────────────
-   Same variable names, same azure accent (kept consistent as the
-   brand color in both modes) — only backgrounds/text/shadows flip.
-   Toggled by AppContext setting data-theme="dark" on <html>. */
-[data-theme="dark"] {
-  --pitch-dark: #0B1120;
-  --pitch-mid: #111827;
-  --pitch-card: #151E33;
-  --pitch-line: #26324A;
-  --surface-alt: #1A2438;
+* { box-sizing: border-box; }
 
-  --chalk: #F1F5F9;
-  --chalk-dim: #94A3B8;
-
-  --gold: #4C8DFF;
-  --gold-bright: #6EA8FF;
-  --gold-deep: #1D4FD8;
-
-  --live-red: #EF4444;
-  --win-green: #22C55E;
-  --loss-red: #EF4444;
-
-  --shadow-card: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px -12px rgba(0,0,0,0.6);
-  --shadow-gold: 0 8px 20px -6px rgba(76,141,255,0.4);
-}
-
-* {
-  box-sizing: border-box;
-}
+html { scroll-behavior: smooth; }
 
 body {
   background: var(--pitch-dark);
   color: var(--chalk);
   font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.5;
   margin: 0;
   -webkit-font-smoothing: antialiased;
 }
 
-a {
-  color: inherit;
-  text-decoration: none;
+[data-theme="dark"] body,
+body {
+  background-image:
+    radial-gradient(1200px 600px at 12% -10%, rgba(76,134,255,0.10), transparent 60%),
+    radial-gradient(900px 500px at 100% 8%, rgba(51,209,122,0.05), transparent 55%);
 }
+
+[data-theme="light"] body {
+  background-image: none;
+}
+
+::selection { background: var(--gold); color: #080B12; }
+
+a { color: inherit; text-decoration: none; }
 
 h1, h2, h3 {
   font-family: var(--font-display);
-  letter-spacing: -0.02em;
+  letter-spacing: -0.01em;
 }
 
 .pitch-divider {
   height: 1px;
-  background: var(--pitch-line);
+  background: var(--border-soft);
   border: none;
   margin: 24px 0;
 }
 
 .eyebrow {
-  font-size: 12px;
-  letter-spacing: 1.5px;
-  color: var(--gold);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: var(--gold-bright);
   text-transform: uppercase;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .pitch-card {
@@ -113,90 +135,109 @@ h1, h2, h3 {
   border-radius: var(--radius-card);
   padding: 18px 20px;
   box-shadow: var(--shadow-card);
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
 }
 
 .pitch-card:hover {
-  border-color: rgba(22,86,245,0.25);
+  border-color: var(--gold-deep);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-raised);
 }
 
 .odds-box {
   flex: 1;
   background: var(--surface-alt);
   border: 1px solid var(--pitch-line);
-  border-radius: var(--radius-pill);
-  padding: 10px 8px;
+  border-radius: 7px;
+  padding: 9px 13px;
+  min-width: 56px;
   text-align: center;
   cursor: pointer;
-  transition: border-color 0.2s ease, background 0.2s ease, transform 0.15s ease;
+  font-family: var(--font-mono);
+  transition: border-color 0.14s ease, background 0.14s ease, transform 0.14s ease;
 }
 
 .odds-box:hover {
-  border-color: var(--gold);
+  border-color: var(--gold-deep);
+  background: var(--surface-raised);
   transform: translateY(-1px);
 }
 
 .odds-box.selected {
+  background: var(--gold);
   border-color: var(--gold);
-  background: rgba(22,86,245,0.08);
+  box-shadow: 0 4px 14px -4px var(--gold-glow);
 }
 
 .odds-box .label {
-  font-size: 10px;
-  color: var(--chalk-dim);
-  margin-bottom: 3px;
+  font-family: var(--font-body);
+  font-size: 8.5px;
+  color: var(--text-faint);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.03em;
+}
+
+.odds-box.selected .label {
+  color: #0F1A33;
 }
 
 .odds-box .value {
-  font-size: 16px;
-  font-weight: 700;
+  font-size: 13px;
+  font-weight: 600;
   color: var(--chalk);
-  font-variant-numeric: tabular-nums;
+}
+
+.odds-box.selected .value {
+  color: #080B12;
+  font-weight: 700;
 }
 
 .pill {
-  font-size: 10.5px;
-  padding: 3px 9px;
-  border-radius: 20px;
-  display: inline-block;
-  letter-spacing: 0.3px;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
   font-weight: 600;
+  padding: 4px 9px;
+  border-radius: 5px;
+  display: inline-block;
+  letter-spacing: 0.03em;
 }
 
 .pill-open {
-  border: 1px solid var(--gold);
-  color: var(--gold);
+  color: var(--gold-bright);
+  background: var(--gold-bg);
 }
 
 .pill-live {
-  background: var(--live-red);
-  color: #FFFFFF;
+  color: var(--live-red);
+  background: var(--live-bg);
+  box-shadow: 0 0 0 1px rgba(51,209,122,0.2);
 }
 
 .pill-finished {
-  border: 1px solid var(--pitch-line);
-  color: var(--chalk-dim);
+  color: var(--text-faint);
+  background: var(--surface-alt);
 }
 
 .btn-gold {
-  background: linear-gradient(135deg, var(--gold-bright), var(--gold));
-  color: #FFFFFF;
+  background: linear-gradient(135deg, var(--gold), #3E6FE0);
+  color: #080B12;
   border: none;
   border-radius: var(--radius-pill);
-  padding: 12px 24px;
+  padding: 12px 22px;
   font-weight: 700;
-  font-size: 14px;
+  font-size: 13.5px;
   cursor: pointer;
   box-shadow: var(--shadow-gold);
-  transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+  transition: filter 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+[data-theme="light"] .btn-gold {
+  color: #FFFFFF;
 }
 
 .btn-gold:hover {
-  filter: brightness(1.05);
+  filter: brightness(1.08);
   transform: translateY(-1px);
-  box-shadow: 0 10px 24px -6px rgba(22,86,245,0.45);
 }
 
 .btn-gold:active {
@@ -208,14 +249,14 @@ h1, h2, h3 {
   color: var(--chalk);
   border: 1.5px solid var(--pitch-line);
   border-radius: var(--radius-pill);
-  padding: 12px 24px;
-  font-size: 14px;
+  padding: 12px 22px;
+  font-size: 13.5px;
   font-weight: 600;
   cursor: pointer;
-  transition: border-color 0.2s ease, color 0.2s ease;
+  transition: border-color 0.15s ease, color 0.15s ease;
 }
 
 .btn-outline:hover {
-  border-color: var(--gold);
-  color: var(--gold);
+  border-color: var(--gold-deep);
+  color: var(--gold-bright);
 }
