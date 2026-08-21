@@ -33,11 +33,7 @@
 .bb-pro a{color:inherit; text-decoration:none;}
 .bb-pro svg{display:block;}
 .bb-pro button{font-family:inherit; cursor:pointer; border:none; background:none;}
-.bb-pro .main{padding:22px 24px; padding-right: 352px;}
-
-@media (max-width: 1080px) {
-  .bb-pro .main { padding-right: 24px; }
-}
+.bb-pro .main{padding:22px 24px;}
 .bb-pro .stats-row{display:flex; gap:12px; margin-bottom:20px; flex-wrap: wrap;}
 .bb-pro .stat-card{
   background:var(--bp-surface); border:1px solid var(--bp-border); border-radius:12px; padding:15px 18px; flex:1;

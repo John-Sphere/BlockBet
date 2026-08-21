@@ -1,0 +1,194 @@
+.bb-sidebar {
+  position: fixed;
+  top: var(--nav-h);
+  left: 0;
+  bottom: 0;
+  background: var(--pitch-mid);
+  border-right: 1px solid var(--pitch-line);
+  overflow-y: auto;
+  padding: 18px 13px;
+  display: flex;
+  flex-direction: column;
+  width: var(--side-w);
+  z-index: 150;
+}
+
+.bb-wallet-card {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(155deg, var(--surface-raised), var(--surface-alt));
+  border: 1px solid var(--border-soft);
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 18px;
+  box-shadow: var(--shadow-card);
+}
+
+.bb-wallet-card::after {
+  content: '';
+  position: absolute;
+  top: -40%; right: -30%;
+  width: 140px; height: 140px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--gold-glow), transparent 70%);
+  opacity: 0.25;
+  pointer-events: none;
+}
+
+.bb-wc-lbl {
+  font-size: 9.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--text-faint);
+  margin-bottom: 7px;
+  font-weight: 600;
+}
+
+.bb-wc-addr {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--chalk-dim);
+  margin-bottom: 9px;
+}
+
+.bb-wc-bal {
+  font-family: var(--font-display);
+  font-size: 23px;
+  font-weight: 700;
+  position: relative;
+  z-index: 1;
+  color: var(--chalk);
+}
+
+.bb-wc-bal span {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-faint);
+  font-weight: 400;
+  margin-left: 5px;
+}
+
+.bb-wallet-spark {
+  width: 100%;
+  height: 26px;
+  margin-top: 9px;
+}
+
+.bb-side-nav {
+  flex: 1;
+}
+
+.bb-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  justify-content: space-between;
+  padding: 9px 10px;
+  border-radius: 8px;
+  color: var(--chalk-dim);
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.14s ease, color 0.14s ease;
+  text-decoration: none;
+}
+
+.bb-nl {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.bb-nav-item svg {
+  width: 15px; height: 15px;
+  opacity: 0.75;
+  flex-shrink: 0;
+}
+
+.bb-nav-item:hover {
+  background: var(--surface-alt);
+  color: var(--chalk);
+}
+
+.bb-nav-item.active {
+  background: var(--gold-bg);
+  color: var(--gold-bright);
+  font-weight: 600;
+  box-shadow: inset 0 0 0 1px var(--gold-deep);
+}
+
+.bb-nav-item.active svg { opacity: 1; }
+
+.bb-nav-item.sub {
+  padding-left: 32px;
+  font-size: 12.5px;
+}
+
+.bb-nav-item.disabled {
+  color: var(--text-faint);
+  cursor: default;
+  pointer-events: none;
+}
+
+.bb-soon-tag {
+  font-family: var(--font-mono);
+  font-size: 8.5px;
+  color: var(--text-faint);
+  border: 1px solid var(--pitch-line);
+  padding: 2px 6px;
+  border-radius: 3px;
+  letter-spacing: 0.04em;
+}
+
+.bb-nav-divider {
+  height: 1px;
+  background: var(--border-soft);
+  margin: 13px 4px;
+}
+
+.bb-sidebar-footer {
+  margin-top: auto;
+  padding: 14px 10px 4px;
+  border-top: 1px solid var(--border-soft);
+}
+
+.bb-sf-v {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--chalk-dim);
+  font-weight: 600;
+}
+
+.bb-sf-net {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  color: var(--text-faint);
+  margin-top: 3px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.bb-sf-dot {
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: var(--live-red);
+}
+
+@media (max-width: 1080px) {
+  .bb-sidebar {
+    display: none;
+  }
+}
+
+/* Compensates for the sidebar being position:fixed (removed from
+   normal flex flow) — main content needs matching left space so it
+   doesn't render underneath the pinned sidebar. */
+.bb-content-with-sidebar {
+  margin-left: var(--side-w);
+}
+
+@media (max-width: 1080px) {
+  .bb-content-with-sidebar {
+    margin-left: 0;
+  }
+}

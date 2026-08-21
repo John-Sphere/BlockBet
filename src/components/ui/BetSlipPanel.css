@@ -1,44 +1,13 @@
 .slip {
-  position: fixed;
-  top: var(--nav-h);
-  right: 0;
-  bottom: 0;
+  position: static;
   width: 328px;
+  flex-shrink: 0;
+  height: calc(100vh - var(--nav-h));
   background: var(--pitch-card);
   border-left: 1px solid var(--pitch-line);
   display: flex;
   flex-direction: column;
-  z-index: 200;
   overflow-y: auto;
-  box-shadow: var(--shadow-raised);
-}
-
-.bet-slip-tab {
-  position: fixed;
-  bottom: 24px;
-  right: 24px;
-  background: linear-gradient(135deg, var(--gold), var(--gold-deep));
-  color: #080B12;
-  border: none;
-  border-radius: 30px;
-  padding: 13px 22px;
-  font-weight: 700;
-  font-size: 13.5px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  box-shadow: var(--shadow-gold);
-  z-index: 200;
-  cursor: pointer;
-}
-
-[data-theme="light"] .bet-slip-tab { color: #FFFFFF; }
-
-.bet-slip-count {
-  background: rgba(255,255,255,0.25);
-  border-radius: 12px;
-  padding: 1px 8px;
-  font-size: 11.5px;
 }
 
 .slip-head {
@@ -313,12 +282,36 @@
 .cashout-btn:hover { border-color: var(--gold-deep); color: var(--gold-bright); }
 .cashout-btn:disabled { opacity: 0.5; cursor: default; }
 
+.slip-mobile-close {
+  display: none;
+  background: var(--surface-alt);
+  border: 1px solid var(--pitch-line);
+  color: var(--chalk-dim);
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  font-size: 13px;
+}
+
 @media (max-width: 1080px) {
   .slip {
-    position: static;
+    display: none;
+    position: fixed;
+    top: var(--nav-h);
+    left: 0;
+    right: 0;
+    bottom: 0;
     width: 100%;
     height: auto;
     border-left: none;
-    border-top: 1px solid var(--pitch-line);
+    z-index: 250;
+  }
+  .slip.slip--mobile-open {
+    display: flex;
+  }
+  .slip-mobile-close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 }

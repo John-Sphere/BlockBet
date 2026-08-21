@@ -66,14 +66,6 @@ export function BetSlipPanel() {
     return liveMatches.find((m) => m.homeTeam === homeTeam && m.awayTeam === awayTeam) || null;
   }
 
-  if (!open) {
-    return selections.length > 0 ? (
-      <button className="bet-slip-tab" onClick={() => setOpen(true)}>
-        Bet slip <span className="bet-slip-count">{selections.length}</span>
-      </button>
-    ) : null;
-  }
-
   function stakeFor(matchId) { return stakes[matchId] ?? "10"; }
   function setStake(matchId, value) { setStakes((prev) => ({ ...prev, [matchId]: value })); }
 
@@ -143,10 +135,13 @@ export function BetSlipPanel() {
   }
 
   return (
-    <aside className="slip">
+    <aside className={`slip ${open ? "slip--mobile-open" : ""}`}>
       <div className="slip-head">
         <h2>Bet Slip</h2>
-        <span className="clear" onClick={() => setOpen(false)} role="button">Close</span>
+        <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+          <span className="clear" onClick={clearAll} role="button">Clear all</span>
+          <button className="slip-mobile-close" onClick={() => setOpen(false)} aria-label="Close bet slip">✕</button>
+        </div>
       </div>
 
       <div className="mode-toggle">

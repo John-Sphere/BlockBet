@@ -2,7 +2,6 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import { lazy, Suspense, useState, useEffect } from "react";
 import { Layout } from "./components/layout/Layout";
 import { BetSlipProvider } from "./context/BetSlipContext";
-import { BetSlipPanel } from "./components/ui/BetSlipPanel";
 import "./App.css";
 
 const Home        = lazy(() => import("./Pages/Home"));
@@ -67,7 +66,6 @@ export default function App() {
           </Routes>
         </Suspense>
       </Layout>
-      <BetSlipPanel />
     </BetSlipProvider>
   );
 }
