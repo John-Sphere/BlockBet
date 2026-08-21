@@ -1,4 +1,7 @@
 import { Link } from "react-router-dom";
+import { useState, useEffect, useMemo } from "react";
+import { subscribe, initMatchManager } from "../engine/matchManager";
+import RadarViz from "../components/charts/RadarViz";
 import "./Home.css";
 
 const TICKER_ITEMS = [
@@ -8,12 +11,6 @@ const TICKER_ITEMS = [
   { t: "Liverpool vs Chelsea", o: "2.05", d: "up" },
   { t: "Bayern vs Dortmund", o: "1.65", d: "down" },
   { t: "Inter vs Napoli", o: "2.15", d: "up" },
-];
-
-const LIVE_PREVIEW = [
-  { league: "Premier League", minute: "90'", home: "Man United", away: "Newcastle", hs: 1, as: 0, odds: ["2.10", "3.40", "4.80"] },
-  { league: "Serie A", minute: "71'", home: "Juventus", away: "AC Milan", hs: 1, as: 1, odds: ["2.20", "3.20", "3.10"] },
-  { league: "La Liga", minute: "54'", home: "Real Madrid", away: "Barcelona", hs: 0, as: 0, odds: ["2.05", "3.75", "3.40"] },
 ];
 
 const STEPS = [
@@ -40,6 +37,20 @@ function TrustIcon({ name }) {
 // simple isHome variant from Phase 1). This component starts at the
 // hero, not with its own separate top bar.
 export default function Home() {
+  const [allMatches, setAllMatches] = useState([]);
+
+  useEffect(() => {
+    initMatchManager();
+    const unsub = subscribe((matches) => setAllMatches(matches));
+    return unsub;
+  }, []);
+
+  const liveMatches = useMemo(
+    () => allMatches.filter((m) => m.status === "first_half" || m.status === "second_half" || m.status === "halftime"),
+    [allMatches]
+  );
+  const featuredLive = liveMatches[0];
+
   return (
     <div className="home-page">
       <div className="wrap">
@@ -79,24 +90,23 @@ export default function Home() {
           </div>
 
           <div className="hero-visual">
-            <div className="hero-corner">LIVE FORMATION · ARC TESTNET</div>
-            <svg className="grid-lines" viewBox="0 0 460 500" width="100%" height="100%">
-              <line x1="0" y1="250" x2="460" y2="250" stroke="#4C86FF" strokeWidth="1" />
-              <circle cx="230" cy="250" r="60" fill="none" stroke="#4C86FF" strokeWidth="1" />
-              <circle cx="230" cy="250" r="2.5" fill="#4C86FF" />
-              <rect x="0" y="180" width="46" height="140" fill="none" stroke="#4C86FF" strokeWidth="1" />
-              <rect x="414" y="180" width="46" height="140" fill="none" stroke="#4C86FF" strokeWidth="1" />
-              <path d="M40,420 C120,360 160,300 230,250 C300,200 340,140 420,90" fill="none" stroke="#7DA6FF" strokeWidth="2" strokeLinecap="round" opacity="0.85" />
-              <circle cx="420" cy="90" r="5" fill="#7DA6FF" />
-              <circle cx="40" cy="420" r="4" fill="#4C86FF" opacity="0.6" />
-            </svg>
+            <div className="hero-corner">LIVE MATCH RADAR · ARC TESTNET</div>
+            <RadarViz matches={liveMatches} />
             <div className="glow-ring" />
             <div className="glow-ring r2" />
             <div className="glow-ring r3" />
             <div className="hero-badge">
-              <div className="hb-team"><span className="hb-badge" />BlockBet FC</div>
-              <div className="hb-score">2 – 1</div>
-              <div className="hb-live">LIVE 78'</div>
+              {featuredLive ? (
+                <>
+                  <div className="hb-team"><span className="hb-badge" />{featuredLive.homeTeam} v {featuredLive.awayTeam}</div>
+                  <div className="hb-score">{featuredLive.homeScore} – {featuredLive.awayScore}</div>
+                  <div className="hb-live">LIVE {featuredLive.minute}'</div>
+                </>
+              ) : (
+                <div className="hb-team" style={{ width: "100%", justifyContent: "center" }}>
+                  {liveMatches.length} matches live right now
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -135,22 +145,26 @@ export default function Home() {
         <section style={{ paddingTop: 0 }}>
           <div className="section-head">
             <div className="section-eyebrow">Right now</div>
-            <h2>27 matches live across 6 leagues</h2>
+            <h2>{liveMatches.length} matches live across {new Set(allMatches.map(m => m.leagueName)).size} leagues</h2>
             <p>Every fixture is deterministic — the same round, same kickoff time, same result, for every visitor.</p>
           </div>
           <div className="live-preview">
-            {LIVE_PREVIEW.map((m, i) => (
-              <Link to="/football" className="lp-card" key={i}>
+            {(liveMatches.length > 0 ? liveMatches : allMatches).slice(0, 3).map((m) => (
+              <Link to={`/match/${m.id}`} className="lp-card" key={m.id}>
                 <div className="lp-top">
-                  <span className="lp-league">{m.league}</span>
-                  <span className="lp-live">LIVE {m.minute}</span>
+                  <span className="lp-league">{m.leagueName}</span>
+                  {liveMatches.length > 0
+                    ? <span className="lp-live">LIVE {m.minute}'</span>
+                    : <span className="lp-league">{new Date(m.kickOffAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>}
                 </div>
                 <div className="lp-teams">
-                  <div className="lp-team-row"><span className="lp-badge" /><span>{m.home}</span><span className="sc">{m.hs}</span></div>
-                  <div className="lp-team-row"><span className="lp-badge" /><span>{m.away}</span><span className="sc">{m.as}</span></div>
+                  <div className="lp-team-row"><span className="lp-badge" /><span>{m.homeTeam}</span><span className="sc">{m.homeScore ?? "\u2014"}</span></div>
+                  <div className="lp-team-row"><span className="lp-badge" /><span>{m.awayTeam}</span><span className="sc">{m.awayScore ?? "\u2014"}</span></div>
                 </div>
                 <div className="lp-odds">
-                  {m.odds.map((o, j) => <span key={j}>{o}</span>)}
+                  <span>{m.oddsHome?.toFixed(2)}</span>
+                  <span>{m.oddsDraw?.toFixed(2)}</span>
+                  <span>{m.oddsAway?.toFixed(2)}</span>
                 </div>
               </Link>
             ))}

@@ -1,0 +1,128 @@
+.bb-mm-scrim {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.55);
+  z-index: 400;
+  animation: bb-mm-fade 0.15s ease;
+}
+
+@keyframes bb-mm-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.bb-mm-drawer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 78vw;
+  max-width: 300px;
+  background: var(--pitch-mid);
+  border-right: 1px solid var(--pitch-line);
+  z-index: 401;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow-raised);
+  animation: bb-mm-slide 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes bb-mm-slide {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
+}
+
+.bb-mm-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 16px;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.bb-mm-title {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 15px;
+  color: var(--chalk);
+}
+
+.bb-mm-close {
+  background: var(--surface-alt);
+  border: 1px solid var(--pitch-line);
+  color: var(--chalk-dim);
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bb-mm-nav {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 10px;
+}
+
+.bb-mm-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 12px;
+  border-radius: 9px;
+  color: var(--chalk-dim);
+  font-size: 14px;
+  text-decoration: none;
+}
+
+.bb-mm-item.active {
+  background: var(--gold-bg);
+  color: var(--gold-bright);
+  font-weight: 600;
+  box-shadow: inset 0 0 0 1px var(--gold-deep);
+}
+
+.bb-mm-item.disabled {
+  color: var(--text-faint);
+}
+
+.bb-mm-soon {
+  font-family: var(--font-mono);
+  font-size: 8.5px;
+  color: var(--text-faint);
+  border: 1px solid var(--pitch-line);
+  padding: 2px 6px;
+  border-radius: 3px;
+}
+
+.bb-mm-divider {
+  height: 1px;
+  background: var(--border-soft);
+  margin: 10px 6px;
+}
+
+.bb-mm-label {
+  font-size: 9.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--text-faint);
+  font-weight: 700;
+  padding: 4px 12px 8px;
+}
+
+.bb-mm-footer {
+  padding: 14px 16px;
+  border-top: 1px solid var(--border-soft);
+}
+
+.bb-mm-net {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-faint);
+}
+
+@media (min-width: 1081px) {
+  .bb-mm-drawer, .bb-mm-scrim { display: none; }
+}

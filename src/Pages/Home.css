@@ -190,3 +190,22 @@
   .home-page .footer-grid{grid-template-columns:1fr 1fr;}
   .home-page .top-links{display:none;}
 }
+
+/* Live Match Radar */
+.home-page .radar-sweep {
+  animation: bb-radar-rotate 4s linear infinite;
+  transform-box: fill-box;
+}
+
+@keyframes bb-radar-rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.home-page .radar-blip circle:nth-child(2) {
+  transition: r 0.15s ease;
+}
+
+.home-page .radar-blip:hover circle:nth-child(2) {
+  r: 6;
+}

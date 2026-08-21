@@ -1,216 +1,174 @@
-import { useEffect, useState } from "react";
-import { useSearchParams, useNavigate } from "react-router-dom";
+import { useMemo, useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { subscribe, initMatchManager } from "../engine/matchManager";
-import { ClubBadge } from "../components/ui/ClubBadge";
 import { useBetSlip } from "../context/BetSlipContext";
+import MatchCard from "../components/ui/MatchCard";
+import Sparkline from "../components/charts/Sparkline";
 import "./Football.css";
 
+function formatKickoff(ts) {
+  if (!ts) return "--:--";
+  return new Date(ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+}
+
+function toCardShape(m) {
+  const isLive = m.status === "first_half" || m.status === "second_half" || m.status === "halftime";
+  return {
+    id: m.id,
+    chainMatchId: m.chainMatchId,
+    leagueName: m.leagueName,
+    status: m.status,
+    minuteLabel: m.status === "halftime" ? "HT" : `${m.minute ?? 0}'`,
+    kickoffLabel: formatKickoff(m.kickOffAt),
+    homeTeam: m.homeTeam,
+    awayTeam: m.awayTeam,
+    homeScore: m.homeScore,
+    awayScore: m.awayScore,
+    oddsHome: m.oddsHome,
+    oddsDraw: m.oddsDraw,
+    oddsAway: m.oddsAway,
+    hasSecondaryMarkets: m.status !== "finished",
+    // Deterministic per-match seed for the pitch momentum trace, so it
+    // doesn't reshuffle on every re-render.
+    seed: (m.id?.length || 1) * 0.37 + 0.6,
+  };
+}
+
 export default function Football() {
-  const [matches, setMatches] = useState([]);
+  const [rawMatches, setRawMatches] = useState([]);
+  const [activeLeague, setActiveLeague] = useState("All");
   const { selections, addSelection } = useBetSlip();
-  const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
-  const leagueFilter = searchParams.get("league");
-  const liveOnly = searchParams.get("live") === "1";
-  const hotOnly = searchParams.get("hot") === "1";
 
   useEffect(() => {
     initMatchManager();
-    const unsubscribe = subscribe((snapshot) => setMatches(snapshot));
-    return unsubscribe;
+    const unsub = subscribe((matches) => setRawMatches(matches));
+    return unsub;
   }, []);
 
-  let visibleMatches = matches;
-  if (leagueFilter) {
-    visibleMatches = visibleMatches.filter((m) => m.leagueId === leagueFilter);
-  }
-  if (liveOnly) {
-    visibleMatches = visibleMatches.filter(
-      (m) => m.status === "first_half" || m.status === "second_half" || m.status === "halftime"
-    );
-  }
-  if (hotOnly) {
-    // "Hot games" = highest combined USDC staked across all three outcomes
-    visibleMatches = [...visibleMatches]
-      .sort((a, b) => (b.poolHome + b.poolDraw + b.poolAway) - (a.poolHome + a.poolDraw + a.poolAway))
-      .slice(0, 12);
+  const matches = useMemo(() => rawMatches.map(toCardShape), [rawMatches]);
+
+  const leagues = useMemo(() => {
+    const byLeague = {};
+    for (const m of matches) {
+      if (!byLeague[m.leagueName]) byLeague[m.leagueName] = [];
+      byLeague[m.leagueName].push(m);
+    }
+    return Object.entries(byLeague).map(([name, ms]) => ({ name, matches: ms }));
+  }, [matches]);
+
+  const liveCount = matches.filter((m) => m.status === "first_half" || m.status === "second_half" || m.status === "halftime").length;
+  const leagueCount = leagues.length;
+  const clubsTracked = useMemo(() => {
+    const names = new Set();
+    matches.forEach((m) => { names.add(m.homeTeam); names.add(m.awayTeam); });
+    return names.size;
+  }, [matches]);
+
+  const visibleLeagues = activeLeague === "All" ? leagues : leagues.filter((l) => l.name === activeLeague);
+
+  const hotGames = useMemo(
+    () => matches.filter((m) => m.status !== "finished").slice(0, 6),
+    [matches]
+  );
+
+  function handleSelectOdd(match, side, odds) {
+    // addSelection expects the raw match shape (needs .id/.chainMatchId/
+    // .homeTeam/.awayTeam) — the card-shaped object already has all of these.
+    addSelection(match, side, odds);
   }
 
-  const grouped = visibleMatches.reduce((acc, m) => {
-    acc[m.leagueName] = acc[m.leagueName] || [];
-    acc[m.leagueName].push(m);
-    return acc;
-  }, {});
-
-  function isPicked(matchId, side) {
-    return selections.some((s) => s.matchId === matchId && s.side === side);
+  function selectedOddFor(matchId) {
+    return selections.find((s) => s.matchId === matchId)?.side;
   }
 
   return (
-    <div>
-      <section className="bb-hero">
-        <div className="eyebrow">Live formation · Arc testnet</div>
-        <h1 className="bb-hero-title">
-          Read the pitch.
-          <br />
-          <span>Back the play.</span>
-        </h1>
-        <p className="bb-hero-sub">
-          Odds set from real club form, drawn out like a manager's
-          chalkboard. Settle instantly in USDC.
-        </p>
-
-        <svg width="100%" height="110" viewBox="0 0 400 110" aria-hidden="true">
-          {/* Pitch outline */}
-          <rect x="6" y="4" width="388" height="102" fill="none" stroke="var(--pitch-line)" strokeWidth="1" />
-          {/* Halfway line */}
-          <line x1="200" y1="4" x2="200" y2="106" stroke="var(--pitch-line)" strokeWidth="1" />
-          {/* Center circle + spot */}
-          <circle cx="200" cy="55" r="22" fill="none" stroke="var(--pitch-line)" strokeWidth="1" />
-          <circle cx="200" cy="55" r="1.4" fill="var(--pitch-line)" />
-
-          {/* Left penalty box + six-yard box */}
-          <rect x="6" y="24" width="42" height="62" fill="none" stroke="var(--pitch-line)" strokeWidth="1" />
-          <rect x="6" y="38" width="16" height="34" fill="none" stroke="var(--pitch-line)" strokeWidth="1" />
-          <path d="M48 34 A 18 18 0 0 1 48 76" fill="none" stroke="var(--pitch-line)" strokeWidth="1" />
-          {/* Left goal frame */}
-          <rect x="0" y="44" width="6" height="22" fill="none" stroke="var(--gold)" strokeWidth="1.5" opacity="0.6" />
-
-          {/* Right penalty box + six-yard box */}
-          <rect x="352" y="24" width="42" height="62" fill="none" stroke="var(--pitch-line)" strokeWidth="1" />
-          <rect x="378" y="38" width="16" height="34" fill="none" stroke="var(--pitch-line)" strokeWidth="1" />
-          <path d="M352 34 A 18 18 0 0 0 352 76" fill="none" stroke="var(--pitch-line)" strokeWidth="1" />
-          {/* Right goal frame */}
-          <rect x="394" y="44" width="6" height="22" fill="none" stroke="var(--gold)" strokeWidth="1.5" opacity="0.6" />
-
-          {/* Chalk-drawn attacking move */}
-          <path
-            className="bb-chalk-path"
-            d="M55 78 L120 40 L175 58 L235 30 L300 50 L360 45"
-            pathLength="1"
-            stroke="var(--gold)"
-            strokeWidth="1.75"
-            fill="none"
-            markerEnd="url(#arrow)"
-          />
-
-          <circle className="bb-chalk-ball" r="4" fill="var(--gold)">
-            <animateMotion
-              dur="3.6s"
-              repeatCount="indefinite"
-              path="M55 78 L120 40 L175 58 L235 30 L300 50 L360 45"
-              keyPoints="0;1"
-              keyTimes="0;1"
-              calcMode="linear"
-            />
-          </circle>
-
-          <defs>
-            <marker id="arrow" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
-              <path d="M0,0 L7,3.5 L0,7 Z" fill="var(--gold)" />
-            </marker>
-          </defs>
-        </svg>
-
-        <div className="bb-hero-stats">
-          <div className="bb-hero-stat">
-            <div className="num">{visibleMatches.length}</div>
-            <div className="label">Matches today</div>
-          </div>
-          <div className="bb-hero-stat">
-            <div className="num">
-              {visibleMatches.filter((m) => m.status === "first_half" || m.status === "second_half").length}
+    <div className="bb-pro">
+      <div className="main">
+        <div className="stats-row">
+          <div className="stat-card">
+            <div className="top-row">
+              <div><div className="num">{matches.length}</div><div className="lbl">Matches today</div></div>
+              <Sparkline width={66} height={28} color="#4C86FF" seed={1} />
             </div>
-            <div className="label">Live now</div>
+          </div>
+          <div className="stat-card">
+            <div className="top-row">
+              <div><div className="num live">{liveCount}</div><div className="lbl">Live now</div></div>
+              <Sparkline width={66} height={28} color="#33D17A" seed={2} />
+            </div>
+          </div>
+          <div className="stat-card">
+            <div className="top-row">
+              <div><div className="num">{leagueCount}</div><div className="lbl">Leagues</div></div>
+              <Sparkline width={66} height={28} color="#4C86FF" drift={0} seed={3} />
+            </div>
+          </div>
+          <div className="stat-card">
+            <div className="top-row">
+              <div><div className="num">{clubsTracked}</div><div className="lbl">Clubs tracked</div></div>
+              <Sparkline width={66} height={28} color="#4C86FF" seed={4} />
+            </div>
           </div>
         </div>
-      </section>
 
-      {liveOnly && visibleMatches.length === 0 && (
-        <div style={{ padding: "0 28px 24px", color: "var(--chalk-dim)", fontSize: 13 }}>
-          No matches are live right now — check back in a moment as kickoffs roll through.
-        </div>
-      )}
-
-      {hotOnly && (
-        <div style={{ padding: "0 28px 16px", color: "var(--chalk-dim)", fontSize: 13 }}>
-          Showing matches with the most USDC staked. Pools fill in as real bets come in.
-        </div>
-      )}
-
-      {Object.entries(grouped).map(([league, leagueMatches]) => (
-        <section className="bb-league-section" key={league}>
-          <div className="eyebrow" style={{ marginBottom: 10 }}>
-            {league}
-          </div>
-          <div className="bb-match-list">
-            {leagueMatches.map((match) => {
-              const isLive = match.status === "first_half" || match.status === "second_half" || match.status === "halftime";
-              const isFinished = match.status === "finished";
-              const oddsMap = { home: match.oddsHome, draw: match.oddsDraw, away: match.oddsAway };
-
-              return (
-                <div className="bb-match-row" key={match.id}>
-                  <div className="bb-match-meta">
-                    {isLive ? (
-                      <span className="bb-match-meta-live">● {match.minute}'</span>
-                    ) : (
-                      <span className="bb-match-meta-time">Betting open</span>
-                    )}
+        {hotGames.length > 0 && (
+          <>
+            <div className="section-title"><h2>Hot games</h2></div>
+            <div className="hot-row">
+              {hotGames.map((m) => (
+                <div className="hot-card" key={m.id}>
+                  <div className="hc-top">
+                    <span className="hc-league">{m.leagueName}</span>
+                    {m.status !== "betting" && <span className="hc-heat">🔥 High vol</span>}
                   </div>
-
-                  <div className="bb-match-body">
-                    <div
-                      className="bb-match-teamscol"
-                      onClick={() => navigate(`/match/${match.id}`)}
-                      role="button"
-                      tabIndex={0}
-                    >
-                      <div className="bb-match-teamline">
-                        <ClubBadge name={match.homeTeam} size={20} />
-                        <span className="bb-match-teamname">{match.homeTeam}</span>
-                        {(isLive || isFinished) && <span className="bb-match-teamscore">{match.homeScore}</span>}
-                      </div>
-                      <div className="bb-match-teamline">
-                        <ClubBadge name={match.awayTeam} size={20} />
-                        <span className="bb-match-teamname">{match.awayTeam}</span>
-                        {(isLive || isFinished) && <span className="bb-match-teamscore">{match.awayScore}</span>}
-                      </div>
-                    </div>
-
-                    {isFinished ? (
-                      <div className="bb-match-ft">FT</div>
-                    ) : (
-                      <div className="bb-odds-row bb-odds-row--compact">
-                        {["home", "draw", "away"].map((side) => (
-                          <div
-                            key={side}
-                            className={`odds-box${isPicked(match.id, side) ? " selected" : ""}`}
-                            onClick={() => addSelection(match, side, oddsMap[side])}
-                            role="button"
-                            tabIndex={0}
-                          >
-                            <div className="label">{side}</div>
-                            <div className="value">{oddsMap[side]?.toFixed(2) ?? "-"}</div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
+                  <div className="hc-teams">{m.homeTeam} <span className="vs">vs</span> {m.awayTeam}</div>
+                  <div className="hc-odds">
+                    <span>{m.oddsHome?.toFixed(2)}</span>
+                    <span>{m.oddsDraw?.toFixed(2)}</span>
+                    <span>{m.oddsAway?.toFixed(2)}</span>
                   </div>
-
-                  {!isFinished && (
-                    <div className="bb-odds-note">
-                      {isLive
-                        ? "Live odds — moving with the match, locked in the moment you bet."
-                        : "Fixed odds — locked in the moment you place your bet."}
-                    </div>
-                  )}
                 </div>
-              );
-            })}
+              ))}
+            </div>
+          </>
+        )}
+
+        <div className="league-tabs">
+          {["All", ...leagues.map((l) => l.name)].map((name) => (
+            <div
+              key={name}
+              className={`league-tab ${activeLeague === name ? "active" : ""}`}
+              onClick={() => setActiveLeague(name)}
+            >
+              <span className="crest" />
+              {name}
+            </div>
+          ))}
+        </div>
+
+        {visibleLeagues.map((league) => (
+          <div className="league-block" key={league.name}>
+            <div className="league-block-head">
+              <h3><span className="crest" />{league.name}</h3>
+              <Link to="/leaderboard" className="view-table">View table →</Link>
+            </div>
+            {league.matches.map((m) => (
+              <MatchCard
+                key={m.id}
+                match={m}
+                selectedOdd={selectedOddFor(m.id)}
+                onSelectOdd={handleSelectOdd}
+              />
+            ))}
           </div>
-        </section>
-      ))}
+        ))}
+
+        {matches.length === 0 && (
+          <div style={{ color: "var(--bp-text-faint, #4E5570)", padding: "40px 0", textAlign: "center" }}>
+            Loading matches…
+          </div>
+        )}
+      </div>
     </div>
   );
 }
