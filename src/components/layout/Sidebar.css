@@ -182,13 +182,16 @@
 
 /* Compensates for the sidebar being position:fixed (removed from
    normal flex flow) — main content needs matching left space so it
-   doesn't render underneath the pinned sidebar. */
+   doesn't render underneath the pinned sidebar. Using padding, not
+   margin: padding stays inside the flex-computed width, so it can't
+   push the box's right edge past its allocated space (which margin
+   would, causing an overlap with whatever sits to the right of main). */
 .bb-content-with-sidebar {
-  margin-left: var(--side-w);
+  padding-left: var(--side-w);
 }
 
 @media (max-width: 1080px) {
   .bb-content-with-sidebar {
-    margin-left: 0;
+    padding-left: 0;
   }
 }
