@@ -55,6 +55,11 @@ export function MobileMenu() {
           {isAdmin && (
             <Link to="/admin" className={`bb-mm-item ${pathname === "/admin" ? "active" : ""}`} onClick={close}>Admin Panel</Link>
           )}
+
+          <div className="bb-mm-divider" />
+          <a href="https://faucet.circle.com" target="_blank" rel="noopener noreferrer" className="bb-mm-item" onClick={close}>
+            💧 Get USDC
+          </a>
         </nav>
 
         <div className="bb-mm-footer">

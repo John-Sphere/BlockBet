@@ -13,21 +13,6 @@
   z-index: 300;
 }
 
-/* ============ TOPBAR — shared base ============ */
-.bb-topbar {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-  height: var(--nav-h);
-  padding: 0 20px;
-  background: rgba(16,20,31,0.9);
-  backdrop-filter: blur(10px);
-  border-bottom: 1px solid var(--pitch-line);
-  position: fixed;
-  top: 0; left: 0; right: 0;
-  z-index: 300;
-}
-
 [data-theme="light"] .bb-topbar {
   background: rgba(255,255,255,0.9);
 }
@@ -239,6 +224,7 @@
 /* ============ MOBILE ============ */
 @media (max-width: 1080px) {
   .bb-top-search { display: none; }
+  .bb-btn-usdc { display: none; }
 }
 
 @media (max-width: 768px) {
