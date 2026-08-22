@@ -209,3 +209,29 @@
 .home-page .radar-blip:hover circle:nth-child(2) {
   r: 6;
 }
+
+/* Light mode override */
+[data-theme="light"] .home-page{
+  --hp-bg:            #FFFFFF;
+  --hp-surface:       #FFFFFF;
+  --hp-surface-alt:   #F7F9FC;
+  --hp-surface-raised:#EEF2FA;
+  --hp-border:        #E5E9F2;
+  --hp-border-soft:   #EDF0F7;
+  --hp-text:          #0B1526;
+  --hp-text-dim:      #64748B;
+  --hp-text-faint:    #94A3B8;
+  --hp-blue:          #1656F5;
+  --hp-blue-2:        #3B72FF;
+  --hp-blue-dim:      #A9C0FF;
+  --hp-blue-bg:       rgba(22,86,245,0.08);
+  --hp-blue-glow:     rgba(22,86,245,0.3);
+  --hp-live:          #16A34A;
+  --hp-live-glow:     rgba(22,163,74,0.35);
+  --hp-down:          #DC2626;
+  background:
+    radial-gradient(1200px 600px at 12% -10%, rgba(22,86,245,0.06), transparent 60%),
+    radial-gradient(900px 500px at 100% 8%, rgba(22,163,74,0.04), transparent 55%),
+    radial-gradient(700px 500px at 50% 100%, rgba(22,86,245,0.03), transparent 60%),
+    var(--hp-bg);
+}

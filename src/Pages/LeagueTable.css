@@ -95,3 +95,23 @@
   .lt-table thead th, .lt-row td{ padding:10px 8px; }
   .lt-club-name{ font-size:12px; }
 }
+
+/* Light mode override */
+[data-theme="light"] .lt-page{
+  --lt-bg:            #FFFFFF;
+  --lt-surface:       #FFFFFF;
+  --lt-surface-alt:   #F7F9FC;
+  --lt-border:        #E5E9F2;
+  --lt-border-soft:   #EDF0F7;
+  --lt-text:          #0B1526;
+  --lt-text-dim:      #64748B;
+  --lt-text-faint:    #94A3B8;
+  --lt-blue:          #1656F5;
+  --lt-blue-2:        #3B72FF;
+  --lt-blue-bg:       rgba(22,86,245,0.08);
+  --lt-cl:            #1656F5;
+  --lt-el:            #C77700;
+  --lt-rel:           #DC2626;
+  --lt-pos:           #16A34A;
+  --lt-neg:           #DC2626;
+}

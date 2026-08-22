@@ -116,3 +116,27 @@
 @media (max-width: 1080px){
   .bb-pro .match-card{grid-template-columns:1fr; gap:12px;}
 }
+
+/* Light mode override — the dark values above are the primary intent,
+   this makes the theme toggle actually affect this page too. */
+[data-theme="light"] .bb-pro{
+  --bp-bg:            #FFFFFF;
+  --bp-surface:       #FFFFFF;
+  --bp-surface-alt:   #F7F9FC;
+  --bp-surface-raised:#EEF2FA;
+  --bp-border:        #E5E9F2;
+  --bp-border-soft:   #EDF0F7;
+  --bp-text:          #0B1526;
+  --bp-text-dim:      #64748B;
+  --bp-text-faint:    #94A3B8;
+  --bp-blue:          #1656F5;
+  --bp-blue-2:        #3B72FF;
+  --bp-blue-dim:      #A9C0FF;
+  --bp-blue-bg:       rgba(22,86,245,0.08);
+  --bp-blue-glow:     rgba(22,86,245,0.3);
+  --bp-live:          #16A34A;
+  --bp-live-bg:       rgba(22,163,74,0.1);
+  --bp-live-glow:     rgba(22,163,74,0.35);
+  --bp-down:          #DC2626;
+  --bp-amber:         #C77700;
+}

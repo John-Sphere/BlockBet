@@ -114,3 +114,25 @@
   .mb-stats-row{ flex-direction:column; }
   .mb-history-row{ flex-direction:column; align-items:flex-start; gap:8px; }
 }
+
+/* Light mode override */
+[data-theme="light"] .mb-page{
+  --mb-bg:            #FFFFFF;
+  --mb-surface:       #FFFFFF;
+  --mb-surface-alt:   #F7F9FC;
+  --mb-surface-raised:#EEF2FA;
+  --mb-border:        #E5E9F2;
+  --mb-border-soft:   #EDF0F7;
+  --mb-text:          #0B1526;
+  --mb-text-dim:      #64748B;
+  --mb-text-faint:    #94A3B8;
+  --mb-blue:          #1656F5;
+  --mb-blue-2:        #3B72FF;
+  --mb-blue-bg:       rgba(22,86,245,0.08);
+  --mb-live:          #16A34A;
+  --mb-live-bg:       rgba(22,163,74,0.1);
+  --mb-down:          #DC2626;
+  --mb-down-bg:       rgba(220,38,38,0.08);
+  --mb-amber:         #C77700;
+  --mb-amber-bg:      rgba(199,119,0,0.08);
+}
