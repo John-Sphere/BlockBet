@@ -1,88 +1,69 @@
-.bb-tabbar {
-  display: none; /* only shown on mobile, via media query below */
+.mtb{
+  --mtb-bg:        #10141F;
+  --mtb-border:    #242B40;
+  --mtb-text-dim:  #8891A8;
+  --mtb-blue:      #4C86FF;
+  --mtb-blue-bg:   rgba(76,134,255,0.12);
+  --mtb-live:      #33D17A;
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  height: 62px;
+  padding-bottom: env(safe-area-inset-bottom, 0);
+  background: rgba(16,20,31,0.92);
+  backdrop-filter: blur(14px);
+  border-top: 1px solid var(--mtb-border);
+  display: flex;
+  align-items: stretch;
+  z-index: 200;
+  font-family: 'Inter', sans-serif;
+}
+.mtb-item{
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  background: none;
+  border: none;
+  color: var(--mtb-text-dim);
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  position: relative;
+}
+.mtb-item svg{ width: 20px; height: 20px; }
+.mtb-item.active{ color: var(--mtb-blue); }
+.mtb-item.active::before{
+  content:'';
+  position:absolute; top:4px; left:50%; transform:translateX(-50%);
+  width:26px; height:26px; border-radius:9px; background: var(--mtb-blue-bg);
+  z-index:-1;
+}
+.mtb-icon-wrap{ position: relative; display:flex; align-items:center; justify-content:center; }
+.mtb-live-dot{
+  position:absolute; top:-1px; right:-3px; width:6px; height:6px; border-radius:50%;
+  background: var(--mtb-live); box-shadow: 0 0 0 2px var(--mtb-bg);
+}
+.mtb-badge{
+  position:absolute; top:-6px; right:-9px;
+  background: var(--mtb-blue); color:#080B12; font-family:'IBM Plex Mono', monospace;
+  font-size:9.5px; font-weight:700; min-width:16px; height:16px; padding:0 3px;
+  border-radius:9px; display:flex; align-items:center; justify-content:center;
+  box-shadow: 0 0 0 2px var(--mtb-bg);
+}
+@media (min-width: 1081px){
+  .mtb{ display:none; }
 }
 
-@media (max-width: 768px) {
-  .bb-tabbar {
-    display: flex;
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    z-index: 400;
-    background: var(--pitch-mid);
-    border-top: 1px solid var(--pitch-line);
-    padding: 6px 4px calc(6px + env(safe-area-inset-bottom));
-    justify-content: space-around;
-    align-items: flex-end;
-  }
-
-  .bb-tabbar-item {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 3px;
-    background: none;
-    border: none;
-    color: var(--chalk-dim);
-    font-size: 10px;
-    font-weight: 600;
-    padding: 4px 6px;
-    cursor: pointer;
-    position: relative;
-    text-decoration: none;
-  }
-
-  .bb-tabbar-item.active {
-    color: var(--gold);
-  }
-
-  .bb-tabbar-icon {
-    font-size: 18px;
-    position: relative;
-  }
-
-  .bb-tabbar-badge {
-    position: absolute;
-    top: -4px;
-    right: -8px;
-    background: var(--gold);
-    color: var(--pitch-dark);
-    font-size: 9px;
-    font-weight: 800;
-    border-radius: 50%;
-    width: 15px;
-    height: 15px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .bb-tabbar-center {
-    transform: translateY(-10px);
-  }
-
-  .bb-tabbar-center-icon {
-    width: 44px;
-    height: 44px;
-    border-radius: 50%;
-    background: var(--gold);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 18px;
-    box-shadow: 0 4px 14px -4px rgba(201,162,75,0.5);
-    position: relative;
-  }
-
-  .bb-tabbar-dot {
-    position: absolute;
-    top: 2px;
-    right: 2px;
-    width: 9px;
-    height: 9px;
-    border-radius: 50%;
-    background: var(--live-red);
-    border: 1.5px solid var(--pitch-mid);
-  }
+/* Light mode override — same pattern as the other redesigned pages */
+[data-theme="light"] .mtb{
+  --mtb-bg:        #FFFFFF;
+  --mtb-border:    #E5E9F2;
+  --mtb-text-dim:  #64748B;
+  --mtb-blue:      #1656F5;
+  --mtb-blue-bg:   rgba(22,86,245,0.08);
+  --mtb-live:      #16A34A;
+  background: rgba(255,255,255,0.92);
 }

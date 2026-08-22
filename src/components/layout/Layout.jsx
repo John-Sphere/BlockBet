@@ -1,4 +1,5 @@
 import { useLocation } from "react-router-dom";
+import { useApp } from "../../context/AppContext";
 import { Navbar }  from "./Navbar";
 import { Sidebar } from "./Sidebar";
 import { BetSlipPanel } from "../ui/BetSlipPanel";
@@ -8,6 +9,7 @@ import { OfflineBanner } from "./OfflineBanner";
 
 export function Layout({ children }) {
   const { pathname } = useLocation();
+  const { toggleSidebar } = useApp();
   const isHome = pathname === "/";
 
   return (
@@ -24,7 +26,7 @@ export function Layout({ children }) {
         </main>
         {!isHome && <BetSlipPanel />}
       </div>
-      <MobileTabBar />
+      <MobileTabBar onOpenMenu={toggleSidebar} />
       <MobileMenu />
     </div>
   );
