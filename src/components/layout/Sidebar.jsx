@@ -1,224 +1,105 @@
-import { useState, useEffect } from "react";
-import { Link, useLocation, useSearchParams } from "react-router-dom";
-import { useApp }    from "../../context/AppContext";
+import { Link, useLocation } from "react-router-dom";
 import { useWallet } from "../../context/WalletContext";
-import { LEAGUES }   from "../../data/clubs";
-import { subscribe, initMatchManager } from "../../engine/matchManager";
+import "./Sidebar.css";
 
 const OTHER_LINKS = [
-  { to:"/my-bets",      label:"Open Bet"       },
-  { to:"/history",      label:"Match History" },
-  { to:"/leaderboard",  label:"Table"          },
-  { to:"/admin",        label:"Admin Panel", adminOnly:true },
+  { to: "/my-bets",     label: "Open Bet" },
+  { to: "/history",     label: "Match History" },
+  { to: "/leaderboard", label: "Table" },
+  { to: "/admin",       label: "Admin Panel", adminOnly: true },
 ];
 
 const OTHER_SPORTS = [
-  { to:"/coming-soon/basketball", label:"Basketball" },
-  { to:"/coming-soon/tennis",     label:"Tennis" },
-  { to:"/coming-soon/darts",      label:"Darts" },
-  { to:"/coming-soon/casino",     label:"Casino" },
+  { to: "/coming-soon/basketball", label: "Basketball" },
+  { to: "/coming-soon/tennis",     label: "Tennis" },
+  { to: "/coming-soon/darts",      label: "Darts" },
+  { to: "/coming-soon/casino",     label: "Casino" },
 ];
 
 export function Sidebar() {
-  const { pathname }              = useLocation();
-  const [searchParams]            = useSearchParams();
-  const { sidebarOpen }           = useApp();
+  const { pathname } = useLocation();
   const { connected, address, shortAddr, balance } = useWallet();
-  const [footballOpen, setFootballOpen] = useState(true);
-  const [allMatchesOpen, setAllMatchesOpen] = useState(false);
-  const [liveCount, setLiveCount] = useState(0);
 
-  const activeLeague = searchParams.get("league");
-  const isHotView = searchParams.get("hot") === "1";
   const onFootball = pathname === "/football" || pathname === "/";
 
   const adminWallet = (import.meta.env.VITE_ADMIN_WALLET || "").toLowerCase();
   const isAdmin = connected && address && adminWallet && address.toLowerCase() === adminWallet;
-
-  const otherLinks = OTHER_LINKS.filter(l => !l.adminOnly || isAdmin);
-
-  useEffect(() => {
-    initMatchManager();
-    const unsub = subscribe((matches) => {
-      const count = matches.filter(
-        (m) => m.status === "first_half" || m.status === "second_half" || m.status === "halftime"
-      ).length;
-      setLiveCount(count);
-    });
-    return unsub;
-  }, []);
-
-  const navItemStyle = (active) => ({
-    display:"flex", alignItems:"center", gap:12,
-    padding:"12px 18px", fontSize:13,
-    color: active ? "var(--gold)" : "var(--chalk-dim)",
-    background: active ? "rgba(22,86,245,0.08)" : "transparent",
-    borderLeft:`3px solid ${active ? "var(--gold)" : "transparent"}`,
-    fontWeight: active ? 700 : 500,
-    transition:"background 0.15s ease, color 0.15s ease", textDecoration:"none",
-  });
+  const otherLinks = OTHER_LINKS.filter((l) => !l.adminOnly || isAdmin);
 
   return (
-    <aside style={{
-      position:"fixed", top:"var(--nav-h)", left:0, zIndex:100,
-      height:"calc(100vh - var(--nav-h))", width:"var(--side-w)",
-      background:"var(--pitch-mid)", borderRight:"1px solid var(--pitch-line)",
-      display:"flex", flexDirection:"column",
-      transform: sidebarOpen ? "translateX(0)" : "translateX(-100%)",
-      transition:"transform 0.3s ease",
-      overflowY:"auto", overflowX:"hidden",
-    }}>
-
-      {/* ── BRAND BLOCK ── */}
-      <div style={{
-        padding:"20px 18px", borderBottom:"1px solid var(--pitch-line)",
-      }}>
-        <Link to="/" style={{ display:"flex", alignItems:"center", gap:10, marginBottom:14 }}>
-          <div style={{
-            width:36, height:36, borderRadius:9,
-            border:"1.5px solid var(--gold)",
-            display:"flex", alignItems:"center", justifyContent:"center",
-            flexShrink:0, background:"var(--pitch-dark)",
-          }}>
-            <img src="/logo.png" alt="BlockBet" width={26} height={26} style={{ objectFit:"contain" }}
-              onError={e => { e.target.style.display="none"; e.target.parentNode.innerHTML='<span style="font-size:18px;font-weight:900;color:var(--gold)">B</span>'; }} />
-          </div>
-          <div>
-            <div style={{ fontSize:16, fontWeight:900, letterSpacing:1, color:"var(--chalk)" }}>BLOCKBET</div>
-            <div style={{ fontSize:9, color:"var(--chalk-dim)", letterSpacing:2 }}>VIRTUAL SPORTSBOOK</div>
-          </div>
-        </Link>
-
-        <div style={{
-          display:"flex", alignItems:"center", gap:6,
-          background:"var(--pitch-card)", border:"1px solid var(--pitch-line)",
-          borderRadius:8, padding:"6px 10px",
-        }}>
-          <div>
-            <div style={{ fontSize:9, color:"var(--chalk-dim)", fontWeight:700, letterSpacing:1 }}>POWERED BY</div>
-            <div style={{ fontSize:13, color:"var(--gold)", fontWeight:800 }}>USDC • Arc Testnet</div>
-          </div>
-        </div>
-      </div>
-
-      {/* ── WALLET BLOCK ── */}
+    <aside className="bb-sidebar">
       {connected && (
-        <div style={{
-          margin:"12px 14px",
-          background:"var(--pitch-card)", border:"1px solid var(--pitch-line)",
-          borderRadius:12, padding:"12px 14px",
-        }}>
-          <div style={{ fontSize:9, color:"var(--chalk-dim)", fontWeight:700, letterSpacing:1, marginBottom:6 }}>MY WALLET</div>
-          <div style={{ fontSize:12, color:"var(--chalk)", fontWeight:700, marginBottom:4 }}>{shortAddr}</div>
-          <div style={{ fontSize:18, fontWeight:900, color:"var(--gold)" }}>
-            {balance} <span style={{ fontSize:11, color:"var(--chalk-dim)", fontWeight:600 }}>USDC</span>
-          </div>
+        <div className="bb-wallet-card">
+          <div className="bb-wc-lbl">My Wallet</div>
+          <div className="bb-wc-addr">{shortAddr}</div>
+          <div className="bb-wc-bal">{Number(balance ?? 0).toFixed(2)}<span>USDC</span></div>
+          <svg className="bb-wallet-spark" viewBox="0 0 200 26">
+            <path d="M0 18 L20 15 L40 19 L60 12 L80 16 L100 9 L120 14 L140 8 L160 11 L180 6 L200 9" fill="none" stroke="var(--gold)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.7" />
+          </svg>
         </div>
       )}
 
-      {/* ── NAV ── */}
-      <nav style={{ flex:1, padding:"8px 0" }}>
-
-        {/* Home */}
-        <Link to="/" style={navItemStyle(pathname === "/")}>
-          <span style={{ flex:1 }}>Home</span>
+      <nav className="bb-side-nav">
+        <Link to="/" className={`bb-nav-item ${pathname === "/" ? "active" : ""}`}>
+          <span className="bb-nl">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 12l9-9 9 9M5 10v10h14V10"/></svg>
+            Home
+          </span>
         </Link>
 
-        {/* Football — expandable */}
-        <button
-          onClick={() => setFootballOpen((v) => !v)}
-          style={{
-            width:"100%", display:"flex", alignItems:"center", gap:12,
-            padding:"12px 18px", fontSize:13, background:"none", border:"none", cursor:"pointer",
-            color: onFootball && !activeLeague ? "var(--gold)" : "var(--chalk-dim)",
-            fontWeight: onFootball && !activeLeague ? 700 : 500,
-            borderLeft: `3px solid ${onFootball && !activeLeague ? "var(--gold)" : "transparent"}`,
-          }}
-        >
-          <span style={{ flex:1, textAlign:"left" }}>Football</span>
-          <span style={{ fontSize:10, transform: footballOpen ? "rotate(90deg)" : "none", transition:"transform 0.15s ease" }}>▸</span>
-        </button>
+        <Link to="/football" className={`bb-nav-item ${onFootball ? "active" : ""}`}>
+          <span className="bb-nl">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="9"/><path d="M12 3v18M3 12h18"/></svg>
+            Football
+          </span>
+        </Link>
+        <Link to="/football" className={`bb-nav-item sub ${onFootball ? "active" : ""}`}>
+          All matches
+        </Link>
 
-        {footballOpen && (
-          <div style={{ paddingLeft: 6 }}>
-            {/* All matches — clicking expands the league list nested beneath it */}
-            <button
-              onClick={() => setAllMatchesOpen((v) => !v)}
-              style={{
-                width:"100%", display:"flex", alignItems:"center", gap:10,
-                background:"none", border:"none", cursor:"pointer",
-                ...navItemStyle(onFootball && !activeLeague && !isHotView),
-                fontSize: 12, padding: "9px 18px 9px 30px",
-              }}
-            >
-              <span style={{ flex:1, textAlign:"left" }}>All matches</span>
-              <span style={{ fontSize:9, transform: allMatchesOpen ? "rotate(90deg)" : "none", transition:"transform 0.15s ease" }}>▸</span>
-            </button>
+        {OTHER_SPORTS.map((s) => (
+          <Link key={s.to} to={s.to} className="bb-nav-item disabled">
+            <span className="bb-nl">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="9"/></svg>
+              {s.label}
+            </span>
+            <span className="bb-soon-tag">SOON</span>
+          </Link>
+        ))}
 
-            {allMatchesOpen && (
-              <div>
-                <Link
-                  to="/football"
-                  style={{ ...navItemStyle(onFootball && !activeLeague && !isHotView), fontSize: 11.5, padding: "8px 18px 8px 42px" }}
-                >
-                  <span>All leagues</span>
-                </Link>
-                {LEAGUES.map((l) => {
-                  const active = onFootball && activeLeague === l.id;
-                  return (
-                    <Link
-                      key={l.id}
-                      to={`/football?league=${l.id}`}
-                      style={{ ...navItemStyle(active), fontSize: 11.5, padding: "8px 18px 8px 42px" }}
-                    >
-                      <span>{l.name}</span>
-                    </Link>
-                  );
-                })}
-              </div>
-            )}
-          </div>
+        <div className="bb-nav-divider" />
+
+        <Link to="/my-bets" className={`bb-nav-item ${pathname === "/my-bets" ? "active" : ""}`}>
+          <span className="bb-nl">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18"/></svg>
+            Open Bet
+          </span>
+        </Link>
+        <Link to="/history" className={`bb-nav-item ${pathname === "/history" ? "active" : ""}`}>
+          <span className="bb-nl">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 12a9 9 0 1 0 9-9M3 12h6M3 12l4-4"/></svg>
+            Match History
+          </span>
+        </Link>
+        <Link to="/leaderboard" className={`bb-nav-item ${pathname === "/leaderboard" ? "active" : ""}`}>
+          <span className="bb-nl">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 20V10M12 20V4M20 20v-7"/></svg>
+            Table
+          </span>
+        </Link>
+        {isAdmin && (
+          <Link to="/admin" className={`bb-nav-item ${pathname === "/admin" ? "active" : ""}`}>
+            <span className="bb-nl">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1 1.55V21a2 2 0 1 1-4 0v-.09A1.7 1.7 0 0 0 9 19.4a1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.55-1H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-1.55V3a2 2 0 1 1 4 0v.09A1.7 1.7 0 0 0 15 4.6a1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.4 9a1.7 1.7 0 0 0 1.55 1H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.51 1Z"/></svg>
+              Admin Panel
+            </span>
+          </Link>
         )}
-
-        <div style={{ height: 1, background: "var(--pitch-line)", margin: "8px 18px" }} />
-
-        {OTHER_SPORTS.map(s => {
-          const active = pathname === s.to;
-          return (
-            <Link key={s.to} to={s.to} style={navItemStyle(active)}>
-              <span style={{ flex:1 }}>{s.label}</span>
-              <span style={{
-                fontSize:8, fontWeight:800, letterSpacing:0.3, padding:"2px 5px",
-                borderRadius:5, border:"1px solid var(--pitch-line)", color:"var(--chalk-dim)",
-              }}>
-                SOON
-              </span>
-            </Link>
-          );
-        })}
-
-        <div style={{ height: 1, background: "var(--pitch-line)", margin: "8px 18px" }} />
-
-        {otherLinks.map(l => {
-          const active = pathname === l.to;
-          return (
-            <Link key={l.to} to={l.to} style={navItemStyle(active)}>
-              <span style={{ flex:1 }}>{l.label}</span>
-              {active && (
-                <span style={{ width:5, height:5, borderRadius:"50%", background:"var(--gold)" }} />
-              )}
-            </Link>
-          );
-        })}
       </nav>
 
-      {/* ── FOOTER ── */}
-      <div style={{
-        padding:"14px 18px", borderTop:"1px solid var(--pitch-line)",
-        fontSize:10, color:"var(--chalk-dim)",
-      }}>
-        <div style={{ marginBottom:2, fontWeight:600, color:"var(--chalk)" }}>BlockBet v2.0 — Phase 2</div>
-        <div>Arc Testnet • USDC Native</div>
+      <div className="bb-sidebar-footer">
+        <div className="bb-sf-v">BlockBet v2.0 — Phase 2</div>
+        <div className="bb-sf-net"><span className="bb-sf-dot" />Arc Testnet · USDC Native</div>
       </div>
     </aside>
   );
