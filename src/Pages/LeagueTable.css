@@ -1,62 +1,97 @@
-.lt-page  { padding: 32px 40px; }
-.lt-head  { margin-bottom: 20px; }
-.lt-title { font-size: 26px; font-weight: 700; margin-bottom: 4px; color: var(--chalk); font-family: var(--font-display); }
-.lt-sub   { font-size: 13px; color: var(--chalk-dim); }
-
-.lt-tabs { display: flex; gap: 6px; overflow-x: auto; margin-bottom: 22px; padding-bottom: 4px; }
-.lt-tab  { background: var(--pitch-card); border: 1px solid var(--pitch-line); color: var(--chalk-dim); padding: 8px 16px; border-radius: 4px; font-size: 12px; font-weight: 600; white-space: nowrap; flex-shrink: 0; }
-.lt-tab--on { background: var(--gold) !important; color: var(--pitch-dark) !important; border-color: var(--gold) !important; font-weight: 700 !important; }
-
-.lt-table-head, .lt-row {
-  display: grid;
-  grid-template-columns: 32px 1fr repeat(7, 40px) 48px;
-  align-items: center;
-  padding: 10px 16px;
-  gap: 4px;
+.lt-page{
+  --lt-bg:            #090C15;
+  --lt-surface:       #10141F;
+  --lt-surface-alt:   #161C2C;
+  --lt-border:        #242B40;
+  --lt-border-soft:   #191F30;
+  --lt-text:          #EEF1F8;
+  --lt-text-dim:      #8891A8;
+  --lt-text-faint:    #4E5570;
+  --lt-blue:          #4C86FF;
+  --lt-blue-2:        #7DA6FF;
+  --lt-blue-bg:       rgba(76,134,255,0.12);
+  --lt-cl:            #4C86FF;
+  --lt-el:            #E8A23D;
+  --lt-rel:           #FF5C5C;
+  --lt-pos:           #33D17A;
+  --lt-neg:           #FF5C5C;
+  --lt-font-display: 'Sora', sans-serif;
+  --lt-font-mono:    'IBM Plex Mono', monospace;
+  padding: 24px 28px;
+  color: var(--lt-text);
+  font-family: 'Inter', sans-serif;
+  font-size: 13.5px;
 }
-.lt-table-head {
-  font-size: 10px;
-  color: var(--chalk-dim);
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-  border-bottom: 1px solid var(--pitch-line);
-  background: var(--pitch-dark);
-  text-align: center;
+.lt-page *{ box-sizing: border-box; }
+.lt-header{ margin-bottom: 20px; }
+.lt-header h1{
+  font-family: var(--lt-font-display); font-size: 26px; font-weight: 800;
+  letter-spacing: -0.01em; margin-bottom: 6px;
 }
-.lt-row {
-  font-size: 13px;
-  color: var(--chalk);
-  border-bottom: 1px solid var(--pitch-line);
-  text-align: center;
+.lt-header p{ color: var(--lt-text-dim); font-size: 13.5px; }
+.lt-tabs{ display:flex; gap:8px; margin-bottom:20px; flex-wrap:wrap; }
+.lt-tab{
+  padding:9px 16px; border-radius:8px; font-size:12.5px; font-weight:600;
+  background: var(--lt-surface-alt); color: var(--lt-text-dim);
+  border:1px solid var(--lt-border); cursor:pointer; transition:.14s;
+  font-family: inherit;
 }
-.lt-row:last-child { border-bottom: none; }
-.lt-row--top { background: rgba(201,162,75,0.04); }
-.lt-row--bottom { background: rgba(163,58,58,0.04); }
-
-.lt-col-pos { color: var(--chalk-dim); font-weight: 700; }
-.lt-col-club {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  text-align: left;
-  font-weight: 600;
+.lt-tab:hover{ color: var(--lt-text); border-color: var(--lt-blue); }
+.lt-tab.active{
+  background: linear-gradient(135deg, var(--lt-blue), #3E6FE0); color:#080B12; border-color: var(--lt-blue);
 }
-.lt-table-head .lt-col-club { text-align: left; }
-.lt-col-pts { color: var(--gold); font-weight: 700; }
-
-.lt-empty {
-  padding: 48px 24px;
-  text-align: center;
-  color: var(--chalk-dim);
-  font-size: 13px;
+.lt-panel{
+  background: var(--lt-surface); border:1px solid var(--lt-border); border-radius:14px;
+  overflow:hidden; box-shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px -12px rgba(0,0,0,0.5);
 }
-
-@media (max-width: 768px) {
-  .lt-page { padding: 20px 16px; }
-  .lt-table-head, .lt-row { grid-template-columns: 24px 1fr repeat(3, 32px) 40px; font-size: 11px; padding: 8px 10px; }
-  .lt-table-head span:nth-child(4), .lt-table-head span:nth-child(5),
-  .lt-row span:nth-child(4), .lt-row span:nth-child(5),
-  .lt-table-head span:nth-child(6), .lt-table-head span:nth-child(7),
-  .lt-row span:nth-child(6), .lt-row span:nth-child(7) { display: none; }
+.lt-table{ width:100%; border-collapse:collapse; }
+.lt-table thead th{
+  text-align:left; font-size:10.5px; text-transform:uppercase; letter-spacing:0.06em;
+  color: var(--lt-text-faint); font-weight:700; padding:14px 16px;
+  border-bottom:1px solid var(--lt-border-soft); background: var(--lt-surface-alt);
+}
+.lt-table thead th.lt-num{ text-align:center; }
+.lt-row td{
+  padding:13px 16px; border-bottom:1px solid var(--lt-border-soft); font-size:13px;
+  transition: background .14s;
+}
+.lt-row:last-child td{ border-bottom:none; }
+.lt-row:hover td{ background: var(--lt-surface-alt); }
+.lt-num{ text-align:center; font-family: var(--lt-font-mono); }
+.lt-rank{ display:flex; align-items:center; justify-content:center; gap:8px; font-weight:600; }
+.lt-zone-dot{
+  width:5px; height:5px; border-radius:50%; flex-shrink:0; background: var(--lt-text-faint);
+}
+.lt-zone-dot-cl{ background: var(--lt-cl); box-shadow:0 0 6px var(--lt-cl); }
+.lt-zone-dot-el{ background: var(--lt-el); box-shadow:0 0 6px var(--lt-el); }
+.lt-zone-dot-rel{ background: var(--lt-rel); box-shadow:0 0 6px var(--lt-rel); }
+.lt-zone-cl{ box-shadow: inset 3px 0 0 var(--lt-cl); }
+.lt-zone-el{ box-shadow: inset 3px 0 0 var(--lt-el); }
+.lt-zone-rel{ box-shadow: inset 3px 0 0 var(--lt-rel); }
+.lt-club{ display:flex; align-items:center; gap:11px; }
+.lt-crest{
+  width:26px; height:26px; border-radius:7px; background: var(--lt-surface-alt);
+  border:1px solid var(--lt-border); display:flex; align-items:center; justify-content:center;
+  font-family: var(--lt-font-mono); font-size:9.5px; font-weight:700; color: var(--lt-blue-2);
+  flex-shrink:0;
+}
+.lt-club-name{ font-size:13px; font-weight:600; }
+.lt-gd.pos{ color: var(--lt-pos); }
+.lt-gd.neg{ color: var(--lt-neg); }
+.lt-pts{ font-weight:800; color: var(--lt-blue-2); font-size:13.5px; }
+.lt-form{ display:flex; gap:3px; justify-content:center; }
+.lt-form i{ width:6px; height:6px; border-radius:50%; display:inline-block; }
+.lt-form-w{ background: var(--lt-pos); }
+.lt-form-d{ background: var(--lt-text-faint); }
+.lt-form-l{ background: var(--lt-neg); }
+.lt-legend{
+  display:flex; gap:22px; margin-top:16px; font-size:11.5px; color: var(--lt-text-dim);
+  flex-wrap:wrap;
+}
+.lt-legend span{ display:flex; align-items:center; gap:7px; }
+@media (max-width: 760px){
+  .lt-page{ padding:16px; }
+  .lt-table{ font-size:11.5px; }
+  .lt-table thead th, .lt-row td{ padding:10px 8px; }
+  .lt-club-name{ font-size:12px; }
 }
