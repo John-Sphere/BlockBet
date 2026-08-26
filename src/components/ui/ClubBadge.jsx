@@ -80,7 +80,7 @@ export function ClubBadge({ name, size = 32 }) {
       aria-label={name}
     >
       <title>{name}</title>
-      <path d={shieldPath} fill="var(--pitch-dark)" stroke={color} strokeWidth="1.75" />
+      <path d={shieldPath} fill="var(--pitch-dark, #10141F)" stroke={color} strokeWidth="1.75" />
       <path d={shieldPath} fill={color} opacity="0.16" />
       <text
         x="20"
