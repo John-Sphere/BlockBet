@@ -1,3 +1,4 @@
+import { useState } from "react";
 import "./ClubBadge.css";
 
 // Curated palette so colors stay readable on the dark pitch background.
@@ -23,6 +24,16 @@ function getInitials(name) {
   return words.slice(0, 3).map((w) => w[0]).join("").toUpperCase();
 }
 
+// Converts "Manchester United" -> "manchester-united", matching the
+// exact filename each club's real crest should be saved as.
+function slugify(name) {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .trim()
+    .replace(/\s+/g, "-");
+}
+
 // Three subtly different shield silhouettes, picked deterministically
 // per club, so not every crest on the page is an identical stamp.
 const SHIELD_PATHS = [
@@ -35,10 +46,29 @@ const SHIELD_PATHS = [
 ];
 
 export function ClubBadge({ name, size = 32 }) {
+  const [imgFailed, setImgFailed] = useState(false);
   const color = PALETTE[hashToIndex(name, PALETTE.length)];
   const initials = getInitials(name);
   const shieldPath = SHIELD_PATHS[hashToIndex(name + "shield", SHIELD_PATHS.length)];
   const height = Math.round(size * 1.15);
+
+  // Tries the real crest first (added club-by-club to public/club-logos/).
+  // Falls back automatically to the generated placeholder for any club
+  // that doesn't have a real logo file yet — nothing breaks in the
+  // meantime, and clubs upgrade individually as files are added.
+  if (!imgFailed) {
+    return (
+      <img
+        src={`/club-logos/${slugify(name)}.png`}
+        alt={name}
+        title={name}
+        width={size}
+        height={size}
+        className="club-badge club-badge-img"
+        onError={() => setImgFailed(true)}
+      />
+    );
+  }
 
   return (
     <svg
