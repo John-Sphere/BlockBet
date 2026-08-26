@@ -49,10 +49,16 @@ export function calculateProbabilities(homeRatings, awayRatings) {
  * probabilityToOdds
  * Converts probability to decimal odds with house margin applied.
  */
+// A cap of 15.00 keeps things looking like normal sportsbook odds
+// even in the most lopsided, near-certain scenarios (a team down 3-0
+// in the 88th minute) — mathematically the "fair" number could run
+// into the hundreds, which just looks broken rather than realistic.
+const MAX_ODDS = 15.0;
+
 function probabilityToOdds(prob, margin) {
   const fair = 1 / prob;
   const withMargin = fair * (1 - margin);
-  return Math.max(1.05, +withMargin.toFixed(2));
+  return Math.min(MAX_ODDS, Math.max(1.05, +withMargin.toFixed(2)));
 }
 
 /**
@@ -107,7 +113,7 @@ export function calculateLiveOdds(baseProbabilities, minute, homeScore, awayScor
 
   // Keep a small floor so the market never fully locks to 0% before
   // the actual final whistle (odds would go to infinity otherwise).
-  const FLOOR = 0.01;
+  const FLOOR = 0.06;
   const clamp = (p) => Math.max(FLOOR, Math.min(0.98, p));
   const clamped = {
     home: clamp(blended.home),
