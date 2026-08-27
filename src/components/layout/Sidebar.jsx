@@ -2,6 +2,16 @@ import { Link, useLocation } from "react-router-dom";
 import { useWallet } from "../../context/WalletContext";
 import "./Sidebar.css";
 
+const ICONS = {
+  home: "M3 12l9-9 9 9M5 10v10h14V10",
+  football: null, // uses circle+cross, built inline below
+  basketball: null, // uses plain circle
+  ticket: "M3 4h18v16H3z|M3 9h18", // handled specially below
+  history: "M3 12a9 9 0 1 0 9-9M3 12h6M3 12l4-4",
+  table: "M4 20V10M12 20V4M20 20v-7",
+  admin: "M12 12m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0",
+};
+
 const OTHER_LINKS = [
   { to: "/my-bets",     label: "Open Bet" },
   { to: "/history",     label: "Match History" },
@@ -10,7 +20,6 @@ const OTHER_LINKS = [
 ];
 
 const OTHER_SPORTS = [
-  { to: "/coming-soon/basketball", label: "Basketball" },
   { to: "/coming-soon/tennis",     label: "Tennis" },
   { to: "/coming-soon/darts",      label: "Darts" },
   { to: "/coming-soon/casino",     label: "Casino" },
@@ -55,6 +64,13 @@ export function Sidebar() {
         </Link>
         <Link to="/football" className={`bb-nav-item sub ${onFootball ? "active" : ""}`}>
           All matches
+        </Link>
+
+        <Link to="/basketball" className={`bb-nav-item ${pathname === "/basketball" ? "active" : ""}`}>
+          <span className="bb-nl">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="9"/><path d="M12 3v18M3 12h18M5.6 5.6c4.8 4.8 4.8 12.8 0 17.6M18.4 5.6c-4.8 4.8-4.8 12.8 0 17.6"/></svg>
+            Basketball
+          </span>
         </Link>
 
         {OTHER_SPORTS.map((s) => (
