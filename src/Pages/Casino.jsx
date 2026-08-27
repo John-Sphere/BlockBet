@@ -155,27 +155,29 @@ export default function Casino() {
           </div>
 
           <div className="rl-table">
-            <button
-              className={`rl-cell rl-cell-zero rl-c-green ${betSelected(bets, "0") ? "selected" : ""}`}
-              onClick={() => addBet("straight", "0", [0])}
-            >
-              0
-            </button>
+            <div className="rl-table-top">
+              <button
+                className={`rl-cell rl-cell-zero rl-c-green ${betSelected(bets, "0") ? "selected" : ""}`}
+                onClick={() => addBet("straight", "0", [0])}
+              >
+                0
+              </button>
 
-            <div className="rl-grid">
-              {NUMBER_GRID.map((row, ri) => (
-                <div className="rl-grid-row" key={ri}>
-                  {row.map((n) => (
-                    <button
-                      key={n}
-                      className={`rl-cell rl-c-${colorOf(n)} ${betSelected(bets, String(n)) ? "selected" : ""}`}
-                      onClick={() => addBet("straight", String(n), [n])}
-                    >
-                      {n}
-                    </button>
-                  ))}
-                </div>
-              ))}
+              <div className="rl-grid">
+                {NUMBER_GRID.map((row, ri) => (
+                  <div className="rl-grid-row" key={ri}>
+                    {row.map((n) => (
+                      <button
+                        key={n}
+                        className={`rl-cell rl-c-${colorOf(n)} ${betSelected(bets, String(n)) ? "selected" : ""}`}
+                        onClick={() => addBet("straight", String(n), [n])}
+                      >
+                        {n}
+                      </button>
+                    ))}
+                  </div>
+                ))}
+              </div>
             </div>
 
             <div className="rl-dozens">

@@ -1,6 +1,5 @@
 /* ==========================================================
-   Casino.css — self-contained tokens, gold/pitch theme to match
-   the roulette wheel's real-money casino feel.
+   Casino.css — self-contained tokens, gold/pitch theme.
    ========================================================== */
 
 .rl-page{
@@ -87,8 +86,9 @@ path.rl-c-green{ fill: var(--rl-green); }
   background: var(--rl-surface); border:1px solid var(--rl-border); border-radius:14px; padding:16px;
   display:flex; flex-direction:column; gap:8px; margin-bottom:16px;
 }
-.rl-table > .rl-cell-zero{ align-self:flex-start; width:44px; height:100%; margin-right:8px; }
-.rl-grid{ display:flex; flex-direction:column; gap:4px; }
+.rl-table-top{ display:flex; flex-direction:row; gap:8px; align-items:stretch; }
+.rl-cell-zero{ width:44px; flex-shrink:0; writing-mode: horizontal-tb; }
+.rl-grid{ display:flex; flex-direction:column; gap:4px; flex:1; }
 .rl-grid-row{ display:grid; grid-template-columns: repeat(12, 1fr); gap:4px; }
 
 .rl-cell{
@@ -98,8 +98,10 @@ path.rl-c-green{ fill: var(--rl-green); }
 }
 .rl-cell:hover{ border-color: var(--rl-gold-dim); }
 .rl-cell.selected{ box-shadow: inset 0 0 0 2px var(--rl-gold); }
+.rl-cell.rl-c-red{ background: var(--rl-red); }
+.rl-cell.rl-c-black{ background: var(--rl-black); }
+.rl-cell.rl-c-green{ background: var(--rl-green); }
 .rl-cell-wide{ height:34px; font-family:'Inter',sans-serif; font-size:11px; letter-spacing:0.03em; }
-.rl-cell-zero{ writing-mode:vertical-rl; text-orientation:mixed; }
 
 .rl-dozens, .rl-outside{ display:grid; grid-template-columns: repeat(6, 1fr); gap:4px; }
 .rl-dozens{ grid-template-columns: repeat(3, 1fr); }
