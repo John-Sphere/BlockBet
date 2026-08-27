@@ -6,24 +6,43 @@
  * finishes its simulation. Passes the REAL result the simulation
  * already computed — result: 1=home win, 2=draw, 3=away win —
  * matching the Result enum in FootballBetting.sol exactly.
- *
- * This replaces resolve-matches.js's old random-outcome cron job,
- * which resolved matches with a result unrelated to what anyone
- * actually watched.
  */
 
 import { ethers } from "ethers";
 
 const ABI = [
-  "function matchCount() public view returns (uint256)",
-  "function getMatch(uint256) public view returns (string,string,uint256,uint256,uint256,bool,uint8)",
   "function resolveMatch(uint256,uint8) public",
 ];
 
 const MAX_ATTEMPTS = 4;
+const INDEXER_URL = "https://indexer.dev.hyperindex.xyz/49a3373/v1/graphql";
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+// Same fast lookup approach as ensure-match.js — one indexer query
+// instead of scanning up to 100 matches on-chain.
+async function findTargetMatch(home, away) {
+  try {
+    const res = await fetch(INDEXER_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        query: `query Find($home: String!, $away: String!) {
+          Match(where: { homeTeam: { _eq: $home }, awayTeam: { _eq: $away }, resolved: { _eq: false } }, limit: 1) {
+            matchId
+          }
+        }`,
+        variables: { home, away },
+      }),
+    });
+    const json = await res.json();
+    const match = json?.data?.Match?.[0];
+    return match ? Number(match.matchId) : null;
+  } catch {
+    return null;
+  }
 }
 
 export default async function handler(req, res) {
@@ -39,21 +58,7 @@ export default async function handler(req, res) {
     const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
     const contract = new ethers.Contract(process.env.BETTING_ADDRESS, ABI, wallet);
 
-    const count = await contract.matchCount();
-    const total = Number(count);
-    const MAX_SCAN = 100;
-    const startFrom = Math.max(1, total - MAX_SCAN + 1);
-
-    let targetMatchId = null;
-    for (let i = total; i >= startFrom; i--) {
-      const m = await contract.getMatch(i);
-      const [mHome, mAway, , , , resolved] = m;
-      if (mHome === home && mAway === away && !resolved) {
-        targetMatchId = i;
-        break;
-      }
-    }
-
+    const targetMatchId = await findTargetMatch(home, away);
     if (targetMatchId === null) {
       return res.status(200).json({ resolved: false, reason: "no matching unresolved match found" });
     }

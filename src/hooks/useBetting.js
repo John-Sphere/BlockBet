@@ -8,7 +8,7 @@ const CONTRACT = import.meta.env.VITE_CONTRACT_ADDRESS;
 // scanning blockchain history directly. Currently covers single bets
 // and match data; accumulator legs/outcomes still read on-chain below
 // since those aren't indexed yet.
-const INDEXER_URL = "https://indexer.dev.hyperindex.xyz/c5d5150/v1/graphql";
+const INDEXER_URL = "https://indexer.dev.hyperindex.xyz/49a3373/v1/graphql";
 
 async function queryIndexer(query, variables) {
   const res = await fetch(INDEXER_URL, {

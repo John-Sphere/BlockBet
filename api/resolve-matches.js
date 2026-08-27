@@ -23,7 +23,7 @@ const ABI = [
   "function resolveMatch(uint256,uint8) public",
 ];
 
-const INDEXER_URL = "https://indexer.dev.hyperindex.xyz/c5d5150/v1/graphql";
+const INDEXER_URL = "https://indexer.dev.hyperindex.xyz/49a3373/v1/graphql";
 
 const BETTING_WINDOW_MS = 2 * 60 * 1000;
 const HALF_DURATION_MS  = 3.5 * 60 * 1000;
