@@ -1,4 +1,5 @@
 import PitchViz from "../charts/PitchViz";
+import { ClubBadge } from "./ClubBadge";
 
 const FORM_COLOR = { W: "w", D: "d", L: "l" };
 function FormDots({ form = [] }) {
@@ -22,7 +23,7 @@ export default function MatchCard({ match, selectedOdd, onSelectOdd }) {
     <div className={`match-card ${isLive ? "live" : ""}`}>
       <div className="mc-teams">
         <div className="mc-team-row">
-          <div className="mc-badge" />
+          <ClubBadge name={match.homeTeam} size={21} />
           <div className="mc-team-name">{match.homeTeam}</div>
           {match.homeForm && <FormDots form={match.homeForm} />}
           <div className={`mc-score ${leading(match.homeScore, match.awayScore)}`}>
@@ -30,7 +31,7 @@ export default function MatchCard({ match, selectedOdd, onSelectOdd }) {
           </div>
         </div>
         <div className="mc-team-row">
-          <div className="mc-badge" />
+          <ClubBadge name={match.awayTeam} size={21} />
           <div className="mc-team-name">{match.awayTeam}</div>
           {match.awayForm && <FormDots form={match.awayForm} />}
           <div className={`mc-score ${leading(match.awayScore, match.homeScore)}`}>

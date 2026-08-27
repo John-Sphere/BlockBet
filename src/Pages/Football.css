@@ -79,7 +79,11 @@
 .bb-pro .match-card.live{border-color:rgba(51,209,122,0.35);}
 .bb-pro .mc-teams{display:flex; flex-direction:column; gap:7px;}
 .bb-pro .mc-team-row{display:flex; align-items:center; gap:10px;}
-.bb-pro .mc-badge{width:21px; height:21px; border-radius:6px; background:var(--bp-surface-raised); flex-shrink:0; box-shadow:inset 0 0 0 1px var(--bp-border-soft);}
+/* Keeps team rows vertically centered now that ClubBadge replaces the
+   old fixed-size .mc-badge square. The SVG placeholder fallback
+   renders slightly taller than it is wide, so without this the row
+   can look subtly misaligned. */
+.bb-pro .mc-team-row .club-badge{flex-shrink:0;}
 .bb-pro .mc-team-name{font-size:13px; font-weight:500;}
 .bb-pro .form-dots{display:flex; gap:3px; margin-left:4px;}
 .bb-pro .form-dots i{width:5px; height:5px; border-radius:50%; display:inline-block;}
