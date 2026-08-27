@@ -273,46 +273,58 @@ export function useBetting() {
     };
   }, [signer]);
 
-  // Full roulette flow in one call: places the bet on-chain, waits
-  // for confirmation, requests the provably-fair spin using that
-  // transaction's own hash as unpredictable entropy, then
-  // immediately settles the result on-chain (paying out if won).
-  // Returns everything needed to show the result AND let the player
-  // independently verify the spin was genuinely fair.
-  const playRoulette = useCallback(async ({ amount, numbers }) => {
+  // Real roulette table flow: places every bet in the slip on-chain
+  // (sequentially, to avoid wallet rate-limiting), requests ONE
+  // shared provably-fair spin covering all of them, then settles each
+  // bet against that same winning number. Returns the winning number,
+  // per-bet results, total payout, and the fairness data needed to
+  // verify the spin independently.
+  const playRoulette = useCallback(async (bets) => {
     if (!signer) throw new Error("Wallet not connected");
-    if (!amount || Number(amount) <= 0) throw new Error("Invalid stake amount");
+    if (!bets || bets.length === 0) throw new Error("No bets placed");
     setPlacing(true);
     try {
-      await approveUsdc(CONTRACT, amount);
       const contract = new ethers.Contract(CONTRACT, BET_ABI, signer);
-      const amtUnits = ethers.parseUnits(String(amount), 6);
+      const totalStake = bets.reduce((a, b) => a + Number(b.stake), 0);
+      await approveUsdc(CONTRACT, String(totalStake));
 
-      const tx = await contract.placeRouletteBet(amtUnits, numbers);
-      const receipt = await tx.wait();
+      const betIds = [];
+      let lastReceipt = null;
+      for (const bet of bets) {
+        const amtUnits = ethers.parseUnits(String(bet.stake), 6);
+        const tx = await contract.placeRouletteBet(amtUnits, bet.numbers);
+        const receipt = await tx.wait();
+        lastReceipt = receipt;
 
-      const placedEvent = receipt.logs
-        .map((log) => { try { return contract.interface.parseLog(log); } catch { return null; } })
-        .find((e) => e?.name === "RouletteBetPlaced");
-      const betId = placedEvent?.args?.betId;
-      if (betId === undefined) throw new Error("Couldn't read bet ID from transaction");
+        const placedEvent = receipt.logs
+          .map((log) => { try { return contract.interface.parseLog(log); } catch { return null; } })
+          .find((e) => e?.name === "RouletteBetPlaced");
+        if (placedEvent?.args?.betId === undefined) throw new Error("Couldn't read bet ID from transaction");
+        betIds.push(Number(placedEvent.args.betId));
+      }
 
-      const spinRes = await fetch(`/api/roulette-spin?betId=${betId}&txHash=${receipt.hash}`);
+      const spinRes = await fetch("/api/roulette-spin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ betIds, txHash: lastReceipt.hash }),
+      });
       const spin = await spinRes.json();
       if (!spinRes.ok) throw new Error(spin.error || "Spin failed");
 
-      const settleTx = await contract.settleRouletteBet(
-        betId, spin.winningNumber, spin.deadline, spin.nonce, spin.signature
-      );
-      await settleTx.wait();
+      let totalPayout = 0n;
+      for (const s of spin.settlements) {
+        const settleTx = await contract.settleRouletteBet(s.betId, spin.winningNumber, s.deadline, s.nonce, s.signature);
+        await settleTx.wait();
+        totalPayout += BigInt(s.payout);
+      }
       await refreshBalance();
 
       return {
         success: true,
-        betId: Number(betId),
         winningNumber: spin.winningNumber,
-        won: spin.won,
-        payout: ethers.formatUnits(spin.payout, 6),
+        settlements: spin.settlements,
+        totalPayout: ethers.formatUnits(totalPayout, 6),
+        won: spin.settlements.some((s) => s.won),
         fairness: spin.fairness,
       };
     } finally {
