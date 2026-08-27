@@ -1,326 +1,170 @@
-import { useMemo, useState } from "react";
-import { WHEEL_ORDER, colorOf, BET_TYPES, calculatePayout } from "../engine/rouletteEngine";
-import { verifySpin } from "../engine/provablyFair";
-import { useBetting } from "../hooks/useBetting";
-import { useWallet } from "../context/WalletContext";
-import { useApp } from "../context/AppContext";
+import { Link } from "react-router-dom";
 import "./Casino.css";
 
-const NUMBER_GRID = [
-  [3, 6, 9, 12, 15, 18, 21, 24, 27, 30, 33, 36],
-  [2, 5, 8, 11, 14, 17, 20, 23, 26, 29, 32, 35],
-  [1, 4, 7, 10, 13, 16, 19, 22, 25, 28, 31, 34],
+const GAMES = [
+  {
+    key: "blackjack",
+    name: "Blackjack",
+    tag: "Beat the dealer to 21",
+    status: "soon",
+    art: "blackjack",
+    accent: "green",
+  },
+  {
+    key: "dice",
+    name: "Dice",
+    tag: "Pick a target, roll provably fair",
+    status: "soon",
+    art: "dice",
+    accent: "violet",
+  },
+  {
+    key: "slots",
+    name: "Slots",
+    tag: "3-reel, on-chain payouts",
+    status: "soon",
+    art: "slots",
+    accent: "rose",
+  },
+  {
+    key: "plinko",
+    name: "Plinko",
+    tag: "Drop, bounce, cash out",
+    status: "soon",
+    art: "plinko",
+    accent: "cyan",
+  },
 ];
-
-const OUTSIDE_BETS = [
-  { key: "low", label: "1–18" },
-  { key: "even", label: "EVEN" },
-  { key: "red", label: "RED", swatch: "red" },
-  { key: "black", label: "BLACK", swatch: "black" },
-  { key: "odd", label: "ODD" },
-  { key: "high", label: "19–36" },
-];
-
-const DOZENS = [
-  { key: "dozen1", label: "1st 12", numbers: range(1, 12) },
-  { key: "dozen2", label: "2nd 12", numbers: range(13, 24) },
-  { key: "dozen3", label: "3rd 12", numbers: range(25, 36) },
-];
-
-function range(a, b) {
-  return Array.from({ length: b - a + 1 }, (_, i) => a + i);
-}
-
-const OUTSIDE_NUMBERS = {
-  low: range(1, 18),
-  high: range(19, 36),
-  even: range(1, 36).filter((n) => n % 2 === 0),
-  odd: range(1, 36).filter((n) => n % 2 === 1),
-  red: range(0, 36).filter((n) => colorOf(n) === "red"),
-  black: range(0, 36).filter((n) => colorOf(n) === "black"),
-};
-
-const CHIP_VALUES = [1, 5, 10, 25, 100];
 
 export default function Casino() {
-  const { connected, connect, balance } = useWallet();
-  const { playRoulette, placing } = useBetting();
-  const { addToast } = useApp();
+  return (
+    <div className="cs-page">
+      <div className="cs-header">
+        <h1>Casino</h1>
+        <p>Provably fair, on-chain games settled instantly in USDC.</p>
+      </div>
 
-  const [chipValue, setChipValue] = useState(5);
-  const [bets, setBets] = useState([]); // { id, type, label, numbers, stake }
-  const [result, setResult] = useState(null); // { number, color }
-  const [fairness, setFairness] = useState(null);
-  const [verifyResult, setVerifyResult] = useState(null);
-  const [verifying, setVerifying] = useState(false);
-  const [history, setHistory] = useState([]); // real spins only, starts empty
+      <div className="cs-hero-wrap">
+        <Link to="/casino/roulette" className="cs-hero">
+          <div className="cs-hero-art">
+            <RouletteArt />
+          </div>
+          <div className="cs-hero-body">
+            <span className="cs-pill cs-pill-live">● LIVE</span>
+            <h2>European Roulette</h2>
+            <p>Single zero · Provably fair seed reveal · Full table &amp; outside bets</p>
+            <span className="cs-hero-cta">Play now →</span>
+          </div>
+        </Link>
+      </div>
 
-  const totalStake = useMemo(() => bets.reduce((a, b) => a + b.stake, 0), [bets]);
-  const totalPotential = useMemo(
-    () => bets.reduce((a, b) => a + calculatePayout(b.stake, b.type), 0),
-    [bets]
+      <div className="cs-section-label">More games</div>
+      <div className="cs-grid">
+        {GAMES.map((g) => (
+          <GameTile key={g.key} game={g} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function GameTile({ game }) {
+  const isLive = game.status === "live";
+  const content = (
+    <>
+      <div className="cs-tile-art">
+        <GameArt kind={game.art} />
+        {!isLive && <div className="cs-tile-lock">SOON</div>}
+      </div>
+      <div className="cs-tile-body">
+        <div className="cs-tile-name">{game.name}</div>
+        <div className="cs-tile-tag">{game.tag}</div>
+      </div>
+    </>
   );
 
-  function addBet(type, label, numbers) {
-    setBets((prev) => {
-      const existing = prev.find((b) => b.label === label);
-      if (existing) {
-        return prev.map((b) => (b.label === label ? { ...b, stake: b.stake + chipValue } : b));
-      }
-      return [...prev, { id: `${label}-${Date.now()}`, type, label, numbers, stake: chipValue }];
-    });
-  }
+  return isLive ? (
+    <Link to={`/casino/${game.key}`} className={`cs-tile cs-accent-${game.accent}`}>
+      {content}
+    </Link>
+  ) : (
+    <div className={`cs-tile cs-tile-disabled cs-accent-${game.accent}`}>{content}</div>
+  );
+}
 
-  function removeBet(id) {
-    setBets((prev) => prev.filter((b) => b.id !== id));
-  }
-
-  function clearBets() {
-    setBets([]);
-  }
-
-  async function handleSpin() {
-    if (!connected) { await connect(); return; }
-    if (bets.length === 0 || placing) return;
-    if (totalStake > Number(balance)) {
-      addToast(`Not enough USDC — you have ${Number(balance).toFixed(2)}, need ${totalStake.toFixed(2)}.`, "error");
-      return;
-    }
-    setResult(null);
-    setFairness(null);
-    setVerifyResult(null);
-
-    try {
-      const res = await playRoulette(bets);
-      setResult({ number: res.winningNumber, color: colorOf(res.winningNumber) });
-      setFairness(res.fairness);
-      setHistory((prev) => [res.winningNumber, ...prev].slice(0, 12));
-      addToast(
-        res.won ? `You won! Number ${res.winningNumber}, total payout ${res.totalPayout} USDC.` : `Number ${res.winningNumber} — not a win this time.`,
-        res.won ? "success" : "info"
+function GameArt({ kind }) {
+  switch (kind) {
+    case "blackjack":
+      return (
+        <svg viewBox="0 0 120 90" className="cs-art">
+          <rect x="30" y="14" width="42" height="60" rx="6" className="cs-card cs-card-a" />
+          <rect x="48" y="20" width="42" height="60" rx="6" className="cs-card cs-card-b" />
+          <text x="69" y="46" className="cs-card-pip">A</text>
+          <text x="69" y="66" className="cs-card-suit">♠</text>
+        </svg>
       );
-      setBets([]);
-    } catch (e) {
-      addToast(e?.message || "Spin failed.", "error");
-    }
-  }
-
-  async function handleVerify() {
-    if (!fairness || !result) return;
-    setVerifying(true);
-    try {
-      const v = await verifySpin({
-        serverSeed: fairness.serverSeed,
-        serverSeedHash: fairness.serverSeedHash,
-        clientSeed: fairness.clientSeed,
-        nonce: fairness.nonce,
-        claimedNumber: result.number,
-      });
-      setVerifyResult(v);
-    } finally {
-      setVerifying(false);
-    }
-  }
-
-  return (
-    <div className="rl-page">
-      <div className="rl-header">
-        <div>
-          <h1>European Roulette</h1>
-          <p>Single zero · Provably fair · Settled in USDC on Arc</p>
-        </div>
-        {history.length > 0 && (
-          <div className="rl-history">
-            {history.map((n, i) => (
-              <span key={i} className={`rl-history-chip rl-c-${colorOf(n)}`}>{n}</span>
-            ))}
-          </div>
-        )}
-      </div>
-
-      <div className="rl-layout">
-        <div className="rl-main">
-          <div className="rl-wheel-panel">
-            <Wheel spinning={placing} result={result} />
-            <div className="rl-result-block">
-              {result ? (
-                <>
-                  <span className={`rl-result-number rl-c-${result.color}`}>{result.number}</span>
-                  <span className="rl-result-label">{result.color.toUpperCase()}</span>
-                </>
-              ) : (
-                <span className="rl-result-placeholder">Place your bets and spin</span>
-              )}
-            </div>
-          </div>
-
-          <div className="rl-table">
-            <div className="rl-table-top">
-              <button
-                className={`rl-cell rl-cell-zero rl-c-green ${betSelected(bets, "0") ? "selected" : ""}`}
-                onClick={() => addBet("straight", "0", [0])}
-              >
-                0
-              </button>
-
-              <div className="rl-grid">
-                {NUMBER_GRID.map((row, ri) => (
-                  <div className="rl-grid-row" key={ri}>
-                    {row.map((n) => (
-                      <button
-                        key={n}
-                        className={`rl-cell rl-c-${colorOf(n)} ${betSelected(bets, String(n)) ? "selected" : ""}`}
-                        onClick={() => addBet("straight", String(n), [n])}
-                      >
-                        {n}
-                      </button>
-                    ))}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="rl-dozens">
-              {DOZENS.map((d) => (
-                <button
-                  key={d.key}
-                  className={`rl-cell rl-cell-wide ${betSelected(bets, d.label) ? "selected" : ""}`}
-                  onClick={() => addBet("dozen", d.label, d.numbers)}
-                >
-                  {d.label}
-                </button>
-              ))}
-            </div>
-
-            <div className="rl-outside">
-              {OUTSIDE_BETS.map((b) => (
-                <button
-                  key={b.key}
-                  className={`rl-cell rl-cell-wide ${b.swatch ? `rl-c-${b.swatch}` : ""} ${betSelected(bets, b.label) ? "selected" : ""}`}
-                  onClick={() => addBet(b.key, b.label, OUTSIDE_NUMBERS[b.key])}
-                >
-                  {b.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="rl-chip-row">
-            <span className="rl-chip-label">Chip value</span>
-            {CHIP_VALUES.map((v) => (
-              <button
-                key={v}
-                className={`rl-chip ${chipValue === v ? "active" : ""}`}
-                onClick={() => setChipValue(v)}
-              >
-                {v}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <aside className="rl-slip">
-          <div className="rl-slip-head">
-            <h2>Your Bets</h2>
-            <span className="rl-clear" onClick={clearBets} role="button">Clear all</span>
-          </div>
-
-          <div className="rl-slip-items">
-            {bets.length === 0 && (
-              <div className="rl-slip-empty">Click a number or outside bet to place a chip.</div>
-            )}
-            {bets.map((b) => (
-              <div className="rl-slip-item" key={b.id}>
-                <div>
-                  <div className="rl-slip-label">{b.label}</div>
-                  <div className="rl-slip-sub">{BET_TYPES[b.type]?.label} · pays {BET_TYPES[b.type]?.payout}:1</div>
-                </div>
-                <div className="rl-slip-right">
-                  <span className="rl-slip-stake">{b.stake} USDC</span>
-                  <span className="rl-slip-close" onClick={() => removeBet(b.id)} role="button">✕</span>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="rl-slip-summary">
-            <div className="rl-sum-row"><span>Total stake</span><span>{totalStake.toFixed(2)} USDC</span></div>
-            <div className="rl-sum-row total"><span>Potential payout</span><span className="val">{totalPotential.toFixed(2)} USDC</span></div>
-          </div>
-
-          <button className="rl-spin-btn" disabled={bets.length === 0 || placing} onClick={handleSpin}>
-            {!connected ? "Connect wallet" : placing ? "Spinning…" : "Spin"}
-          </button>
-
-          {fairness && (
-            <div className="rl-fairness">
-              <div className="rl-fairness-title">Provably fair</div>
-              <div className="rl-fairness-row"><span>Server seed hash</span><code>{fairness.serverSeedHash}</code></div>
-              <div className="rl-fairness-row"><span>Server seed (revealed)</span><code>{fairness.serverSeed}</code></div>
-              <div className="rl-fairness-row"><span>Client seed (your bet's tx hash)</span><code>{fairness.clientSeed}</code></div>
-              <button className="rl-clear" style={{ marginBottom: 8 }} onClick={handleVerify} disabled={verifying}>
-                {verifying ? "Verifying…" : "Verify this spin →"}
-              </button>
-              {verifyResult && (
-                <div className="rl-fairness-note" style={{ color: verifyResult.valid ? "#33D17A" : "#FF5C5C" }}>
-                  {verifyResult.valid
-                    ? "✓ Verified — hash(revealed seed) matches, and recomputing from it reproduces this exact winning number."
-                    : "✗ Verification failed — something doesn't match."}
-                </div>
-              )}
-            </div>
+    case "dice":
+      return (
+        <svg viewBox="0 0 120 90" className="cs-art">
+          <rect x="24" y="30" width="34" height="34" rx="7" className="cs-die cs-die-a" transform="rotate(-8 41 47)" />
+          <rect x="58" y="24" width="34" height="34" rx="7" className="cs-die cs-die-b" transform="rotate(10 75 41)" />
+          <circle cx="34" cy="40" r="2.4" className="cs-pip" />
+          <circle cx="48" cy="40" r="2.4" className="cs-pip" />
+          <circle cx="34" cy="54" r="2.4" className="cs-pip" />
+          <circle cx="48" cy="54" r="2.4" className="cs-pip" />
+          <circle cx="75" cy="30" r="2.4" className="cs-pip" />
+          <circle cx="75" cy="41" r="2.4" className="cs-pip" />
+          <circle cx="75" cy="52" r="2.4" className="cs-pip" />
+        </svg>
+      );
+    case "slots":
+      return (
+        <svg viewBox="0 0 120 90" className="cs-art">
+          <rect x="18" y="20" width="84" height="50" rx="8" className="cs-slot-body" />
+          <rect x="27" y="29" width="20" height="32" rx="4" className="cs-reel" />
+          <rect x="50" y="29" width="20" height="32" rx="4" className="cs-reel" />
+          <rect x="73" y="29" width="20" height="32" rx="4" className="cs-reel" />
+          <text x="37" y="50" className="cs-reel-sym">7</text>
+          <text x="60" y="50" className="cs-reel-sym">★</text>
+          <text x="83" y="50" className="cs-reel-sym">7</text>
+        </svg>
+      );
+    case "plinko":
+      return (
+        <svg viewBox="0 0 120 90" className="cs-art">
+          {[0, 1, 2, 3].map((row) =>
+            Array.from({ length: row + 3 }).map((_, i) => (
+              <circle
+                key={`${row}-${i}`}
+                cx={30 + i * 14 - row * 7}
+                cy={20 + row * 14}
+                r="2.6"
+                className="cs-peg"
+              />
+            ))
           )}
-        </aside>
-      </div>
-    </div>
-  );
+          <circle cx="60" cy="18" r="4" className="cs-ball" />
+          <rect x="20" y="72" width="80" height="10" rx="3" className="cs-plinko-tray" />
+        </svg>
+      );
+    default:
+      return null;
+  }
 }
 
-function betSelected(bets, label) {
-  return bets.some((b) => b.label === label);
-}
-
-function Wheel({ spinning, result }) {
-  const cx = 110, cy = 110, r = 96;
-  const segAngle = 360 / WHEEL_ORDER.length;
-
-  const targetIndex = result ? WHEEL_ORDER.indexOf(result.number) : 0;
-  const targetAngle = -(targetIndex * segAngle);
-  const spins = spinning ? 0 : 5 * 360;
-
+function RouletteArt() {
   return (
-    <div className="rl-wheel-wrap">
-      <svg
-        className={`rl-wheel ${spinning ? "spinning" : ""}`}
-        viewBox="0 0 220 220"
-        style={!spinning && result ? { transform: `rotate(${spins + targetAngle}deg)` } : undefined}
-      >
-        {WHEEL_ORDER.map((n, i) => {
-          const start = i * segAngle;
-          const end = start + segAngle;
-          const color = colorOf(n);
-          return (
-            <path
-              key={n}
-              d={arcPath(cx, cy, r, start, end)}
-              className={`rl-seg rl-c-${color}`}
-            />
-          );
-        })}
-        <circle cx={cx} cy={cy} r={r * 0.42} className="rl-wheel-hub" />
-      </svg>
-      <div className="rl-wheel-pointer" />
-    </div>
+    <svg viewBox="0 0 200 200" className="cs-hero-svg">
+      <circle cx="100" cy="100" r="88" className="cs-hero-ring" />
+      {Array.from({ length: 12 }).map((_, i) => {
+        const angle = (i * 30 * Math.PI) / 180;
+        const x = 100 + 70 * Math.sin(angle);
+        const y = 100 - 70 * Math.cos(angle);
+        const colors = ["cs-seg-red", "cs-seg-black"];
+        return <circle key={i} cx={x} cy={y} r="7" className={colors[i % 2]} />;
+      })}
+      <circle cx="100" cy="100" r="6" className="cs-seg-green" />
+      <circle cx="100" cy="100" r="34" className="cs-hero-hub" />
+    </svg>
   );
-}
-
-function arcPath(cx, cy, r, startDeg, endDeg) {
-  const toXY = (deg) => {
-    const rad = ((deg - 90) * Math.PI) / 180;
-    return [cx + r * Math.cos(rad), cy + r * Math.sin(rad)];
-  };
-  const [x1, y1] = toXY(startDeg);
-  const [x2, y2] = toXY(endDeg);
-  const largeArc = endDeg - startDeg > 180 ? 1 : 0;
-  return `M${cx},${cy} L${x1},${y1} A${r},${r} 0 ${largeArc} 1 ${x2},${y2} Z`;
 }
