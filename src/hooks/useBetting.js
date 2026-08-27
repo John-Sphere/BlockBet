@@ -39,6 +39,10 @@ const BET_ABI = [
   "event BetPlaced(uint256 matchId, address bettor, uint8 prediction, uint256 amount, uint256 oddsBps)",
   "event BetCashedOut(uint256 matchId, address bettor, uint256 amount)",
   "event AccumulatorPlaced(uint256 accId, address bettor, uint256 legCount, uint256 stake, uint256 combinedOddsBps)",
+  "function placeRouletteBet(uint256,uint256[]) public",
+  "function settleRouletteBet(uint256,uint256,uint256,bytes32,bytes) public",
+  "function rouletteBetCount() view returns (uint256)",
+  "event RouletteBetPlaced(uint256 betId, address bettor, uint256 amount, uint256 numberCount)",
 ];
 
 export function useBetting() {
@@ -269,10 +273,57 @@ export function useBetting() {
     };
   }, [signer]);
 
+  // Full roulette flow in one call: places the bet on-chain, waits
+  // for confirmation, requests the provably-fair spin using that
+  // transaction's own hash as unpredictable entropy, then
+  // immediately settles the result on-chain (paying out if won).
+  // Returns everything needed to show the result AND let the player
+  // independently verify the spin was genuinely fair.
+  const playRoulette = useCallback(async ({ amount, numbers }) => {
+    if (!signer) throw new Error("Wallet not connected");
+    if (!amount || Number(amount) <= 0) throw new Error("Invalid stake amount");
+    setPlacing(true);
+    try {
+      await approveUsdc(CONTRACT, amount);
+      const contract = new ethers.Contract(CONTRACT, BET_ABI, signer);
+      const amtUnits = ethers.parseUnits(String(amount), 6);
+
+      const tx = await contract.placeRouletteBet(amtUnits, numbers);
+      const receipt = await tx.wait();
+
+      const placedEvent = receipt.logs
+        .map((log) => { try { return contract.interface.parseLog(log); } catch { return null; } })
+        .find((e) => e?.name === "RouletteBetPlaced");
+      const betId = placedEvent?.args?.betId;
+      if (betId === undefined) throw new Error("Couldn't read bet ID from transaction");
+
+      const spinRes = await fetch(`/api/roulette-spin?betId=${betId}&txHash=${receipt.hash}`);
+      const spin = await spinRes.json();
+      if (!spinRes.ok) throw new Error(spin.error || "Spin failed");
+
+      const settleTx = await contract.settleRouletteBet(
+        betId, spin.winningNumber, spin.deadline, spin.nonce, spin.signature
+      );
+      await settleTx.wait();
+      await refreshBalance();
+
+      return {
+        success: true,
+        betId: Number(betId),
+        winningNumber: spin.winningNumber,
+        won: spin.won,
+        payout: ethers.formatUnits(spin.payout, 6),
+        fairness: spin.fairness,
+      };
+    } finally {
+      setPlacing(false);
+    }
+  }, [signer, approveUsdc, refreshBalance]);
+
   return {
     placeBet, claimWinnings, cashOutBet,
     placeAccumulator, claimAccumulator, checkAccumulatorOutcome,
-    getMyBets,
+    getMyBets, playRoulette,
     placing, claiming, cashingOut,
   };
 }

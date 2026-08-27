@@ -19,9 +19,7 @@ const OTHER_LINKS = [
   { to: "/admin",       label: "Admin Panel", adminOnly: true },
 ];
 
-const OTHER_SPORTS = [
-  { to: "/coming-soon/casino",     label: "Casino" },
-];
+const OTHER_SPORTS = [];
 
 export function Sidebar() {
   const { pathname } = useLocation();
@@ -82,6 +80,13 @@ export function Sidebar() {
           <span className="bb-nl">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/></svg>
             Darts
+          </span>
+        </Link>
+
+        <Link to="/casino" className={`bb-nav-item ${pathname === "/casino" ? "active" : ""}`}>
+          <span className="bb-nl">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="4" y="4" width="16" height="16" rx="3"/><circle cx="9" cy="9" r="1" fill="currentColor"/><circle cx="15" cy="15" r="1" fill="currentColor"/></svg>
+            Casino
           </span>
         </Link>
 

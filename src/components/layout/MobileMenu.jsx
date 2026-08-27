@@ -3,9 +3,7 @@ import { useApp } from "../../context/AppContext";
 import { useWallet } from "../../context/WalletContext";
 import "./MobileMenu.css";
 
-const OTHER_SPORTS = [
-  { to: "/coming-soon/casino",     label: "Casino" },
-];
+const OTHER_SPORTS = [];
 
 // Slide-in drawer for small screens, replacing what the permanent
 // sidebar does on desktop — desktop hides the sidebar entirely below
@@ -38,15 +36,7 @@ export function MobileMenu() {
           <Link to="/basketball" className={`bb-mm-item ${pathname === "/basketball" ? "active" : ""}`} onClick={close}>Basketball</Link>
           <Link to="/tennis" className={`bb-mm-item ${pathname === "/tennis" ? "active" : ""}`} onClick={close}>Tennis</Link>
           <Link to="/darts" className={`bb-mm-item ${pathname === "/darts" ? "active" : ""}`} onClick={close}>Darts</Link>
-
-          <div className="bb-mm-divider" />
-          <div className="bb-mm-label">Coming soon</div>
-          {OTHER_SPORTS.map((s) => (
-            <div key={s.to} className="bb-mm-item disabled">
-              {s.label}
-              <span className="bb-mm-soon">SOON</span>
-            </div>
-          ))}
+          <Link to="/casino" className={`bb-mm-item ${pathname === "/casino" ? "active" : ""}`} onClick={close}>Casino</Link>
 
           <div className="bb-mm-divider" />
           <Link to="/my-bets" className={`bb-mm-item ${pathname === "/my-bets" ? "active" : ""}`} onClick={close}>Open Bet</Link>
