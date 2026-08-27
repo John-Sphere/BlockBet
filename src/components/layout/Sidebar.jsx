@@ -20,7 +20,6 @@ const OTHER_LINKS = [
 ];
 
 const OTHER_SPORTS = [
-  { to: "/coming-soon/tennis",     label: "Tennis" },
   { to: "/coming-soon/darts",      label: "Darts" },
   { to: "/coming-soon/casino",     label: "Casino" },
 ];
@@ -70,6 +69,13 @@ export function Sidebar() {
           <span className="bb-nl">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="9"/><path d="M12 3v18M3 12h18M5.6 5.6c4.8 4.8 4.8 12.8 0 17.6M18.4 5.6c-4.8 4.8-4.8 12.8 0 17.6"/></svg>
             Basketball
+          </span>
+        </Link>
+
+        <Link to="/tennis" className={`bb-nav-item ${pathname === "/tennis" ? "active" : ""}`}>
+          <span className="bb-nl">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="9"/><path d="M4 8c4-2 12-2 16 0M4 16c4 2 12 2 16 0"/></svg>
+            Tennis
           </span>
         </Link>
 

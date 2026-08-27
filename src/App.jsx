@@ -7,6 +7,7 @@ import "./App.css";
 const Home        = lazy(() => import("./Pages/Home"));
 const Football    = lazy(() => import("./Pages/Football"));
 const Basketball  = lazy(() => import("./Pages/Basketball"));
+const Tennis      = lazy(() => import("./Pages/Tennis"));
 const MatchDetail = lazy(() => import("./Pages/MatchDetail"));
 const Admin       = lazy(() => import("./Pages/Admin"));
 const LeagueTable = lazy(() => import("./Pages/LeagueTable"));
@@ -58,6 +59,7 @@ export default function App() {
             <Route path="/"            element={<Home />}         />
             <Route path="/football"    element={<Football />}     />
             <Route path="/basketball"  element={<Basketball />}   />
+            <Route path="/tennis"      element={<Tennis />}       />
             <Route path="/match/:matchId" element={<MatchDetail />} />
             <Route path="/history"     element={<MatchHistory />} />
             <Route path="/leaderboard" element={<LeagueTable />}  />

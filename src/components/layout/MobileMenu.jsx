@@ -4,7 +4,6 @@ import { useWallet } from "../../context/WalletContext";
 import "./MobileMenu.css";
 
 const OTHER_SPORTS = [
-  { to: "/coming-soon/tennis",     label: "Tennis" },
   { to: "/coming-soon/darts",      label: "Darts" },
   { to: "/coming-soon/casino",     label: "Casino" },
 ];
@@ -38,6 +37,7 @@ export function MobileMenu() {
           <Link to="/" className={`bb-mm-item ${pathname === "/" ? "active" : ""}`} onClick={close}>Home</Link>
           <Link to="/football" className={`bb-mm-item ${pathname === "/football" ? "active" : ""}`} onClick={close}>Football</Link>
           <Link to="/basketball" className={`bb-mm-item ${pathname === "/basketball" ? "active" : ""}`} onClick={close}>Basketball</Link>
+          <Link to="/tennis" className={`bb-mm-item ${pathname === "/tennis" ? "active" : ""}`} onClick={close}>Tennis</Link>
 
           <div className="bb-mm-divider" />
           <div className="bb-mm-label">Coming soon</div>
