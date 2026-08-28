@@ -1,0 +1,44 @@
+.gl-screen {
+  min-height: calc(100vh - var(--nav-h, 60px));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  background: #0B0E17;
+}
+
+.gl-spinner {
+  position: relative;
+  width: 64px;
+  height: 64px;
+}
+
+.gl-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 3px solid transparent;
+  border-top-color: #E8B23D;
+  animation: gl-spin 0.9s linear infinite;
+}
+
+.gl-ring-2 {
+  inset: 10px;
+  border-top-color: #F5C765;
+  animation-duration: 0.7s;
+  animation-direction: reverse;
+}
+
+@keyframes gl-spin {
+  to { transform: rotate(360deg); }
+}
+
+.gl-text {
+  font-family: 'Sora', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: #8990A3;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}

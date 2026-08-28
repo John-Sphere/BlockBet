@@ -10,6 +10,7 @@ const Basketball  = lazy(() => import("./Pages/Basketball"));
 const Tennis      = lazy(() => import("./Pages/Tennis"));
 const Darts       = lazy(() => import("./Pages/Darts"));
 const Casino      = lazy(() => import("./Pages/Casino"));
+const Roulette    = lazy(() => import("./Pages/Roulette"));
 const MatchDetail = lazy(() => import("./Pages/MatchDetail"));
 const Admin       = lazy(() => import("./Pages/Admin"));
 const LeagueTable = lazy(() => import("./Pages/LeagueTable"));
@@ -64,6 +65,7 @@ export default function App() {
             <Route path="/tennis"      element={<Tennis />}       />
             <Route path="/darts"       element={<Darts />}        />
             <Route path="/casino"      element={<Casino />}       />
+            <Route path="/casino/roulette" element={<Roulette />} />
             <Route path="/match/:matchId" element={<MatchDetail />} />
             <Route path="/history"     element={<MatchHistory />} />
             <Route path="/leaderboard" element={<LeagueTable />}  />
