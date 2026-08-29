@@ -20,7 +20,7 @@ const ABI = [
   "function createMatch(string,string) public",
 ];
 
-const INDEXER_URL = "https://indexer.dev.hyperindex.xyz/49a3373/v1/graphql";
+const INDEXER_URL = "https://indexer.dev.hyperindex.xyz/3b829a5/v1/graphql";
 
 // Must stay in sync with matchManager.js's ROUND_PERIOD_MS.
 const ROUND_PERIOD_MS = 18 * 60 * 1000;

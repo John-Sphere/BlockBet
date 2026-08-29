@@ -15,7 +15,7 @@ const ABI = [
 ];
 
 const MAX_ATTEMPTS = 4;
-const INDEXER_URL = "https://indexer.dev.hyperindex.xyz/49a3373/v1/graphql";
+const INDEXER_URL = "https://indexer.dev.hyperindex.xyz/3b829a5/v1/graphql";
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
