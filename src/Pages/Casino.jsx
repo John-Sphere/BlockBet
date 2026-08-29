@@ -34,6 +34,14 @@ const GAMES = [
     art: "plinko",
     accent: "cyan",
   },
+  {
+    key: "aviator",
+    name: "Aviator",
+    tag: "Cash out before it crashes",
+    status: "live",
+    art: "aviator",
+    accent: "green",
+  },
 ];
 
 export default function Casino() {
@@ -145,6 +153,14 @@ function GameArt({ kind }) {
           )}
           <circle cx="60" cy="18" r="4" className="cs-ball" />
           <rect x="20" y="72" width="80" height="10" rx="3" className="cs-plinko-tray" />
+        </svg>
+      );
+    case "aviator":
+      return (
+        <svg viewBox="0 0 120 90" className="cs-art">
+          <path d="M15 70 Q 55 60 105 20" fill="none" className="cs-av-path" strokeWidth="2.5" />
+          <circle cx="105" cy="20" r="5" className="cs-av-plane" />
+          <path d="M100 12 L 110 20 L 100 28" fill="none" className="cs-av-wing" strokeWidth="2" />
         </svg>
       );
     default:

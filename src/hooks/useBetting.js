@@ -43,6 +43,10 @@ const BET_ABI = [
   "function settleRouletteBet(uint256,uint256,uint256,bytes32,bytes) public",
   "function rouletteBetCount() view returns (uint256)",
   "event RouletteBetPlaced(uint256 betId, address bettor, uint256 amount, uint256 numberCount)",
+  "function placeAviatorBet(uint256) public",
+  "function settleAviatorBet(uint256,uint256,uint256,bytes32,bytes) public",
+  "function aviatorBetCount() view returns (uint256)",
+  "event AviatorBetPlaced(uint256 betId, address bettor, uint256 amount)",
 ];
 
 export function useBetting() {
@@ -217,9 +221,6 @@ export function useBetting() {
         };
       }).reverse();
     } catch {
-      // Indexer unreachable — fall back to nothing rather than the
-      // old slow scan, since that path added a lot of complexity for
-      // an edge case. Worth revisiting if this happens often.
       singles = [];
     }
 
@@ -332,10 +333,82 @@ export function useBetting() {
     }
   }, [signer, approveUsdc, refreshBalance]);
 
+  // Places an Aviator bet on-chain. Returns the betId and the tx's
+  // own hash — both needed later for the cash-out request, plus the
+  // moment it confirmed, used to drive the client-side multiplier
+  // display (the actual authoritative timing for settlement comes
+  // from the transaction's real on-chain block timestamp, read
+  // server-side — this local timestamp is just for a smooth-looking
+  // display in the meantime).
+  const placeAviatorBet = useCallback(async (amount) => {
+    if (!signer) throw new Error("Wallet not connected");
+    if (!amount || Number(amount) <= 0) throw new Error("Invalid stake amount");
+    setPlacing(true);
+    try {
+      await approveUsdc(CONTRACT, amount);
+      const contract = new ethers.Contract(CONTRACT, BET_ABI, signer);
+      const amtUnits = ethers.parseUnits(String(amount), 6);
+      const tx = await contract.placeAviatorBet(amtUnits);
+      const receipt = await tx.wait();
+
+      const placedEvent = receipt.logs
+        .map((log) => { try { return contract.interface.parseLog(log); } catch { return null; } })
+        .find((e) => e?.name === "AviatorBetPlaced");
+      if (placedEvent?.args?.betId === undefined) throw new Error("Couldn't read bet ID from transaction");
+
+      return {
+        success: true,
+        betId: Number(placedEvent.args.betId),
+        txHash: receipt.hash,
+        confirmedAtMs: Date.now(),
+      };
+    } finally {
+      setPlacing(false);
+    }
+  }, [signer, approveUsdc]);
+
+  // The actual cash-out: asks the server for the current state (won
+  // at some multiplier, or already crashed), then submits whatever
+  // signed settlement it returns. Every call to this genuinely
+  // attempts to settle the bet — there's no free "peek" at the
+  // current multiplier through this function, since each request
+  // returns a real, one-time-usable signature either way.
+  const cashOutAviator = useCallback(async (betId, txHash) => {
+    if (!signer) throw new Error("Wallet not connected");
+    setCashingOut(true);
+    try {
+      const res = await fetch("/api/aviator-cashout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ betId, txHash }),
+      });
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || "Cash out failed");
+
+      const contract = new ethers.Contract(CONTRACT, BET_ABI, signer);
+      const settleTx = await contract.settleAviatorBet(
+        betId, result.payout, result.deadline, result.nonce, result.signature
+      );
+      await settleTx.wait();
+      await refreshBalance();
+
+      return {
+        success: true,
+        crashed: result.crashed,
+        won: result.won,
+        multiplier: result.multiplier,
+        payout: ethers.formatUnits(result.payout, 6),
+      };
+    } finally {
+      setCashingOut(false);
+    }
+  }, [signer, refreshBalance]);
+
   return {
     placeBet, claimWinnings, cashOutBet,
     placeAccumulator, claimAccumulator, checkAccumulatorOutcome,
     getMyBets, playRoulette,
+    placeAviatorBet, cashOutAviator,
     placing, claiming, cashingOut,
   };
 }

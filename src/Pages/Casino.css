@@ -208,6 +208,9 @@
 .cs-ball{ fill: var(--cs-accent-cyan); filter: drop-shadow(0 0 5px var(--cs-accent-cyan)); }
 .cs-plinko-tray{ fill: var(--cs-surface-raised); stroke: var(--cs-accent-cyan); stroke-width:1.4; }
 
+.cs-av-path{ stroke: var(--cs-accent-green); filter: drop-shadow(0 0 4px rgba(62,226,140,0.5)); }
+.cs-av-plane{ fill: var(--cs-accent-green); filter: drop-shadow(0 0 6px var(--cs-accent-green)); }
+.cs-av-wing{ stroke: var(--cs-gold-2); }
 @media (max-width: 760px){
   .cs-page{ padding:16px; }
   .cs-hero{ flex-direction:column; text-align:center; padding:22px; }
