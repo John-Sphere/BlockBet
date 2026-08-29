@@ -11,6 +11,11 @@ export function Layout({ children }) {
   const { pathname } = useLocation();
   const { toggleSidebar } = useApp();
   const isHome = pathname === "/";
+  // Casino games (roulette, etc.) build their own internal bet slip —
+  // the global sports bet slip (for football/basketball/tennis/darts
+  // selections) is meaningless there and was fighting it for space
+  // on desktop, since both are real flex-width layout members.
+  const isCasino = pathname.startsWith("/casino");
 
   return (
     <div style={{ minHeight:"100vh", display:"flex", flexDirection:"column" }}>
@@ -24,7 +29,7 @@ export function Layout({ children }) {
         >
           {children}
         </main>
-        {!isHome && <BetSlipPanel />}
+        {!isHome && !isCasino && <BetSlipPanel />}
       </div>
       <MobileTabBar onOpenMenu={toggleSidebar} />
       <MobileMenu />
