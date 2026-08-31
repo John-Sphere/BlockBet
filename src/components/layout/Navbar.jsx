@@ -55,15 +55,7 @@ export function Navbar() {
         <Link to="/" className="bb-brand">
           <img src="/logo.png" alt="BlockBet" className="logo-img" />
         </Link>
-        <nav className="bb-top-links">
-          <NavLink to="/football">Pitch</NavLink>
-          <NavLink to="/football?live=1">Live</NavLink>
-          <NavLink to="/football?hot=1">Hot games</NavLink>
-        <NavLink to="/swap">Swap</NavLink>
-          <a href="https://blockbet.mintlify.app" target="_blank" rel="noopener noreferrer">Docs</a>
-        </nav>
         <div className="bb-spacer" />
-        <Link to="/football" className="bb-btn-ghost">Connect wallet</Link>
         <button
           className={`bb-theme-switch ${theme === "dark" ? "bb-theme-switch--dark" : ""}`}
           onClick={toggleTheme}
