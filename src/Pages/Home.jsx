@@ -14,9 +14,9 @@ const TICKER_ITEMS = [
 ];
 
 const STEPS = [
-  { num: "01", title: "Connect & fund", body: "Connect any browser wallet or scan to connect on mobile, then bridge testnet USDC in a click." },
-  { num: "02", title: "Back your call", body: "Odds are drawn from real club ratings and move live with the match. Lock in a single or stack an accumulator." },
-  { num: "03", title: "Claim or cash out", body: "Let it ride to full time, or exit early at a live signed quote. Winnings settle straight to your wallet." },
+  { num: "01", title: "Connect & fund", body: "Connect any wallet, then get testnet USDC in a click. No account creation, no KYC forms." },
+  { num: "02", title: "Play your way", body: "Back a match with live-moving odds, spin the wheel with full seed verification, or swap between USDC, EURC, cirBTC, and BLOCK." },
+  { num: "03", title: "Claim or cash out", body: "Winnings settle straight to your wallet the instant a result lands. Cash out early on live bets, or let it ride." },
 ];
 
 function TrustIcon({ name }) {
@@ -58,16 +58,17 @@ export default function Home() {
           <div>
             <div className="eyebrow">
               <span className="dot" />
-              AI-powered · On-chain · Built for the game
+              On-chain · Provably fair · Instant settlement
             </div>
             <h1>
-              Read the game.
+              Bet, play, and trade —
               <br />
-              <span className="accent">Back your call.</span>
+              <span className="accent">all verifiable on-chain.</span>
             </h1>
             <p className="sub">
-              BlockBet is the next generation of on-chain sports betting. Every match, every bet,
-              every payout — transparent, provable, and settled in USDC on Arc.
+              BlockBet brings sports betting, casino games, and token swaps together on one platform —
+              every outcome, every payout, every trade settled transparently in USDC on Arc. Nothing to
+              trust blindly. Everything you can verify yourself.
             </p>
             <div className="hero-cta">
               <Link to="/football" className="btn-start">Start betting →</Link>
@@ -76,15 +77,15 @@ export default function Home() {
             <div className="trust-row">
               <div className="trust-item">
                 <TrustIcon name="shield" />
-                <div><div className="t">Provably fair</div><div className="d">Verifiable outcomes on-chain</div></div>
+                <div><div className="t">Provably fair</div><div className="d">Every casino result is mathematically verifiable</div></div>
               </div>
               <div className="trust-item">
                 <TrustIcon name="lock" />
-                <div><div className="t">Transparent</div><div className="d">Every bet and payout is on-chain</div></div>
+                <div><div className="t">Fully transparent</div><div className="d">Every bet, swap, and payout lives on-chain</div></div>
               </div>
               <div className="trust-item">
                 <TrustIcon name="check" />
-                <div><div className="t">Secure</div><div className="d">Built with industry best practices</div></div>
+                <div><div className="t">Instantly settled</div><div className="d">No withdrawal queues, no custodial accounts</div></div>
               </div>
             </div>
           </div>
@@ -128,7 +129,7 @@ export default function Home() {
         <section id="how-it-works">
           <div className="section-head">
             <div className="section-eyebrow">How it works</div>
-            <h2>From wallet to winnings, three steps.</h2>
+            <h2>From wallet to winnings, in three steps.</h2>
             <p>No custodial accounts, no withdrawal queues. Everything settles directly to your wallet on Arc.</p>
           </div>
           <div className="steps">
@@ -144,7 +145,7 @@ export default function Home() {
 
         <section style={{ paddingTop: 0 }}>
           <div className="section-head">
-            <div className="section-eyebrow">Right now</div>
+            <div className="section-eyebrow">Live right now</div>
             <h2>{liveMatches.length} matches live across {new Set(allMatches.map(m => m.leagueName)).size} leagues</h2>
             <p>Every fixture is deterministic — the same round, same kickoff time, same result, for every visitor.</p>
           </div>
@@ -173,18 +174,18 @@ export default function Home() {
 
         <section style={{ paddingTop: 0 }}>
           <div className="stats-band">
-            <div className="sb-item"><div className="num blue">114</div><div className="lbl">Clubs tracked across 6 leagues</div></div>
-            <div className="sb-item"><div className="num green">100%</div><div className="lbl">Bets settled on-chain</div></div>
-            <div className="sb-item"><div className="num blue">&lt;2s</div><div className="lbl">Indexer sync latency</div></div>
+            <div className="sb-item"><div className="num blue">4</div><div className="lbl">Sports markets live — football, basketball, tennis, darts</div></div>
+            <div className="sb-item"><div className="num green">100%</div><div className="lbl">Bets and payouts settled on-chain</div></div>
+            <div className="sb-item"><div className="num blue">4</div><div className="lbl">Tradeable assets — USDC, EURC, cirBTC, BLOCK</div></div>
             <div className="sb-item"><div className="num green">0</div><div className="lbl">Custodial funds held</div></div>
           </div>
         </section>
 
         <section style={{ paddingTop: 0 }}>
           <div className="cta-banner">
-            <h2>Every bet, provable. Every payout, yours.</h2>
-            <p>Connect a wallet and place your first bet on Arc Testnet — funded in USDC, settled on-chain.</p>
-            <Link to="/football" className="btn-start" style={{ display: "inline-flex" }}>Start betting →</Link>
+            <h2>Every outcome, provable. Every payout, yours.</h2>
+            <p>Connect a wallet and place your first bet, spin, or swap — funded in USDC, settled on Arc.</p>
+            <Link to="/football" className="btn-start" style={{ display: "inline-flex" }}>Get started →</Link>
           </div>
         </section>
       </div>
@@ -194,13 +195,13 @@ export default function Home() {
           <div className="footer-grid">
             <div>
               <div className="footer-brand"><span className="mark" />BlockBet</div>
-              <p className="footer-desc">On-chain virtual sportsbook settled in USDC on Arc Testnet. Provably fair, fully transparent.</p>
+              <p className="footer-desc">On-chain sports betting, casino games, and token swaps — settled in USDC on Arc Testnet. Provably fair, fully transparent.</p>
             </div>
             <div className="footer-col">
               <h4>Product</h4>
               <Link to="/football">Football</Link>
-              <Link to="/football?live=1">Live</Link>
-              <Link to="/football?hot=1">Hot games</Link>
+              <Link to="/casino">Casino</Link>
+              <Link to="/swap">Swap</Link>
               <Link to="/leaderboard">Table</Link>
             </div>
             <div className="footer-col">
