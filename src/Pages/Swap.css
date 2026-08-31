@@ -97,6 +97,15 @@
   cursor: pointer;
 }
 [data-theme="light"] .sw-btn { color: #FFFFFF; }
+
+.sw-btn-approve {
+  background: var(--surface-raised);
+  color: var(--gold-bright);
+  border: 1px solid var(--gold-deep);
+  box-shadow: none;
+}
+[data-theme="light"] .sw-btn-approve { color: var(--gold-bright); }
+.sw-btn-approve:hover { background: var(--gold-bg); filter: none; }
 .sw-btn:hover { filter: brightness(1.08); }
 .sw-btn:disabled { opacity: 0.5; cursor: default; filter: none; }
 

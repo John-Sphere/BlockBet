@@ -7,7 +7,7 @@ import "./Swap.css";
 const TOKEN_LIST = ["USDC", "EURC", "cirBTC", "BLOCK"];
 
 export default function Swap() {
-  const { getQuote, executeSwap, getBalance, swapping, TOKENS } = useSwap();
+  const { getQuote, executeSwap, getBalance, checkNeedsApproval, approveToken, swapping, TOKENS } = useSwap();
   const { connected, connect, address } = useWallet();
   const { addToast } = useApp();
 
@@ -18,6 +18,8 @@ export default function Swap() {
   const [quoting, setQuoting] = useState(false);
   const [balances, setBalances] = useState({});
   const [result, setResult] = useState(null);
+  const [needsApproval, setNeedsApproval] = useState(false);
+  const [approving, setApproving] = useState(false);
 
   const refreshBalances = useCallback(async () => {
     if (!address) { setBalances({}); return; }
@@ -43,10 +45,35 @@ export default function Swap() {
     return () => { cancelled = true; };
   }, [fromToken, toToken, amountIn, getQuote]);
 
+  useEffect(() => {
+    let cancelled = false;
+    if (!connected || !amountIn || Number(amountIn) <= 0) {
+      setNeedsApproval(false);
+      return;
+    }
+    checkNeedsApproval(fromToken, amountIn).then((needs) => {
+      if (!cancelled) setNeedsApproval(needs);
+    });
+    return () => { cancelled = true; };
+  }, [connected, fromToken, amountIn, checkNeedsApproval, result]);
+
   function flipTokens() {
     setFromToken(toToken);
     setToToken(fromToken);
     setResult(null);
+  }
+
+  async function handleApprove() {
+    setApproving(true);
+    try {
+      await approveToken(fromToken, amountIn);
+      setNeedsApproval(false);
+      addToast(`${fromToken} approved — you can now swap.`, "success");
+    } catch (e) {
+      addToast(e?.message || "Approval failed.", "error");
+    } finally {
+      setApproving(false);
+    }
   }
 
   async function handleSwap() {
@@ -113,9 +140,15 @@ export default function Swap() {
           <div className="sw-route-note">Routed through USDC — two on-chain swaps, one confirmation each.</div>
         )}
 
-        <button className="sw-btn" onClick={handleSwap} disabled={swapping || fromToken === toToken}>
-          {!connected ? "Connect wallet" : swapping ? "Swapping…" : "Swap"}
-        </button>
+        {connected && needsApproval && !isTwoHop ? (
+          <button className="sw-btn sw-btn-approve" onClick={handleApprove} disabled={approving}>
+            {approving ? "Approving…" : `Approve ${fromToken}`}
+          </button>
+        ) : (
+          <button className="sw-btn" onClick={handleSwap} disabled={swapping || fromToken === toToken}>
+            {!connected ? "Connect wallet" : swapping ? "Swapping…" : "Swap"}
+          </button>
+        )}
 
         <div className="sw-meta">
           <span>Fee</span><span>0.3%</span>

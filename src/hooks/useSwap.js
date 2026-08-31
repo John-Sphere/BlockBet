@@ -72,6 +72,37 @@ export function useSwap() {
     }
   }
 
+  // Checks whether the "from" token already has enough allowance for
+  // this swap — used to decide whether the UI should show "Approve"
+  // or "Swap" as the active button, rather than silently handling
+  // both inside one click.
+  const checkNeedsApproval = useCallback(async (fromSymbol, amountIn) => {
+    if (!signer || !amountIn || Number(amountIn) <= 0) return false;
+    const from = TOKENS[fromSymbol];
+    const amountInUnits = ethers.parseUnits(String(amountIn), from.decimals);
+    const contract = new ethers.Contract(from.address, ERC20_ABI, signer);
+    const owner = await signer.getAddress();
+    const current = await contract.allowance(owner, SWAP_CONTRACT);
+    return current < amountInUnits;
+  }, [signer]);
+
+  // A standalone, explicit approval step — its own button, its own
+  // wallet confirmation, clearly separate from the swap itself.
+  const approveToken = useCallback(async (fromSymbol, amountIn) => {
+    if (!signer) throw new Error("Wallet not connected");
+    const from = TOKENS[fromSymbol];
+    const amountInUnits = ethers.parseUnits(String(amountIn), from.decimals);
+    setSwapping(true);
+    try {
+      const contract = new ethers.Contract(from.address, ERC20_ABI, signer);
+      const tx = await contract.approve(SWAP_CONTRACT, amountInUnits);
+      await tx.wait();
+      return { success: true };
+    } finally {
+      setSwapping(false);
+    }
+  }, [signer]);
+
   // Handles all three real cases: USDC->X, X->USDC, and X->Y (routed
   // through USDC as two separate on-chain swaps).
   const executeSwap = useCallback(async (fromSymbol, toSymbol, amountIn) => {
@@ -137,5 +168,5 @@ export function useSwap() {
     return ethers.formatUnits(bal, token.decimals);
   }, [signer, provider]);
 
-  return { getQuote, executeSwap, getBalance, swapping, TOKENS };
+  return { getQuote, executeSwap, getBalance, checkNeedsApproval, approveToken, swapping, TOKENS };
 }
