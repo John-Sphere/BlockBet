@@ -1,80 +1,63 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { multiplierAtTime } from "../engine/aviatorEngine";
+import { getRoundPhase, BETTING_WINDOW_MS } from "../engine/aviatorSchedule";
 import { useBetting } from "../hooks/useBetting";
 import { useWallet } from "../context/WalletContext";
 import { useApp } from "../context/AppContext";
 import "./Aviator.css";
 
-// Game states: "idle" (no bet yet) -> "flying" (bet placed, multiplier
-// climbing) -> "crashed" | "cashed_out" (round over, brief pause) -> "idle"
+// A real shared round: everyone sees the same 60s betting countdown,
+// then the same round starts flying for everyone at once. Your own
+// bet (if you placed one) rides along with it — cash out is only
+// ever a real action against the actual shared round in progress.
 export default function Aviator() {
   const { connected, connect, balance } = useWallet();
   const { placeAviatorBet, cashOutAviator, placing, cashingOut } = useBetting();
   const { addToast } = useApp();
 
   const [stake, setStake] = useState("10");
-  const [phase, setPhase] = useState("idle");
+  const [round, setRound] = useState(getRoundPhase());
   const [multiplier, setMultiplier] = useState(1.0);
-  const [betInfo, setBetInfo] = useState(null); // { betId, txHash, confirmedAtMs }
-  const [roundResult, setRoundResult] = useState(null); // { won, multiplier, payout }
-  const [history, setHistory] = useState([]); // real past round multipliers this session
+  const [myBet, setMyBet] = useState(null);
+  const [roundResult, setRoundResult] = useState(null);
+  const [history, setHistory] = useState([]);
 
   const tickRef = useRef(null);
-  const demoRef = useRef(null);
-  const cashingRef = useRef(false); // guards against double-clicking cash out
+  const cashingRef = useRef(false);
+  const settledRoundsRef = useRef(new Set());
 
-  const stopTicking = useCallback(() => {
-    if (tickRef.current) {
-      cancelAnimationFrame(tickRef.current);
-      tickRef.current = null;
+  useEffect(() => {
+    function tick() {
+      const r = getRoundPhase();
+      setRound((prev) => {
+        if (prev.epoch !== r.epoch) {
+          setMyBet((currentBet) => (currentBet && currentBet.roundEpoch === r.epoch ? currentBet : null));
+        }
+        return r;
+      });
+
+      if (r.phase === "flying") {
+        setMultiplier(multiplierAtTime(r.elapsedFlightSeconds));
+      } else {
+        setMultiplier(1.0);
+      }
+      tickRef.current = requestAnimationFrame(tick);
     }
+    tickRef.current = requestAnimationFrame(tick);
+    return () => { if (tickRef.current) cancelAnimationFrame(tickRef.current); };
   }, []);
 
-  useEffect(() => stopTicking, [stopTicking]);
-
-  // Purely decorative preview loop — runs automatically whenever
-  // there's no real bet in flight, so the page feels alive and
-  // inviting before anyone has connected a wallet, instead of just
-  // sitting on a static "1.00x". Clearly not tied to any real bet,
-  // fairness system, or funds — just a repeating climb-and-reset
-  // animation using the same visual curve as the real game.
   useEffect(() => {
-    if (phase !== "idle") return;
-
-    let demoStart = Date.now();
-    // A demo round "crashes" after a random-ish point purely for
-    // visual variety, then loops back to 1.00x after a short pause.
-    const demoCrashSeconds = 3 + Math.random() * 5;
-
-    function demoFrame() {
-      const elapsed = (Date.now() - demoStart) / 1000;
-      if (elapsed >= demoCrashSeconds) {
-        setMultiplier(1.0);
-        demoStart = Date.now();
-      } else {
-        setMultiplier(multiplierAtTime(elapsed));
-      }
-      demoRef.current = requestAnimationFrame(demoFrame);
+    if (myBet && round.phase === "betting" && !settledRoundsRef.current.has(myBet.roundEpoch)) {
+      settledRoundsRef.current.add(myBet.roundEpoch);
+      addToast("That round ended before you cashed out — bet lost.", "error");
+      setMyBet(null);
     }
-    demoRef.current = requestAnimationFrame(demoFrame);
-
-    return () => {
-      if (demoRef.current) cancelAnimationFrame(demoRef.current);
-    };
-  }, [phase]);
-
-  function startTicking(startMs) {
-    if (demoRef.current) { cancelAnimationFrame(demoRef.current); demoRef.current = null; }
-    function frame() {
-      const elapsed = (Date.now() - startMs) / 1000;
-      setMultiplier(multiplierAtTime(elapsed));
-      tickRef.current = requestAnimationFrame(frame);
-    }
-    tickRef.current = requestAnimationFrame(frame);
-  }
+  }, [round.phase, myBet, addToast]);
 
   async function handlePlaceBet() {
     if (!connected) { await connect(); return; }
+    if (round.phase !== "betting") { addToast("Betting is closed for this round — wait for the next one.", "error"); return; }
     if (!stake || Number(stake) <= 0) { addToast("Enter a stake amount.", "error"); return; }
     if (Number(stake) > Number(balance)) {
       addToast(`Not enough USDC — you have ${Number(balance).toFixed(2)}, need ${Number(stake).toFixed(2)}.`, "error");
@@ -82,39 +65,36 @@ export default function Aviator() {
     }
     setRoundResult(null);
     try {
-      const res = await placeAviatorBet(stake);
-      setBetInfo(res);
-      setMultiplier(1.0);
-      setPhase("flying");
+      const res = await placeAviatorBet(stake, round.epoch);
+      setMyBet({ betId: res.betId, roundEpoch: res.roundEpoch });
       cashingRef.current = false;
-      startTicking(res.confirmedAtMs);
+      addToast("Bet placed — the round starts flying when the timer hits zero.", "success");
     } catch (e) {
       addToast(e?.message || "Bet failed.", "error");
     }
   }
 
   async function handleCashOut() {
-    if (!betInfo || cashingRef.current) return;
+    if (!myBet || cashingRef.current) return;
     cashingRef.current = true;
-    stopTicking();
     try {
-      const res = await cashOutAviator(betInfo.betId, betInfo.txHash);
+      const res = await cashOutAviator(myBet.betId, myBet.roundEpoch);
       setRoundResult(res);
-      setPhase(res.won ? "cashed_out" : "crashed");
-      setMultiplier(res.multiplier);
       setHistory((prev) => [res.multiplier, ...prev].slice(0, 15));
+      settledRoundsRef.current.add(myBet.roundEpoch);
       addToast(
-        res.won ? `Cashed out at ${res.multiplier.toFixed(2)}x — ${res.payout} USDC.` : `Crashed at ${res.multiplier.toFixed(2)}x — too late.`,
+        res.won ? `Cashed out at ${res.multiplier.toFixed(2)}x — ${res.payout} USDC.` : `Too late — crashed at ${res.multiplier.toFixed(2)}x.`,
         res.won ? "success" : "error"
       );
-      setTimeout(() => { setPhase("idle"); setBetInfo(null); }, 2500);
+      setMyBet(null);
     } catch (e) {
       addToast(e?.message || "Cash out failed.", "error");
       cashingRef.current = false;
     }
   }
 
-  const isFlying = phase === "flying" || phase === "idle";
+  const secondsLeft = round.phase === "betting" ? Math.ceil(round.msUntilFlight / 1000) : null;
+  const canCashOut = myBet && round.phase === "flying" && myBet.roundEpoch === round.epoch;
 
   return (
     <div className="av-page">
@@ -133,28 +113,30 @@ export default function Aviator() {
       </div>
 
       <div className="av-display">
-        <div className={`av-multiplier ${phase === "crashed" ? "av-crashed" : ""} ${phase === "cashed_out" ? "av-won" : ""}`}>
-          {multiplier.toFixed(2)}x
-        </div>
-        {phase === "idle" && <div className="av-demo-tag">PREVIEW — place a bet to play for real</div>}
-        <div className="av-status">
-          {phase === "idle" && "Watching a live preview — connect your wallet to play"}
-          {phase === "flying" && "Flying — cash out any time"}
-          {phase === "crashed" && "Crashed! Too late to cash out"}
-          {phase === "cashed_out" && "Cashed out!"}
-        </div>
+        {round.phase === "betting" ? (
+          <>
+            <div className="av-countdown">{secondsLeft}s</div>
+            <div className="av-status">Betting open — next round starts soon</div>
+          </>
+        ) : (
+          <div className={`av-multiplier ${roundResult && !roundResult.won ? "av-crashed" : ""} ${roundResult?.won ? "av-won" : ""}`}>
+            {multiplier.toFixed(2)}x
+          </div>
+        )}
+        {round.phase === "flying" && (
+          <div className="av-status">
+            {myBet ? "Flying — cash out any time" : "Flying — place a bet next round to play"}
+          </div>
+        )}
         <svg className="av-plane" viewBox="0 0 100 60">
           <path
-            d={isFlying ? "M5 55 Q 40 50 95 5" : "M5 55 L 95 5"}
-            fill="none"
-            stroke={phase === "crashed" ? "var(--av-down)" : "var(--av-gold)"}
-            strokeWidth="2"
+            d={round.phase === "flying" ? "M5 55 Q 40 50 95 5" : "M5 55 L 95 5"}
+            fill="none" stroke="var(--av-gold)" strokeWidth="2"
           />
           <circle
-            cx={isFlying ? Math.min(95, 5 + (multiplier - 1) * 30) : 5}
-            cy={isFlying ? Math.max(5, 55 - (multiplier - 1) * 22) : 55}
-            r="4"
-            fill={phase === "crashed" ? "var(--av-down)" : "var(--av-gold)"}
+            cx={round.phase === "flying" ? Math.min(95, 5 + (multiplier - 1) * 30) : 5}
+            cy={round.phase === "flying" ? Math.max(5, 55 - (multiplier - 1) * 22) : 55}
+            r="4" fill="var(--av-gold)"
           />
         </svg>
       </div>
@@ -165,23 +147,19 @@ export default function Aviator() {
           <input
             type="number" min="1" value={stake}
             onChange={(e) => setStake(e.target.value)}
-            disabled={phase !== "idle"}
+            disabled={round.phase !== "betting" || !!myBet}
           />
         </div>
 
-        {phase === "idle" && (
-          <button className="av-btn av-btn-bet" onClick={handlePlaceBet} disabled={placing}>
-            {!connected ? "Connect wallet" : placing ? "Placing bet…" : "Place Bet"}
-          </button>
-        )}
-        {phase === "flying" && (
+        {canCashOut ? (
           <button className="av-btn av-btn-cashout" onClick={handleCashOut} disabled={cashingOut}>
             {cashingOut ? "Cashing out…" : `Cash Out — ${(Number(stake) * multiplier).toFixed(2)} USDC`}
           </button>
-        )}
-        {(phase === "crashed" || phase === "cashed_out") && (
-          <button className="av-btn av-btn-bet" disabled>
-            {phase === "crashed" ? "Round over — crashed" : "Round over — cashed out"}
+        ) : myBet ? (
+          <button className="av-btn av-btn-bet" disabled>Bet placed — waiting for takeoff</button>
+        ) : (
+          <button className="av-btn av-btn-bet" onClick={handlePlaceBet} disabled={placing || round.phase !== "betting"}>
+            {!connected ? "Connect wallet" : placing ? "Placing bet…" : round.phase === "betting" ? "Place Bet" : "Betting closed — wait for next round"}
           </button>
         )}
       </div>
