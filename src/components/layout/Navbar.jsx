@@ -53,7 +53,7 @@ export function Navbar() {
     return (
       <header className="bb-topbar bb-topbar--home">
         <Link to="/" className="bb-brand">
-          <span className="bb-brand-mark"><img src="/logo.png" alt="" onError={(e) => { e.target.style.display = "none"; e.target.parentNode.textContent = "B"; }} /></span>BlockBet
+          <img src="/logo.png" alt="BlockBet" className="logo-img" />
         </Link>
         <nav className="bb-top-links">
           <NavLink to="/football">Pitch</NavLink>
@@ -83,7 +83,7 @@ export function Navbar() {
   return (
     <header className="bb-topbar">
       <Link to="/" className="bb-brand">
-        <span className="bb-brand-mark"><img src="/logo.png" alt="" onError={(e) => { e.target.style.display = "none"; e.target.parentNode.textContent = "B"; }} /></span>BlockBet
+        <img src="/logo.png" alt="BlockBet" className="logo-img" />
       </Link>
 
       <nav className="bb-top-nav">
