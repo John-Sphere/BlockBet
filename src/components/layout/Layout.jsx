@@ -6,6 +6,7 @@ import { BetSlipPanel } from "../ui/BetSlipPanel";
 import { MobileTabBar } from "./MobileTabBar";
 import { MobileMenu } from "./MobileMenu";
 import { OfflineBanner } from "./OfflineBanner";
+import { RouteProgressBar } from "./RouteProgressBar";
 
 export function Layout({ children }) {
   const { pathname } = useLocation();
@@ -19,6 +20,7 @@ export function Layout({ children }) {
 
   return (
     <div style={{ minHeight:"100vh", display:"flex", flexDirection:"column" }}>
+      <RouteProgressBar />
       <Navbar />
       <OfflineBanner />
       <div style={{ display:"flex", flex:1, paddingTop:"var(--nav-h)" }}>

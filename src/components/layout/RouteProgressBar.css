@@ -1,0 +1,25 @@
+.rpb-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 3px;
+  width: 0%;
+  background: linear-gradient(90deg, var(--gold), var(--gold-bright));
+  box-shadow: 0 0 8px 1px var(--gold-glow);
+  z-index: 999;
+  animation: rpb-grow 0.22s ease-out forwards;
+}
+
+.rpb-bar.rpb-complete {
+  animation: rpb-finish 0.26s ease-in forwards;
+}
+
+@keyframes rpb-grow {
+  from { width: 0%; }
+  to { width: 78%; }
+}
+
+@keyframes rpb-finish {
+  from { width: 78%; opacity: 1; }
+  to { width: 100%; opacity: 0; }
+}
