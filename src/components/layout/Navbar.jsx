@@ -59,6 +59,7 @@ export function Navbar() {
           <NavLink to="/football">Pitch</NavLink>
           <NavLink to="/football?live=1">Live</NavLink>
           <NavLink to="/football?hot=1">Hot games</NavLink>
+        <NavLink to="/swap">Swap</NavLink>
           <a href="https://blockbet.mintlify.app" target="_blank" rel="noopener noreferrer">Docs</a>
         </nav>
         <div className="bb-spacer" />
@@ -92,6 +93,7 @@ export function Navbar() {
           {liveCount > 0 && <span className="bb-live-badge">LIVE</span>}
         </NavLink>
         <NavLink to="/football?hot=1">Hot games</NavLink>
+        <NavLink to="/swap">Swap</NavLink>
       </nav>
 
       <div className="bb-top-search">
