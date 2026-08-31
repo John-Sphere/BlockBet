@@ -333,14 +333,11 @@ export function useBetting() {
     }
   }, [signer, approveUsdc, refreshBalance]);
 
-  // Places an Aviator bet on-chain. Returns the betId and the tx's
-  // own hash — both needed later for the cash-out request, plus the
-  // moment it confirmed, used to drive the client-side multiplier
-  // display (the actual authoritative timing for settlement comes
-  // from the transaction's real on-chain block timestamp, read
-  // server-side — this local timestamp is just for a smooth-looking
-  // display in the meantime).
-  const placeAviatorBet = useCallback(async (amount) => {
+  // Places an Aviator bet on-chain, tied to the current shared round.
+  // The betId is all that's needed afterward — the round's crash
+  // point comes from the shared round epoch (same for everyone
+  // betting in that window), not anything specific to this bet.
+  const placeAviatorBet = useCallback(async (amount, roundEpoch) => {
     if (!signer) throw new Error("Wallet not connected");
     if (!amount || Number(amount) <= 0) throw new Error("Invalid stake amount");
     setPlacing(true);
@@ -359,8 +356,7 @@ export function useBetting() {
       return {
         success: true,
         betId: Number(placedEvent.args.betId),
-        txHash: receipt.hash,
-        confirmedAtMs: Date.now(),
+        roundEpoch,
       };
     } finally {
       setPlacing(false);
@@ -373,14 +369,14 @@ export function useBetting() {
   // attempts to settle the bet — there's no free "peek" at the
   // current multiplier through this function, since each request
   // returns a real, one-time-usable signature either way.
-  const cashOutAviator = useCallback(async (betId, txHash) => {
+  const cashOutAviator = useCallback(async (betId, roundEpoch) => {
     if (!signer) throw new Error("Wallet not connected");
     setCashingOut(true);
     try {
       const res = await fetch("/api/aviator-cashout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ betId, txHash }),
+        body: JSON.stringify({ betId, roundEpoch }),
       });
       const result = await res.json();
       if (!res.ok) throw new Error(result.error || "Cash out failed");

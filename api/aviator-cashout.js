@@ -1,26 +1,26 @@
 /**
- * /api/aviator-cashout  (POST)  { betId, txHash }
+ * /api/aviator-cashout  (POST)  { betId, roundEpoch }
  *
  * Handles both checking the current state AND cashing out an Aviator
- * bet. Crucially, this is stateless-safe: the crash point is derived
- * deterministically from a server-only secret key + this specific
- * bet's own on-chain data (via HMAC), so it never needs to be stored
- * anywhere between bet placement and cash-out — the server can always
- * recompute the identical answer later, but a player can never
- * predict it in advance without that secret key. The bet's actual
- * on-chain block timestamp (permanent, queryable forever) serves as
- * the round's start time, so there's no separate state to track
- * there either.
+ * bet. The crash point is derived from the SHARED round epoch (not
+ * this individual bet's own tx hash) — every player betting into the
+ * same round window gets the exact same crash point and multiplier
+ * curve, which is what makes it a genuine shared round rather than a
+ * private one-off. Still fully stateless: given a server-only secret
+ * key + the public round epoch number, the crash point is always
+ * identically recomputable without storing anything, while staying
+ * unpredictable to anyone who doesn't have that key.
  */
 
 import { ethers } from "ethers";
 import { crashPointFromRandom, timeForMultiplier, multiplierAtTime } from "../src/engine/aviatorEngine.js";
+import { flightStartMs, MAX_FLIGHT_MS } from "../src/engine/aviatorSchedule.js";
 
 const ABI = [
   "function aviatorBets(uint256) view returns (address,uint256,bool)",
 ];
 
-const QUOTE_VALID_SECONDS = 30; // short window — this is a live, time-sensitive race
+const QUOTE_VALID_SECONDS = 30;
 
 async function hmacSha256Hex(key, message) {
   const enc = new TextEncoder();
@@ -31,18 +31,22 @@ async function hmacSha256Hex(key, message) {
   return Array.from(new Uint8Array(sig)).map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
-async function deriveCrashPoint(betId, txHash) {
+// Shared per-round, not per-bet — this is the key change. Every bet
+// placed in the same round window resolves against this same value.
+async function deriveCrashPoint(roundEpoch) {
   const secret = process.env.AVIATOR_SERVER_SEED;
   if (!secret) throw new Error("Server misconfigured: AVIATOR_SERVER_SEED not set");
-  const derived = await hmacSha256Hex(secret, `${betId}:${txHash}`);
+  const derived = await hmacSha256Hex(secret, `round:${roundEpoch}`);
   const randomValue = parseInt(derived.slice(0, 8), 16) / 0xffffffff;
   return crashPointFromRandom(randomValue);
 }
 
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).json({ error: "POST only" });
-  const { betId, txHash } = req.body || {};
-  if (!betId || !txHash) return res.status(400).json({ error: "betId and txHash are required" });
+  const { betId, roundEpoch } = req.body || {};
+  if (!betId || roundEpoch === undefined) {
+    return res.status(400).json({ error: "betId and roundEpoch are required" });
+  }
 
   try {
     const provider = new ethers.JsonRpcProvider(process.env.ARC_RPC_URL);
@@ -50,21 +54,22 @@ export default async function handler(req, res) {
     const contract = new ethers.Contract(process.env.BETTING_ADDRESS, ABI, wallet);
     const contractAddress = process.env.BETTING_ADDRESS;
 
-    const [bettor, amount, settled] = await contract.aviatorBets(betId);
+    const [, amount, settled] = await contract.aviatorBets(betId);
     if (amount === 0n) return res.status(404).json({ error: "Bet not found" });
     if (settled) return res.status(400).json({ error: "This bet has already been settled" });
 
-    const receipt = await provider.getTransactionReceipt(txHash);
-    if (!receipt || receipt.from.toLowerCase() !== bettor.toLowerCase()) {
-      return res.status(400).json({ error: "Transaction hash doesn't match this bet" });
-    }
-    const block = await provider.getBlock(receipt.blockNumber);
-    const roundStartMs = block.timestamp * 1000;
-
-    const crashPoint = await deriveCrashPoint(betId, txHash);
+    const crashPoint = await deriveCrashPoint(roundEpoch);
+    const roundFlightStart = flightStartMs(roundEpoch);
     const requestMs = Date.now();
-    const elapsedSeconds = (requestMs - roundStartMs) / 1000;
-    const crashAtSeconds = timeForMultiplier(crashPoint);
+    const elapsedSeconds = (requestMs - roundFlightStart) / 1000;
+    // The round always ends by its scheduled boundary regardless of
+    // what the theoretical crash point works out to — this keeps
+    // round cycling predictable even on a very high, rare result.
+    const crashAtSeconds = Math.min(timeForMultiplier(crashPoint), MAX_FLIGHT_MS / 1000);
+
+    if (elapsedSeconds < 0) {
+      return res.status(400).json({ error: "This round hasn't started flying yet" });
+    }
 
     if (elapsedSeconds >= crashAtSeconds) {
       const deadline = Math.floor(Date.now() / 1000) + QUOTE_VALID_SECONDS;
@@ -74,8 +79,9 @@ export default async function handler(req, res) {
         [betId, 0, deadline, nonce, contractAddress]
       );
       const signature = await wallet.signMessage(ethers.getBytes(messageHash));
+      const displayMultiplier = Math.min(crashPoint, multiplierAtTime(MAX_FLIGHT_MS / 1000));
       return res.status(200).json({
-        crashed: true, won: false, multiplier: crashPoint,
+        crashed: true, won: false, multiplier: displayMultiplier,
         payout: "0", deadline, nonce, signature,
       });
     }

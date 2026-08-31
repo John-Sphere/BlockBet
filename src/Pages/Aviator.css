@@ -47,6 +47,13 @@
   overflow: hidden;
 }
 
+.av-countdown{
+  font-family: var(--av-font-display);
+  font-size: 56px;
+  font-weight: 800;
+  color: var(--av-text);
+}
+
 .av-multiplier{
   font-family: var(--av-font-display);
   font-size: 56px;
