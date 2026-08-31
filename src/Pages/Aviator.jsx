@@ -20,6 +20,7 @@ export default function Aviator() {
   const [history, setHistory] = useState([]); // real past round multipliers this session
 
   const tickRef = useRef(null);
+  const demoRef = useRef(null);
   const cashingRef = useRef(false); // guards against double-clicking cash out
 
   const stopTicking = useCallback(() => {
@@ -31,7 +32,39 @@ export default function Aviator() {
 
   useEffect(() => stopTicking, [stopTicking]);
 
+  // Purely decorative preview loop — runs automatically whenever
+  // there's no real bet in flight, so the page feels alive and
+  // inviting before anyone has connected a wallet, instead of just
+  // sitting on a static "1.00x". Clearly not tied to any real bet,
+  // fairness system, or funds — just a repeating climb-and-reset
+  // animation using the same visual curve as the real game.
+  useEffect(() => {
+    if (phase !== "idle") return;
+
+    let demoStart = Date.now();
+    // A demo round "crashes" after a random-ish point purely for
+    // visual variety, then loops back to 1.00x after a short pause.
+    const demoCrashSeconds = 3 + Math.random() * 5;
+
+    function demoFrame() {
+      const elapsed = (Date.now() - demoStart) / 1000;
+      if (elapsed >= demoCrashSeconds) {
+        setMultiplier(1.0);
+        demoStart = Date.now();
+      } else {
+        setMultiplier(multiplierAtTime(elapsed));
+      }
+      demoRef.current = requestAnimationFrame(demoFrame);
+    }
+    demoRef.current = requestAnimationFrame(demoFrame);
+
+    return () => {
+      if (demoRef.current) cancelAnimationFrame(demoRef.current);
+    };
+  }, [phase]);
+
   function startTicking(startMs) {
+    if (demoRef.current) { cancelAnimationFrame(demoRef.current); demoRef.current = null; }
     function frame() {
       const elapsed = (Date.now() - startMs) / 1000;
       setMultiplier(multiplierAtTime(elapsed));
@@ -81,7 +114,7 @@ export default function Aviator() {
     }
   }
 
-  const isFlying = phase === "flying";
+  const isFlying = phase === "flying" || phase === "idle";
 
   return (
     <div className="av-page">
@@ -103,8 +136,9 @@ export default function Aviator() {
         <div className={`av-multiplier ${phase === "crashed" ? "av-crashed" : ""} ${phase === "cashed_out" ? "av-won" : ""}`}>
           {multiplier.toFixed(2)}x
         </div>
+        {phase === "idle" && <div className="av-demo-tag">PREVIEW — place a bet to play for real</div>}
         <div className="av-status">
-          {phase === "idle" && "Place a bet to start"}
+          {phase === "idle" && "Watching a live preview — connect your wallet to play"}
           {phase === "flying" && "Flying — cash out any time"}
           {phase === "crashed" && "Crashed! Too late to cash out"}
           {phase === "cashed_out" && "Cashed out!"}

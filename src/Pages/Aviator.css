@@ -58,6 +58,16 @@
 .av-multiplier.av-crashed{ color: var(--av-down); text-shadow: 0 0 30px rgba(255,92,92,0.5); }
 .av-multiplier.av-won{ color: var(--av-live); text-shadow: 0 0 30px rgba(62,226,140,0.5); }
 
+.av-demo-tag{
+  display: inline-block;
+  font-family: var(--av-font-mono); font-size: 10px; font-weight: 700; letter-spacing: 0.05em;
+  color: var(--av-text-faint);
+  border: 1px solid var(--av-border);
+  padding: 4px 10px;
+  border-radius: 12px;
+  margin-top: 10px;
+}
+
 .av-status{
   font-family: var(--av-font-mono); font-size: 12px; color: var(--av-text-dim);
   margin-top: 8px; letter-spacing: 0.03em;
