@@ -18,9 +18,17 @@ const TOKEN_META = {
 const TOKEN_LIST = Object.keys(TOKEN_META);
 
 export default function Swap() {
-  const { getQuote, executeSwap, getBalance, checkNeedsApproval, approveToken, getPriceHistory, swapping, TOKENS } = useSwap();
+  const { getQuote, executeSwap, getBalance, checkNeedsApproval, approveToken, getPriceHistory, getPoolInfo, getMyLp, addLiquidity, removeLiquidity, swapping, TOKENS } = useSwap();
   const { connected, connect, address } = useWallet();
   const { addToast } = useApp();
+
+  const [activeTab, setActiveTab] = useState("swap");
+  const [poolToken, setPoolToken] = useState("BLOCK");
+  const [poolInfo, setPoolInfo] = useState(null);
+  const [myLp, setMyLp] = useState(null);
+  const [poolUsdcIn, setPoolUsdcIn] = useState("");
+  const [poolTokenIn, setPoolTokenIn] = useState("");
+  const [removePercent, setRemovePercent] = useState(50);
 
   const [fromToken, setFromToken] = useState("USDC");
   const [toToken, setToToken] = useState("BLOCK");
@@ -84,6 +92,69 @@ export default function Swap() {
     });
     return () => { cancelled = true; };
   }, [showChart, chartToken, getPriceHistory]);
+
+  const refreshPoolData = useCallback(async () => {
+    const info = await getPoolInfo(poolToken);
+    setPoolInfo(info);
+    if (connected && address) {
+      const lp = await getMyLp(poolToken, address);
+      setMyLp(lp);
+    } else {
+      setMyLp(null);
+    }
+  }, [poolToken, connected, address, getPoolInfo, getMyLp]);
+
+  useEffect(() => {
+    if (activeTab === "pool") refreshPoolData();
+  }, [activeTab, refreshPoolData]);
+
+  // Auto-fills the paired token amount when USDC input changes,
+  // keeping the deposit proportional to the pool's current ratio —
+  // the way to add liquidity without shifting the price.
+  function handlePoolUsdcChange(val) {
+    setPoolUsdcIn(val);
+    if (poolInfo && Number(poolInfo.reserveUsdc) > 0 && val) {
+      const ratio = Number(poolInfo.reserveToken) / Number(poolInfo.reserveUsdc);
+      setPoolTokenIn((Number(val) * ratio).toFixed(6));
+    }
+  }
+
+  function handlePoolTokenChange(val) {
+    setPoolTokenIn(val);
+    if (poolInfo && Number(poolInfo.reserveToken) > 0 && val) {
+      const ratio = Number(poolInfo.reserveUsdc) / Number(poolInfo.reserveToken);
+      setPoolUsdcIn((Number(val) * ratio).toFixed(6));
+    }
+  }
+
+  async function handleAddLiquidity() {
+    if (!connected) { await connect(); return; }
+    if (!poolUsdcIn || !poolTokenIn || Number(poolUsdcIn) <= 0 || Number(poolTokenIn) <= 0) {
+      addToast("Enter both amounts.", "error");
+      return;
+    }
+    try {
+      await addLiquidity(poolToken, poolUsdcIn, poolTokenIn);
+      addToast(`Added liquidity to the ${poolToken} pool.`, "success");
+      setPoolUsdcIn("");
+      setPoolTokenIn("");
+      refreshPoolData();
+    } catch (e) {
+      addToast(e?.message || "Adding liquidity failed.", "error");
+    }
+  }
+
+  async function handleRemoveLiquidity() {
+    if (!myLp || myLp.lpBalance === "0") return;
+    const lpToRemove = (BigInt(myLp.lpBalance) * BigInt(removePercent)) / 100n;
+    try {
+      await removeLiquidity(poolToken, lpToRemove.toString());
+      addToast(`Removed ${removePercent}% of your ${poolToken} pool position.`, "success");
+      refreshPoolData();
+    } catch (e) {
+      addToast(e?.message || "Removing liquidity failed.", "error");
+    }
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -196,8 +267,8 @@ export default function Swap() {
         <div className="sw-card">
           <div className="sw-card-top">
             <div className="sw-tabs">
-              <button className="sw-tab active">Swap</button>
-              <button className="sw-tab" disabled>Bridge</button>
+              <button className={`sw-tab ${activeTab === "swap" ? "active" : ""}`} onClick={() => setActiveTab("swap")}>Swap</button>
+              <button className={`sw-tab ${activeTab === "pool" ? "active" : ""}`} onClick={() => setActiveTab("pool")}>Pool</button>
             </div>
             <div className="sw-toolbar">
               <button className={`sw-icon-btn ${showChart ? "sw-icon-btn-active" : ""}`} onClick={() => setShowChart((s) => !s)} aria-label="Chart" disabled={!chartToken}>
@@ -239,61 +310,134 @@ export default function Swap() {
             </div>
           )}
 
-          <div className="sw-field">
-            <div className="sw-field-top">
-              <span className="sw-field-label">Sell</span>
-              <div className="sw-balance-row">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="sw-wallet-ico"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18M7 15h.01"/></svg>
-                <span>{fromBalance.toLocaleString(undefined, { maximumFractionDigits: 6 })} {fromToken}</span>
-                {connected && <button className="sw-pct" onClick={() => pct(0.5)}>50%</button>}
-                {connected && <button className="sw-pct" onClick={() => pct(1)}>Max</button>}
+          {activeTab === "swap" && (
+            <>
+              <div className="sw-field">
+                <div className="sw-field-top">
+                  <span className="sw-field-label">Sell</span>
+                  <div className="sw-balance-row">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="sw-wallet-ico"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18M7 15h.01"/></svg>
+                    <span>{fromBalance.toLocaleString(undefined, { maximumFractionDigits: 6 })} {fromToken}</span>
+                    {connected && <button className="sw-pct" onClick={() => pct(0.5)}>50%</button>}
+                    {connected && <button className="sw-pct" onClick={() => pct(1)}>Max</button>}
+                  </div>
+                </div>
+                <div className="sw-field-row">
+                  <TokenPill symbol={fromToken} meta={fromT} onClick={() => setPickerFor("from")} />
+                  <div className="sw-amount-block">
+                    <input
+                      className="sw-amount-input"
+                      type="number"
+                      placeholder="0.00"
+                      value={amountIn}
+                      onChange={(e) => setAmountIn(e.target.value)}
+                    />
+                    <span className="sw-usd-value">${usdIn}</span>
+                  </div>
+                </div>
               </div>
-            </div>
-            <div className="sw-field-row">
-              <TokenPill symbol={fromToken} meta={fromT} onClick={() => setPickerFor("from")} />
-              <div className="sw-amount-block">
-                <input
-                  className="sw-amount-input"
-                  type="number"
-                  placeholder="0.00"
-                  value={amountIn}
-                  onChange={(e) => setAmountIn(e.target.value)}
-                />
-                <span className="sw-usd-value">${usdIn}</span>
-              </div>
-            </div>
-          </div>
 
-          <div className="sw-flip-row">
-            <button className="sw-flip-btn" onClick={flip} aria-label="Flip">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4"><path d="M12 5v14M6 13l6 6 6-6"/></svg>
-            </button>
-          </div>
-
-          <div className="sw-field">
-            <div className="sw-field-top">
-              <span className="sw-field-label">Receive</span>
-              <div className="sw-balance-row">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="sw-wallet-ico"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18M7 15h.01"/></svg>
-                <span>{toBalance.toLocaleString(undefined, { maximumFractionDigits: 6 })} {toToken}</span>
+              <div className="sw-flip-row">
+                <button className="sw-flip-btn" onClick={flip} aria-label="Flip">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4"><path d="M12 5v14M6 13l6 6 6-6"/></svg>
+                </button>
               </div>
-            </div>
-            <div className="sw-field-row">
-              <TokenPill symbol={toToken} meta={toT} onClick={() => setPickerFor("to")} />
-              <div className="sw-amount-block">
-                <input className="sw-amount-input" type="text" placeholder="0.00" value={quoting ? "…" : amountOut} readOnly />
-                <span className="sw-usd-value">${usdOut}</span>
-              </div>
-            </div>
-          </div>
 
-          {isTwoHop && (
-            <div className="sw-route-note">Routed through USDC — two on-chain swaps, one confirmation each.</div>
+              <div className="sw-field">
+                <div className="sw-field-top">
+                  <span className="sw-field-label">Receive</span>
+                  <div className="sw-balance-row">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="sw-wallet-ico"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18M7 15h.01"/></svg>
+                    <span>{toBalance.toLocaleString(undefined, { maximumFractionDigits: 6 })} {toToken}</span>
+                  </div>
+                </div>
+                <div className="sw-field-row">
+                  <TokenPill symbol={toToken} meta={toT} onClick={() => setPickerFor("to")} />
+                  <div className="sw-amount-block">
+                    <input className="sw-amount-input" type="text" placeholder="0.00" value={quoting ? "…" : amountOut} readOnly />
+                    <span className="sw-usd-value">${usdOut}</span>
+                  </div>
+                </div>
+              </div>
+
+              {isTwoHop && (
+                <div className="sw-route-note">Routed through USDC — two on-chain swaps, one confirmation each.</div>
+              )}
+
+              <button className="sw-submit" disabled={submitDisabled} onClick={submitAction}>
+                {submitLabel}
+              </button>
+            </>
           )}
 
-          <button className="sw-submit" disabled={submitDisabled} onClick={submitAction}>
-            {submitLabel}
-          </button>
+          {activeTab === "pool" && (
+            <div className="sw-pool-panel">
+              <div className="sw-pool-select">
+                <span className="sw-field-label">Pool</span>
+                <div className="sw-pool-tokens">
+                  {["EURC", "cirBTC", "BLOCK"].map((sym) => (
+                    <button
+                      key={sym}
+                      className={`sw-pool-token-btn ${poolToken === sym ? "active" : ""}`}
+                      onClick={() => setPoolToken(sym)}
+                    >
+                      <TokenIcon symbol={sym} fallbackIcon={TOKEN_META[sym].icon} color={TOKEN_META[sym].color} size={16} />
+                      USDC/{sym}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {poolInfo && (
+                <div className="sw-pool-stats">
+                  <div className="sw-pool-stat"><span>Pool reserves</span><span>{Number(poolInfo.reserveUsdc).toFixed(2)} USDC / {Number(poolInfo.reserveToken).toFixed(6)} {poolToken}</span></div>
+                  {connected && myLp && (
+                    <div className="sw-pool-stat"><span>Your share</span><span>{Number(myLp.usdcShare).toFixed(4)} USDC / {Number(myLp.tokenShare).toFixed(6)} {poolToken}</span></div>
+                  )}
+                </div>
+              )}
+
+              <div className="sw-pool-section-label">Add liquidity</div>
+              <div className="sw-field">
+                <div className="sw-field-top"><span className="sw-field-label">USDC amount</span></div>
+                <div className="sw-field-row">
+                  <TokenIcon symbol="USDC" fallbackIcon="$" color="#4C86FF" size={22} />
+                  <div className="sw-amount-block">
+                    <input className="sw-amount-input" type="number" placeholder="0.00" value={poolUsdcIn} onChange={(e) => handlePoolUsdcChange(e.target.value)} />
+                  </div>
+                </div>
+              </div>
+              <div className="sw-field" style={{ marginTop: 8 }}>
+                <div className="sw-field-top"><span className="sw-field-label">{poolToken} amount (auto-matched to pool ratio)</span></div>
+                <div className="sw-field-row">
+                  <TokenIcon symbol={poolToken} fallbackIcon={TOKEN_META[poolToken].icon} color={TOKEN_META[poolToken].color} size={22} />
+                  <div className="sw-amount-block">
+                    <input className="sw-amount-input" type="number" placeholder="0.00" value={poolTokenIn} onChange={(e) => handlePoolTokenChange(e.target.value)} />
+                  </div>
+                </div>
+              </div>
+              <button className="sw-submit" style={{ marginTop: 12 }} onClick={handleAddLiquidity} disabled={swapping}>
+                {!connected ? "Connect wallet" : swapping ? "Adding…" : "Add Liquidity"}
+              </button>
+
+              {connected && myLp && myLp.lpBalance !== "0" && (
+                <>
+                  <div className="sw-pool-section-label" style={{ marginTop: 18 }}>Remove liquidity</div>
+                  <div className="sw-remove-row">
+                    <input
+                      type="range" min="1" max="100" value={removePercent}
+                      onChange={(e) => setRemovePercent(Number(e.target.value))}
+                      className="sw-remove-slider"
+                    />
+                    <span className="sw-remove-pct">{removePercent}%</span>
+                  </div>
+                  <button className="sw-submit sw-submit-remove" onClick={handleRemoveLiquidity} disabled={swapping}>
+                    {swapping ? "Removing…" : `Remove ${removePercent}%`}
+                  </button>
+                </>
+              )}
+            </div>
+          )}
         </div>
 
         {priceOf(fromToken) != null && (

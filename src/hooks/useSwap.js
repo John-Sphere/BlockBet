@@ -20,6 +20,7 @@ const SWAP_ABI = [
   "function getAmountOut(address,uint256,bool) view returns (uint256)",
   "function getPool(address) view returns (uint256,uint256,uint256)",
   "function getPrice(address) view returns (uint256)",
+  "function lpBalance(address,address) view returns (uint256)",
 ];
 
 const ERC20_ABI = [
@@ -212,5 +213,99 @@ export function useSwap() {
     }
   }, []);
 
-  return { getQuote, executeSwap, getBalance, checkNeedsApproval, approveToken, getPriceHistory, swapping, TOKENS };
+  // Real pool state — reserves and total LP shares, read directly
+  // from the contract. Used to show current price/ratio and to
+  // calculate the correctly-proportioned deposit for adding liquidity.
+  const getPoolInfo = useCallback(async (symbol) => {
+    const token = TOKENS[symbol];
+    const readProvider = signer?.provider || provider || new ethers.JsonRpcProvider("https://rpc.testnet.arc.io");
+    const contract = new ethers.Contract(SWAP_CONTRACT, SWAP_ABI, readProvider);
+    const [reserveUsdc, reserveToken, totalLp] = await contract.getPool(token.address);
+    return {
+      reserveUsdc: ethers.formatUnits(reserveUsdc, 6),
+      reserveToken: ethers.formatUnits(reserveToken, token.decimals),
+      totalLp: totalLp.toString(),
+      exists: reserveUsdc > 0n,
+    };
+  }, [signer, provider]);
+
+  // A specific user's LP share of a given pool, plus what that's
+  // currently redeemable for in real USDC + token terms.
+  const getMyLp = useCallback(async (symbol, address) => {
+    if (!address) return { lpBalance: "0", usdcShare: "0", tokenShare: "0" };
+    const token = TOKENS[symbol];
+    const readProvider = signer?.provider || provider || new ethers.JsonRpcProvider("https://rpc.testnet.arc.io");
+    const contract = new ethers.Contract(SWAP_CONTRACT, SWAP_ABI, readProvider);
+    const lpBal = await contract.lpBalance(token.address, address);
+    const [reserveUsdc, reserveToken, totalLp] = await contract.getPool(token.address);
+    if (totalLp === 0n || lpBal === 0n) {
+      return { lpBalance: "0", usdcShare: "0", tokenShare: "0" };
+    }
+    const usdcShare = (lpBal * reserveUsdc) / totalLp;
+    const tokenShare = (lpBal * reserveToken) / totalLp;
+    return {
+      lpBalance: lpBal.toString(),
+      usdcShare: ethers.formatUnits(usdcShare, 6),
+      tokenShare: ethers.formatUnits(tokenShare, token.decimals),
+    };
+  }, [signer, provider]);
+
+  // Adds liquidity to a pool. If the pool already has liquidity, the
+  // caller should pass amounts matching the CURRENT ratio (get it
+  // from getPoolInfo first) — depositing at a different ratio still
+  // works but will shift the price, same real tradeoff as any AMM.
+  const addLiquidity = useCallback(async (symbol, usdcAmount, tokenAmount) => {
+    if (!signer) throw new Error("Wallet not connected");
+    const token = TOKENS[symbol];
+    const usdcUnits = ethers.parseUnits(String(usdcAmount), 6);
+    const tokenUnits = ethers.parseUnits(String(tokenAmount), token.decimals);
+
+    setSwapping(true);
+    try {
+      const usdcContract = new ethers.Contract(TOKENS.USDC.address, ERC20_ABI, signer);
+      const tokenContract = new ethers.Contract(token.address, ERC20_ABI, signer);
+      const owner = await signer.getAddress();
+
+      const usdcAllowance = await usdcContract.allowance(owner, SWAP_CONTRACT);
+      if (usdcAllowance < usdcUnits) {
+        const tx = await usdcContract.approve(SWAP_CONTRACT, usdcUnits);
+        await tx.wait();
+      }
+      const tokenAllowance = await tokenContract.allowance(owner, SWAP_CONTRACT);
+      if (tokenAllowance < tokenUnits) {
+        const tx = await tokenContract.approve(SWAP_CONTRACT, tokenUnits);
+        await tx.wait();
+      }
+
+      const swapContract = new ethers.Contract(SWAP_CONTRACT, SWAP_ABI, signer);
+      const tx = await swapContract.addLiquidity(token.address, usdcUnits, tokenUnits);
+      const receipt = await tx.wait();
+      return { success: true, txHash: receipt.hash };
+    } finally {
+      setSwapping(false);
+    }
+  }, [signer]);
+
+  // Burns LP tokens, returning your proportional share of both sides
+  // of the pool. lpAmount is the raw LP token count (as returned by
+  // getMyLp), not a USDC/token amount.
+  const removeLiquidity = useCallback(async (symbol, lpAmount) => {
+    if (!signer) throw new Error("Wallet not connected");
+    const token = TOKENS[symbol];
+    setSwapping(true);
+    try {
+      const swapContract = new ethers.Contract(SWAP_CONTRACT, SWAP_ABI, signer);
+      const tx = await swapContract.removeLiquidity(token.address, lpAmount);
+      const receipt = await tx.wait();
+      return { success: true, txHash: receipt.hash };
+    } finally {
+      setSwapping(false);
+    }
+  }, [signer]);
+
+  return {
+    getQuote, executeSwap, getBalance, checkNeedsApproval, approveToken, getPriceHistory,
+    getPoolInfo, getMyLp, addLiquidity, removeLiquidity,
+    swapping, TOKENS,
+  };
 }
