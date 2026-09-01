@@ -84,6 +84,42 @@
 .sw-icon-btn svg { width: 15px; height: 15px; }
 .sw-icon-btn:hover { color: var(--chalk); border-color: var(--gold-deep); }
 
+.sw-icon-btn-active { background: var(--gold-bg); color: var(--gold-bright); border-color: var(--gold-deep); }
+.sw-icon-btn:disabled { opacity: 0.35; cursor: default; }
+
+.sw-chart-panel {
+  background: var(--surface-alt);
+  border: 1px solid var(--border-soft);
+  border-radius: 12px;
+  padding: 12px;
+  margin-bottom: 14px;
+}
+
+.sw-chart-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--chalk);
+  margin-bottom: 8px;
+}
+
+.sw-chart-current {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  color: var(--gold-bright);
+}
+
+.sw-chart-loading {
+  height: 160px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-faint);
+  font-size: 12px;
+}
+
 .sw-settings {
   background: var(--surface-alt);
   border: 1px solid var(--border-soft);

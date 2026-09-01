@@ -2,6 +2,8 @@ import { useMemo, useState, useEffect, useCallback } from "react";
 import { useSwap } from "../hooks/useSwap";
 import { useWallet } from "../context/WalletContext";
 import { useApp } from "../context/AppContext";
+import { TokenIcon } from "../components/ui/TokenIcon";
+import PriceChart from "../components/charts/PriceChart";
 import "./Swap.css";
 
 // Real tokens only — matching what's actually deployed and pooled on
@@ -16,7 +18,7 @@ const TOKEN_META = {
 const TOKEN_LIST = Object.keys(TOKEN_META);
 
 export default function Swap() {
-  const { getQuote, executeSwap, getBalance, checkNeedsApproval, approveToken, swapping, TOKENS } = useSwap();
+  const { getQuote, executeSwap, getBalance, checkNeedsApproval, approveToken, getPriceHistory, swapping, TOKENS } = useSwap();
   const { connected, connect, address } = useWallet();
   const { addToast } = useApp();
 
@@ -26,6 +28,9 @@ export default function Swap() {
   const [amountOut, setAmountOut] = useState("");
   const [quoting, setQuoting] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showChart, setShowChart] = useState(false);
+  const [chartData, setChartData] = useState([]);
+  const [chartLoading, setChartLoading] = useState(false);
   const [slippage, setSlippage] = useState(1.0);
   const [pickerFor, setPickerFor] = useState(null);
   const [balances, setBalances] = useState({});
@@ -64,6 +69,21 @@ export default function Swap() {
   }, [getQuote]);
 
   const priceOf = useCallback((sym) => (sym === "USDC" ? 1 : poolPrices[sym] ?? null), [poolPrices]);
+
+  // The token to actually chart — whichever side of the pair isn't
+  // USDC, since USDC itself has no swap history (it's always the
+  // base currency, never the "token" side of a Swap event).
+  const chartToken = toToken !== "USDC" ? toToken : fromToken !== "USDC" ? fromToken : null;
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!showChart || !chartToken) return;
+    setChartLoading(true);
+    getPriceHistory(chartToken).then((data) => {
+      if (!cancelled) { setChartData(data); setChartLoading(false); }
+    });
+    return () => { cancelled = true; };
+  }, [showChart, chartToken, getPriceHistory]);
 
   useEffect(() => {
     let cancelled = false;
@@ -180,6 +200,9 @@ export default function Swap() {
               <button className="sw-tab" disabled>Bridge</button>
             </div>
             <div className="sw-toolbar">
+              <button className={`sw-icon-btn ${showChart ? "sw-icon-btn-active" : ""}`} onClick={() => setShowChart((s) => !s)} aria-label="Chart" disabled={!chartToken}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 20V10M12 20V4M20 20v-7"/></svg>
+              </button>
               <button className="sw-icon-btn" onClick={() => setShowSettings((s) => !s)} aria-label="Settings">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1 1.55V21a2 2 0 1 1-4 0v-.09A1.7 1.7 0 0 0 9 19.4a1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.55-1H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-1.55V3a2 2 0 1 1 4 0v.09A1.7 1.7 0 0 0 15 4.6a1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.4 9a1.7 1.7 0 0 0 1.55 1H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.51 1Z"/></svg>
               </button>
@@ -196,6 +219,23 @@ export default function Swap() {
                   </button>
                 ))}
               </div>
+            </div>
+          )}
+
+          {showChart && chartToken && (
+            <div className="sw-chart-panel">
+              <div className="sw-chart-head">
+                <TokenIcon symbol={chartToken} fallbackIcon={TOKEN_META[chartToken].icon} color={TOKEN_META[chartToken].color} size={18} />
+                <span>{chartToken} / USDC</span>
+                {chartData.length > 0 && (
+                  <span className="sw-chart-current">${chartData[chartData.length - 1].price.toFixed(4)}</span>
+                )}
+              </div>
+              {chartLoading ? (
+                <div className="sw-chart-loading">Loading real swap history…</div>
+              ) : (
+                <PriceChart data={chartData} width={420} height={160} />
+              )}
             </div>
           )}
 
@@ -258,7 +298,7 @@ export default function Swap() {
 
         {priceOf(fromToken) != null && (
           <div className="sw-float-chip">
-            <span className="sw-token-icon" style={{ background: fromT.color }}>{fromT.icon}</span>
+            <TokenIcon symbol={fromToken} fallbackIcon={fromT.icon} color={fromT.color} size={20} />
             <span className="sw-float-sym">{fromToken}</span>
             <span className="sw-float-price">${priceOf(fromToken).toLocaleString(undefined, { maximumFractionDigits: 4 })}</span>
           </div>
@@ -274,7 +314,7 @@ export default function Swap() {
             </div>
             {TOKEN_LIST.map((sym) => (
               <button key={sym} className="sw-modal-item" onClick={() => selectToken(sym)}>
-                <span className="sw-token-icon" style={{ background: TOKEN_META[sym].color }}>{TOKEN_META[sym].icon}</span>
+                <TokenIcon symbol={sym} fallbackIcon={TOKEN_META[sym].icon} color={TOKEN_META[sym].color} size={28} />
                 <span className="sw-modal-item-body">
                   <span className="sw-modal-item-sym">{sym}</span>
                   <span className="sw-modal-item-name">{TOKEN_META[sym].name}</span>
@@ -292,7 +332,7 @@ export default function Swap() {
 function TokenPill({ symbol, meta, onClick }) {
   return (
     <button className="sw-token-pill" onClick={onClick}>
-      <span className="sw-token-icon" style={{ background: meta.color }}>{meta.icon}</span>
+      <TokenIcon symbol={symbol} fallbackIcon={meta.icon} color={meta.color} size={22} />
       {symbol}
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" className="sw-chevron">
         <path d="M6 9l6 6 6-6" />

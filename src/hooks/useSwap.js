@@ -29,6 +29,18 @@ const ERC20_ABI = [
 ];
 
 const SLIPPAGE_BPS = 100; // 1% default tolerance
+const INDEXER_URL = "https://indexer.dev.hyperindex.xyz/d59f742/v1/graphql";
+
+async function queryIndexer(query, variables) {
+  const res = await fetch(INDEXER_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ query, variables }),
+  });
+  const json = await res.json();
+  if (json.errors) throw new Error(json.errors[0]?.message || "Indexer query failed");
+  return json.data;
+}
 
 export function useSwap() {
   const { signer, provider } = useWallet();
@@ -168,5 +180,37 @@ export function useSwap() {
     return ethers.formatUnits(bal, token.decimals);
   }, [signer, provider]);
 
-  return { getQuote, executeSwap, getBalance, checkNeedsApproval, approveToken, swapping, TOKENS };
+  // Real price history for a token, derived from actual historical
+  // swap events indexed on-chain — not simulated data. Returns points
+  // sorted oldest-first, each { time, price } where price is USDC
+  // per one whole token, correctly accounting for that token's real
+  // decimal precision.
+  const getPriceHistory = useCallback(async (symbol, limit = 50) => {
+    const token = TOKENS[symbol];
+    if (!token) return [];
+    try {
+      const data = await queryIndexer(
+        `query SwapHistory($token: String!, $limit: Int!) {
+          SwapEvent(where: { token: { _ilike: $token } }, order_by: { timestamp: asc }, limit: $limit) {
+            usdcIn amountIn amountOut timestamp
+          }
+        }`,
+        { token: token.address, limit }
+      );
+      return data.SwapEvent.map((e) => {
+        const usdcAmount = e.usdcIn ? Number(e.amountIn) : Number(e.amountOut);
+        const tokenAmount = e.usdcIn ? Number(e.amountOut) : Number(e.amountIn);
+        const usdcValue = usdcAmount / 1e6;
+        const tokenValue = tokenAmount / Math.pow(10, token.decimals);
+        return {
+          time: Number(e.timestamp) * 1000,
+          price: tokenValue > 0 ? usdcValue / tokenValue : 0,
+        };
+      }).filter((p) => p.price > 0);
+    } catch {
+      return [];
+    }
+  }, []);
+
+  return { getQuote, executeSwap, getBalance, checkNeedsApproval, approveToken, getPriceHistory, swapping, TOKENS };
 }
