@@ -86,6 +86,7 @@ export function Navbar() {
         </NavLink>
         <NavLink to="/football?hot=1">Hot games</NavLink>
         <NavLink to="/swap">Swap</NavLink>
+        <NavLink to="/lend">Lend</NavLink>
       </nav>
 
       <div className="bb-top-search">
