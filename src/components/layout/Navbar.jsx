@@ -53,7 +53,7 @@ export function Navbar() {
     return (
       <header className="bb-topbar bb-topbar--home">
         <Link to="/" className="bb-brand">
-          <img src="/logo.png" alt="BlockBet" className="logo-img" />
+          <img src="/logo.png" alt="BlockBet" className="logo-img" /><span>BlockBet</span>
         </Link>
         <div className="bb-spacer" />
         <button
@@ -75,7 +75,7 @@ export function Navbar() {
   return (
     <header className="bb-topbar">
       <Link to="/" className="bb-brand">
-        <img src="/logo.png" alt="BlockBet" className="logo-img" />
+        <img src="/logo.png" alt="BlockBet" className="logo-img" /><span>BlockBet</span>
       </Link>
 
       <nav className="bb-top-nav">
