@@ -23,8 +23,8 @@ const projectId = import.meta.env.VITE_REOWN_PROJECT_ID;
 const metadata = {
   name: "BLOCKBET",
   description: "AI-powered on-chain sports betting on Arc",
-  url: "https://blockbet-app.vercel.app",
-  icons: ["https://blockbet-app.vercel.app/logo.png"],
+  url: "https://www.blockbetfi.xyz",
+  icons: ["https://www.blockbetfi.xyz/logo.png"],
 };
 
 export const wagmiAdapter = new WagmiAdapter({
