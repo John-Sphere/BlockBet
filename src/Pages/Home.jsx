@@ -4,29 +4,29 @@ import RadarViz from "../components/charts/RadarViz";
 import "./Home.css";
 
 const GLOSSARY = [
-  { term: "Wallet", icon: "◈", body: "An app that holds your funds and signs transactions — nobody but you can move money out of it." },
-  { term: "USDC", icon: "$", body: "A digital dollar — 1 USDC is designed to always equal $1. It's what you bet with." },
-  { term: "On-chain", icon: "⛓", body: "Recorded permanently on a public ledger anyone can inspect — not a private database." },
+  { term: "Wallet", icon: "◈", body: "An app that holds your funds and signs transactions. Nobody but you can move money out of it." },
+  { term: "USDC", icon: "$", body: "A digital dollar. 1 USDC is designed to always equal $1, and it's what you bet with." },
+  { term: "On-chain", icon: "⛓", body: "Recorded permanently on a public ledger anyone can inspect, not a private database." },
   { term: "Testnet", icon: "◎", body: "A practice network. Same mechanics as the real thing, but the USDC has no real-world value." },
-  { term: "Provably fair", icon: "✓", body: "A result you can personally recompute and verify — not just a promise you have to trust." },
+  { term: "Provably fair", icon: "✓", body: "A result you can personally recompute and verify, not just a promise you have to trust." },
 ];
 
 const BET_FLOW = [
-  { n: "1", title: "You pick odds", body: "Tap a price — it's locked in for you at that exact number." },
-  { n: "2", title: "Wallet signs it", body: "Your wallet asks you to confirm — nothing moves without your approval." },
+  { n: "1", title: "You pick odds", body: "Tap a price. It's locked in for you at that exact number." },
+  { n: "2", title: "Wallet signs it", body: "Your wallet asks you to confirm. Nothing moves without your approval." },
   { n: "3", title: "Stake moves on-chain", body: "USDC leaves your wallet and enters the contract, publicly recorded." },
-  { n: "4", title: "Payout returns automatically", body: "If you win, the contract pays your wallet directly — no request needed." },
+  { n: "4", title: "Payout returns automatically", body: "If you win, the contract pays your wallet directly, no request needed." },
 ];
 
 const FEATURES = [
-  { icon: "◆", title: "Provably fair, not just claimed", body: "Roulette spins use a commit-reveal seed you can verify after the fact — the server can't have known the result in advance." },
+  { icon: "◆", title: "Provably fair, not just claimed", body: "Roulette spins use a commit-reveal seed you can verify after the fact, so the server can't have known the result in advance." },
   { icon: "◇", title: "Odds that move with the match", body: "Prices are calculated from real club ratings and shift live as the scoreline changes, not held static behind the scenes." },
   { icon: "▲", title: "Cash out at a real quote", body: "Exit a pending bet early at a dynamically priced, signed quote instead of a flat, arbitrary discount." },
-  { icon: "●", title: "Nothing sits in a custodial account", body: "Funds move directly between your wallet and the contract — BlockBet never holds a balance on your behalf." },
+  { icon: "●", title: "Nothing sits in a custodial account", body: "Funds move directly between your wallet and the contract. BlockBet never holds a balance on your behalf." },
 ];
 
 const USE_CASES = [
-  { icon: "⚽", title: "Fixed-odds singles", body: "Lock in a price the moment you bet — honored regardless of how the market moves after." },
+  { icon: "⚽", title: "Fixed-odds singles", body: "Lock in a price the moment you bet, honored regardless of how the market moves after." },
   { icon: "▦", title: "Accumulators", body: "Stack two or more legs for combined odds, settled together once every leg resolves." },
   { icon: "↺", title: "Live cash-out", body: "Exit early mid-match at a live-priced, signed quote instead of waiting for full time." },
 ];
@@ -34,14 +34,14 @@ const USE_CASES = [
 const COMPARISON = [
   { label: "Where your money sits", trad: "In the operator's account", bb: "In your own wallet until you bet" },
   { label: "Can you verify a result?", trad: "You have to trust the operator", bb: "Recompute it yourself from the published seed" },
-  { label: "Withdrawal", trad: "Request & wait for approval", bb: "Already in your wallet — nothing to request" },
+  { label: "Withdrawal", trad: "Request & wait for approval", bb: "Already in your wallet, nothing to request" },
 ];
 
 const PF_STEPS = [
   { tag: "BEFORE", title: "Server commits", body: "Publishes a scrambled fingerprint of its secret number." },
   { tag: "DURING", title: "Spin resolves", body: "Your result is calculated using that already-committed number." },
   { tag: "AFTER", title: "Server reveals", body: "The original number is published in full." },
-  { tag: "YOU", title: "You verify", body: "Re-scramble the revealed number — it matches, or it doesn't." },
+  { tag: "YOU", title: "You verify", body: "Re-scramble the revealed number. It either matches, or it doesn't." },
 ];
 
 const RESOURCES = [
@@ -52,13 +52,12 @@ const RESOURCES = [
 ];
 
 const FAQS = [
-  { q: "Is this real money?", a: "No — BlockBet currently runs entirely on Arc Testnet using testnet USDC with no real-world value." },
+  { q: "Is this real money?", a: "No, BlockBet currently runs entirely on Arc Testnet using testnet USDC with no real-world value." },
   { q: "Do you ever hold my funds?", a: "No. Stakes move directly from your wallet into the contract when you bet, and payouts move directly back out." },
 ];
 
-// Note: no embedded topbar here — Layout.jsx already renders the real
-// site navbar for every page, including this one. Building a second
-// one directly into this component would duplicate it.
+// Note: no embedded topbar here. Layout.jsx already renders the real
+// site navbar for every page, including this one.
 export default function Home() {
   const [tab, setTab] = useState("sports");
   const [allMatches, setAllMatches] = useState([]);
@@ -86,15 +85,24 @@ export default function Home() {
         <div className="hp-hero-shape">
           <RadarViz matches={liveMatches} size={600} />
         </div>
-        <div className="hp-hero-badge">New to crypto betting? This page explains everything below.</div>
-        <div className="hp-eyebrow">ON-CHAIN SPORTSBOOK &amp; CASINO</div>
+        <div className="hp-eyebrow">
+          ON-CHAIN SPORTSBOOK &amp; CASINO BUILT ON
+          <span className="hp-arc-badge">
+            <img
+              src="/arc-logo.png"
+              alt="Arc"
+              onError={(e) => { e.target.style.display = "none"; e.target.nextSibling.style.display = "inline"; }}
+            />
+            <span style={{ display: "none" }}>ARC</span>
+          </span>
+        </div>
         <h1>
           Every wager, verifiable.
           <br />
           Every payout, yours.
         </h1>
         <p className="hp-hero-sub">
-          BlockBet turns match odds, casino spins, and token swaps into a single onchain experience —
+          BlockBet turns match odds, casino spins, and token swaps into a single onchain experience,
           priced transparently, settled instantly, and never held in a custodial account.
         </p>
         <div className="hp-hero-cta-row">
@@ -125,7 +133,7 @@ export default function Home() {
         <section style={{ paddingTop: 0 }}>
           <div className="hp-eyebrow-tag center">New here?</div>
           <h2 className="hp-h2 center">Five words you'll see everywhere</h2>
-          <p className="hp-p center">A quick glossary before anything else — these terms show up constantly once you're in the app.</p>
+          <p className="hp-p center">A quick glossary before anything else. These terms show up constantly once you're in the app.</p>
           <div className="hp-glossary">
             {GLOSSARY.map((g) => (
               <div className="hp-g-card" key={g.term}>
@@ -140,7 +148,7 @@ export default function Home() {
         <section id="how-it-works" style={{ paddingTop: 0 }}>
           <div className="hp-eyebrow-tag center">Step by step</div>
           <h2 className="hp-h2 center">What actually happens when you bet</h2>
-          <p className="hp-p center">Four steps, start to finish — no hidden middle layer.</p>
+          <p className="hp-p center">Four steps, start to finish, no hidden middle layer.</p>
           <div className="hp-flow">
             <div className="hp-flow-line" />
             <div className="hp-flow-steps">
@@ -213,10 +221,10 @@ export default function Home() {
           <p className="hp-p center">Using a real example: a roulette spin.</p>
           <div className="hp-pf-box">
             <p className="hp-pf-lead">
-              Before your spin happens, the server generates a secret number and publishes its <i>hash</i> —
+              Before your spin happens, the server generates a secret number and publishes its <i>hash</i>,
               a scrambled fingerprint that reveals nothing on its own. Only after the spin resolves does the
               server publish the original secret number. Anyone can re-hash it and confirm it matches what
-              was published beforehand — proving the server couldn't have changed its answer after the fact.
+              was published beforehand, proving the server couldn't have changed its answer after the fact.
             </p>
             <div className="hp-pf-steps">
               {PF_STEPS.map((s) => (
@@ -276,7 +284,7 @@ export default function Home() {
             <div className="hp-footer-col"><h4>LEARN</h4><a href="#how-it-works">How it works</a><a href="#provably-fair">Provably fair</a><a href="https://blockbet.mintlify.app" target="_blank" rel="noopener noreferrer">Docs</a></div>
             <div className="hp-footer-col"><h4>CONNECT</h4><a href="https://x.com/block_on_bet" target="_blank" rel="noopener noreferrer">X</a></div>
           </div>
-          <div className="hp-footer-bottom">© 2026 BlockBet — Arc Testnet · USDC Native. Testnet only, no real-money value.</div>
+          <div className="hp-footer-bottom">© 2026 BlockBet · Arc Testnet · USDC Native. Testnet only, no real-money value.</div>
         </div>
       </footer>
     </div>

@@ -42,11 +42,13 @@
 /* ============ HERO ============ */
 .hp-hero{ position:relative; padding:80px 56px 60px; overflow:hidden; }
 .hp-hero-shape{ position:absolute; top:0; right:-8%; width:600px; height:600px; opacity:0.85; pointer-events:none; }
-.hp-hero-badge{
-  display:inline-flex; align-items:center; font-family: var(--hp-font-mono); font-size:11.5px; color: var(--hp-gold-2);
-  background: var(--hp-gold-bg); border:1px solid var(--hp-gold-dim); padding:7px 16px; border-radius:20px; margin-bottom:26px;
+.hp-eyebrow{
+  display:flex; align-items:center; gap:10px; font-family: var(--hp-font-mono); font-size:15px; font-weight:700;
+  color: var(--hp-gold-2); letter-spacing:0.1em; margin-bottom:22px; position:relative; z-index:1;
 }
-.hp-eyebrow{ font-family: var(--hp-font-mono); font-size:11.5px; color: var(--hp-gold-2); letter-spacing:0.1em; margin-bottom:22px; }
+.hp-arc-badge{ display:inline-flex; align-items:center; }
+.hp-arc-badge img{ height:20px; width:auto; display:block; }
+.hp-arc-badge span{ font-family: var(--hp-font-mono); font-size:15px; font-weight:800; color: var(--hp-gold-2); }
 .hp-hero h1{ font-family: var(--hp-font-display); font-size:56px; line-height:1.1; max-width:780px; margin-bottom:24px; font-weight:600; }
 .hp-hero-sub{ font-size:16.5px; color: var(--hp-text-dim); max-width:620px; line-height:1.6; margin-bottom:34px; }
 .hp-hero-cta-row{ display:flex; align-items:center; margin-bottom:24px; }
