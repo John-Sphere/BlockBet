@@ -1,42 +1,66 @@
-import { Link } from "react-router-dom";
 import { useState, useEffect, useMemo } from "react";
 import { subscribe, initMatchManager } from "../engine/matchManager";
 import RadarViz from "../components/charts/RadarViz";
 import "./Home.css";
 
-const TICKER_ITEMS = [
-  { t: "Man United vs Newcastle", o: "2.10", d: "up" },
-  { t: "Juventus vs AC Milan", o: "2.20", d: "up" },
-  { t: "Real Madrid vs Barcelona", o: "2.05", d: "down" },
-  { t: "Liverpool vs Chelsea", o: "2.05", d: "up" },
-  { t: "Bayern vs Dortmund", o: "1.65", d: "down" },
-  { t: "Inter vs Napoli", o: "2.15", d: "up" },
+const GLOSSARY = [
+  { term: "Wallet", icon: "◈", body: "An app that holds your funds and signs transactions — nobody but you can move money out of it." },
+  { term: "USDC", icon: "$", body: "A digital dollar — 1 USDC is designed to always equal $1. It's what you bet with." },
+  { term: "On-chain", icon: "⛓", body: "Recorded permanently on a public ledger anyone can inspect — not a private database." },
+  { term: "Testnet", icon: "◎", body: "A practice network. Same mechanics as the real thing, but the USDC has no real-world value." },
+  { term: "Provably fair", icon: "✓", body: "A result you can personally recompute and verify — not just a promise you have to trust." },
 ];
 
-const STEPS = [
-  { num: "01", title: "Connect & fund", body: "Connect any wallet, then get testnet USDC in a click. No account creation, no KYC forms." },
-  { num: "02", title: "Play your way", body: "Back a match with live-moving odds, spin the wheel with full seed verification, or swap between USDC, EURC, cirBTC, and BLOCK." },
-  { num: "03", title: "Claim or cash out", body: "Winnings settle straight to your wallet the instant a result lands. Cash out early on live bets, or let it ride." },
+const BET_FLOW = [
+  { n: "1", title: "You pick odds", body: "Tap a price — it's locked in for you at that exact number." },
+  { n: "2", title: "Wallet signs it", body: "Your wallet asks you to confirm — nothing moves without your approval." },
+  { n: "3", title: "Stake moves on-chain", body: "USDC leaves your wallet and enters the contract, publicly recorded." },
+  { n: "4", title: "Payout returns automatically", body: "If you win, the contract pays your wallet directly — no request needed." },
 ];
 
-function TrustIcon({ name }) {
-  switch (name) {
-    case "shield":
-      return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2 3 6v6c0 5 3.8 9.4 9 10 5.2-.6 9-5 9-10V6l-9-4Z" /></svg>;
-    case "lock":
-      return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="10" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>;
-    case "check":
-      return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 12l2 2 4-4" /><circle cx="12" cy="12" r="9" /></svg>;
-    default:
-      return null;
-  }
-}
+const FEATURES = [
+  { icon: "◆", title: "Provably fair, not just claimed", body: "Roulette spins use a commit-reveal seed you can verify after the fact — the server can't have known the result in advance." },
+  { icon: "◇", title: "Odds that move with the match", body: "Prices are calculated from real club ratings and shift live as the scoreline changes, not held static behind the scenes." },
+  { icon: "▲", title: "Cash out at a real quote", body: "Exit a pending bet early at a dynamically priced, signed quote instead of a flat, arbitrary discount." },
+  { icon: "●", title: "Nothing sits in a custodial account", body: "Funds move directly between your wallet and the contract — BlockBet never holds a balance on your behalf." },
+];
 
-// Note: the topbar is NOT duplicated here — Layout.jsx already
-// renders <Navbar /> for every page (including this one, using its
-// simple isHome variant from Phase 1). This component starts at the
-// hero, not with its own separate top bar.
+const USE_CASES = [
+  { icon: "⚽", title: "Fixed-odds singles", body: "Lock in a price the moment you bet — honored regardless of how the market moves after." },
+  { icon: "▦", title: "Accumulators", body: "Stack two or more legs for combined odds, settled together once every leg resolves." },
+  { icon: "↺", title: "Live cash-out", body: "Exit early mid-match at a live-priced, signed quote instead of waiting for full time." },
+];
+
+const COMPARISON = [
+  { label: "Where your money sits", trad: "In the operator's account", bb: "In your own wallet until you bet" },
+  { label: "Can you verify a result?", trad: "You have to trust the operator", bb: "Recompute it yourself from the published seed" },
+  { label: "Withdrawal", trad: "Request & wait for approval", bb: "Already in your wallet — nothing to request" },
+];
+
+const PF_STEPS = [
+  { tag: "BEFORE", title: "Server commits", body: "Publishes a scrambled fingerprint of its secret number." },
+  { tag: "DURING", title: "Spin resolves", body: "Your result is calculated using that already-committed number." },
+  { tag: "AFTER", title: "Server reveals", body: "The original number is published in full." },
+  { tag: "YOU", title: "You verify", body: "Re-scramble the revealed number — it matches, or it doesn't." },
+];
+
+const RESOURCES = [
+  { tag: "//R.01", title: "Get testnet USDC", body: "Fund a wallet in one click to start placing bets on Arc Testnet." },
+  { tag: "//R.02", title: "Read the docs", body: "Contract addresses, indexer schema, and API reference for the whole stack." },
+  { tag: "//R.03", title: "Verify a spin", body: "Step-by-step guide to reproducing any roulette result from its published seed." },
+  { tag: "//R.04", title: "Explorer", body: "Inspect every bet, match, and payout directly on Arc's block explorer." },
+];
+
+const FAQS = [
+  { q: "Is this real money?", a: "No — BlockBet currently runs entirely on Arc Testnet using testnet USDC with no real-world value." },
+  { q: "Do you ever hold my funds?", a: "No. Stakes move directly from your wallet into the contract when you bet, and payouts move directly back out." },
+];
+
+// Note: no embedded topbar here — Layout.jsx already renders the real
+// site navbar for every page, including this one. Building a second
+// one directly into this component would duplicate it.
 export default function Home() {
+  const [tab, setTab] = useState("sports");
   const [allMatches, setAllMatches] = useState([]);
 
   useEffect(() => {
@@ -49,178 +73,210 @@ export default function Home() {
     () => allMatches.filter((m) => m.status === "first_half" || m.status === "second_half" || m.status === "halftime"),
     [allMatches]
   );
-  const featuredLive = liveMatches[0];
+  const clubsTracked = useMemo(() => {
+    const names = new Set();
+    allMatches.forEach((m) => { names.add(m.homeTeam); names.add(m.awayTeam); });
+    return names.size;
+  }, [allMatches]);
 
   return (
     <div className="home-page">
-      <div className="wrap">
-        <div className="hero">
-          <div>
-            <div className="eyebrow">
-              <span className="dot" />
-              On-chain · Provably fair · Instant settlement
-            </div>
-            <h1>
-              Bet, play, and trade —
-              <br />
-              <span className="accent">all verifiable on-chain.</span>
-            </h1>
-            <p className="sub">
-              BlockBet brings sports betting, casino games, and token swaps together on one platform —
-              every outcome, every payout, every trade settled transparently in USDC on Arc. Nothing to
-              trust blindly. Everything you can verify yourself.
-            </p>
-            <div className="hero-cta">
-              <Link to="/football" className="btn-start">Start betting →</Link>
-              <a href="#how-it-works" className="btn-docs">How it works</a>
-            </div>
-            <div className="trust-row">
-              <div className="trust-item">
-                <TrustIcon name="shield" />
-                <div><div className="t">Provably fair</div><div className="d">Every casino result is mathematically verifiable</div></div>
-              </div>
-              <div className="trust-item">
-                <TrustIcon name="lock" />
-                <div><div className="t">Fully transparent</div><div className="d">Every bet, swap, and payout lives on-chain</div></div>
-              </div>
-              <div className="trust-item">
-                <TrustIcon name="check" />
-                <div><div className="t">Instantly settled</div><div className="d">No withdrawal queues, no custodial accounts</div></div>
-              </div>
-            </div>
-          </div>
-
-          <div className="hero-visual">
-            <div className="hero-corner">LIVE MATCH RADAR · ARC TESTNET</div>
-            <RadarViz matches={liveMatches} />
-            <div className="glow-ring" />
-            <div className="glow-ring r2" />
-            <div className="glow-ring r3" />
-            <div className="hero-badge">
-              {featuredLive ? (
-                <>
-                  <div className="hb-team"><span className="hb-badge" />{featuredLive.homeTeam} v {featuredLive.awayTeam}</div>
-                  <div className="hb-score">{featuredLive.homeScore} – {featuredLive.awayScore}</div>
-                  <div className="hb-live">LIVE {featuredLive.minute}'</div>
-                </>
-              ) : (
-                <div className="hb-team" style={{ width: "100%", justifyContent: "center" }}>
-                  {liveMatches.length} matches live right now
-                </div>
-              )}
-            </div>
-          </div>
+      {/* ============ HERO ============ */}
+      <div className="hp-hero">
+        <div className="hp-hero-shape">
+          <RadarViz matches={liveMatches} size={600} />
         </div>
+        <div className="hp-hero-badge">New to crypto betting? This page explains everything below.</div>
+        <div className="hp-eyebrow">ON-CHAIN SPORTSBOOK &amp; CASINO</div>
+        <h1>
+          Every wager, verifiable.
+          <br />
+          Every payout, yours.
+        </h1>
+        <p className="hp-hero-sub">
+          BlockBet turns match odds, casino spins, and token swaps into a single onchain experience —
+          priced transparently, settled instantly, and never held in a custodial account.
+        </p>
+        <div className="hp-hero-cta-row">
+          <a href="/football" className="hp-btn-primary">Start betting →</a>
+          <a href="#how-it-works" className="hp-btn-secondary">How it works</a>
+        </div>
+        <div className="hp-hero-status"><i />{liveMatches.length} matches live right now on Arc Testnet</div>
       </div>
 
-      <div className="ticker-strip">
-        <div className="ticker">
-          {[...TICKER_ITEMS, ...TICKER_ITEMS].map((x, i) => (
-            <div className="t-item" key={i}>
-              <b>{x.t}</b>
-              <span>{x.o}</span>
-              <span className={x.d}>{x.d === "up" ? "▲" : "▼"}</span>
+      <div className="hp-wrap">
+        {/* ============ FEATURES ============ */}
+        <section>
+          <div className="hp-eyebrow-tag">Why BlockBet</div>
+          <h2 className="hp-h2">Built so the house never has the last word</h2>
+          <p className="hp-p">BlockBet is engineered around one idea: you shouldn't have to trust the operator. Every price, every spin, and every payout is something you can check yourself.</p>
+          <div className="hp-feat-grid">
+            {FEATURES.map((f) => (
+              <div className="hp-feat-card" key={f.title}>
+                <div className="hp-feat-ico">{f.icon}</div>
+                <h4>{f.title}</h4>
+                <p>{f.body}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* ============ GLOSSARY ============ */}
+        <section style={{ paddingTop: 0 }}>
+          <div className="hp-eyebrow-tag center">New here?</div>
+          <h2 className="hp-h2 center">Five words you'll see everywhere</h2>
+          <p className="hp-p center">A quick glossary before anything else — these terms show up constantly once you're in the app.</p>
+          <div className="hp-glossary">
+            {GLOSSARY.map((g) => (
+              <div className="hp-g-card" key={g.term}>
+                <div className="hp-g-term"><div className="hp-g-ico">{g.icon}</div><h5>{g.term}</h5></div>
+                <p>{g.body}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* ============ STEP FLOW ============ */}
+        <section id="how-it-works" style={{ paddingTop: 0 }}>
+          <div className="hp-eyebrow-tag center">Step by step</div>
+          <h2 className="hp-h2 center">What actually happens when you bet</h2>
+          <p className="hp-p center">Four steps, start to finish — no hidden middle layer.</p>
+          <div className="hp-flow">
+            <div className="hp-flow-line" />
+            <div className="hp-flow-steps">
+              {BET_FLOW.map((s) => (
+                <div className="hp-flow-step" key={s.n}>
+                  <div className="hp-flow-dot">{s.n}</div>
+                  <h5>{s.title}</h5>
+                  <p>{s.body}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ============ STATS ============ */}
+        <section style={{ paddingTop: 0 }}>
+          <div className="hp-stats-band">
+            <div className="hp-stat"><div className="hp-num gold">{allMatches.length}</div><div className="hp-lbl">Matches today</div></div>
+            <div className="hp-stat"><div className="hp-num green">{liveMatches.length}</div><div className="hp-lbl">Live now</div></div>
+            <div className="hp-stat"><div className="hp-num gold">{clubsTracked}</div><div className="hp-lbl">Clubs tracked</div></div>
+            <div className="hp-stat"><div className="hp-num green">100%</div><div className="hp-lbl">Settled onchain</div></div>
+          </div>
+        </section>
+
+        {/* ============ USE CASES ============ */}
+        <section style={{ paddingTop: 0 }}>
+          <div className="hp-eyebrow-tag">What you can wager on</div>
+          <h2 className="hp-h2">One wallet, every way to play</h2>
+          <p className="hp-p">Whichever way you like to bet, it settles through the same contract and the same USDC balance.</p>
+          <div className="hp-tabs">
+            <button className={`hp-tab ${tab === "sports" ? "active" : ""}`} onClick={() => setTab("sports")}>Sports</button>
+            <button className={`hp-tab ${tab === "casino" ? "active" : ""}`} onClick={() => setTab("casino")}>Casino</button>
+          </div>
+          <div className="hp-use-grid">
+            {USE_CASES.map((u) => (
+              <div className="hp-use-card" key={u.title}>
+                <div className="hp-use-ico">{u.icon}</div>
+                <h5>{u.title}</h5>
+                <p>{u.body}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* ============ COMPARISON TABLE ============ */}
+        <section style={{ paddingTop: 0 }}>
+          <div className="hp-eyebrow-tag center">Why it's different</div>
+          <h2 className="hp-h2 center">Traditional sportsbook vs. BlockBet</h2>
+          <p className="hp-p center">The mechanics most bettors never get to see, laid out side by side.</p>
+          <div className="hp-cmp">
+            <div className="hp-cmp-row head">
+              <div className="hp-cmp-cell" />
+              <div className="hp-cmp-cell">Traditional sportsbook</div>
+              <div className="hp-cmp-cell">BlockBet</div>
+            </div>
+            {COMPARISON.map((row) => (
+              <div className="hp-cmp-row" key={row.label}>
+                <div className="hp-cmp-cell label">{row.label}</div>
+                <div className="hp-cmp-cell trad">{row.trad}</div>
+                <div className="hp-cmp-cell bb">{row.bb}</div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* ============ PROVABLY FAIR DEEP DIVE ============ */}
+        <section id="provably-fair" style={{ paddingTop: 0 }}>
+          <div className="hp-eyebrow-tag center">Deeper dive</div>
+          <h2 className="hp-h2 center">How "provably fair" actually works</h2>
+          <p className="hp-p center">Using a real example: a roulette spin.</p>
+          <div className="hp-pf-box">
+            <p className="hp-pf-lead">
+              Before your spin happens, the server generates a secret number and publishes its <i>hash</i> —
+              a scrambled fingerprint that reveals nothing on its own. Only after the spin resolves does the
+              server publish the original secret number. Anyone can re-hash it and confirm it matches what
+              was published beforehand — proving the server couldn't have changed its answer after the fact.
+            </p>
+            <div className="hp-pf-steps">
+              {PF_STEPS.map((s) => (
+                <div className="hp-pf-step" key={s.tag}>
+                  <div className="hp-pf-num">{s.tag}</div>
+                  <h5>{s.title}</h5>
+                  <p>{s.body}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ============ RESOURCES ============ */}
+        <section style={{ paddingTop: 0 }}>
+          <div className="hp-eyebrow-tag">Resources</div>
+          <h2 className="hp-h2">Built in the open</h2>
+          <div className="hp-res-grid">
+            {RESOURCES.map((r) => (
+              <div className="hp-res-card" key={r.tag}>
+                <div className="hp-res-tag">{r.tag}</div>
+                <h5>{r.title}</h5>
+                <p>{r.body}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* ============ FAQ ============ */}
+        <section style={{ paddingTop: 0 }}>
+          <div className="hp-eyebrow-tag">FAQ</div>
+          <h2 className="hp-h2">Common questions</h2>
+          {FAQS.map((f) => (
+            <div className="hp-faq-item" key={f.q}>
+              <div className="hp-faq-q">{f.q}</div>
+              <div className="hp-faq-a">{f.a}</div>
             </div>
           ))}
-        </div>
-      </div>
-
-      <div className="wrap">
-        <section id="how-it-works">
-          <div className="section-head">
-            <div className="section-eyebrow">How it works</div>
-            <h2>From wallet to winnings, in three steps.</h2>
-            <p>No custodial accounts, no withdrawal queues. Everything settles directly to your wallet on Arc.</p>
-          </div>
-          <div className="steps">
-            {STEPS.map((s) => (
-              <div className="step-card" key={s.num}>
-                <div className="step-num">{s.num}</div>
-                <h3>{s.title}</h3>
-                <p>{s.body}</p>
-              </div>
-            ))}
-          </div>
         </section>
 
+        {/* ============ CTA ============ */}
         <section style={{ paddingTop: 0 }}>
-          <div className="section-head">
-            <div className="section-eyebrow">Live right now</div>
-            <h2>{liveMatches.length} matches live across {new Set(allMatches.map(m => m.leagueName)).size} leagues</h2>
-            <p>Every fixture is deterministic — the same round, same kickoff time, same result, for every visitor.</p>
-          </div>
-          <div className="live-preview">
-            {(liveMatches.length > 0 ? liveMatches : allMatches).slice(0, 3).map((m) => (
-              <Link to={`/match/${m.id}`} className="lp-card" key={m.id}>
-                <div className="lp-top">
-                  <span className="lp-league">{m.leagueName}</span>
-                  {liveMatches.length > 0
-                    ? <span className="lp-live">LIVE {m.minute}'</span>
-                    : <span className="lp-league">{new Date(m.kickOffAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>}
-                </div>
-                <div className="lp-teams">
-                  <div className="lp-team-row"><span className="lp-badge" /><span>{m.homeTeam}</span><span className="sc">{m.homeScore ?? "\u2014"}</span></div>
-                  <div className="lp-team-row"><span className="lp-badge" /><span>{m.awayTeam}</span><span className="sc">{m.awayScore ?? "\u2014"}</span></div>
-                </div>
-                <div className="lp-odds">
-                  <span>{m.oddsHome?.toFixed(2)}</span>
-                  <span>{m.oddsDraw?.toFixed(2)}</span>
-                  <span>{m.oddsAway?.toFixed(2)}</span>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </section>
-
-        <section style={{ paddingTop: 0 }}>
-          <div className="stats-band">
-            <div className="sb-item"><div className="num blue">4</div><div className="lbl">Sports markets live — football, basketball, tennis, darts</div></div>
-            <div className="sb-item"><div className="num green">100%</div><div className="lbl">Bets and payouts settled on-chain</div></div>
-            <div className="sb-item"><div className="num blue">4</div><div className="lbl">Tradeable assets — USDC, EURC, cirBTC, BLOCK</div></div>
-            <div className="sb-item"><div className="num green">0</div><div className="lbl">Custodial funds held</div></div>
-          </div>
-        </section>
-
-        <section style={{ paddingTop: 0 }}>
-          <div className="cta-banner">
-            <h2>Every outcome, provable. Every payout, yours.</h2>
-            <p>Connect a wallet and place your first bet, spin, or swap — funded in USDC, settled on Arc.</p>
-            <Link to="/football" className="btn-start" style={{ display: "inline-flex" }}>Get started →</Link>
+          <div className="hp-cta-banner">
+            <h2>Ready to see it for yourself?</h2>
+            <p>Connect a wallet, claim testnet USDC, and place a bet you can verify every step of.</p>
+            <a href="/football" className="hp-btn-primary">Start betting →</a>
           </div>
         </section>
       </div>
 
-      <footer>
-        <div className="wrap">
-          <div className="footer-grid">
-            <div>
-              <div className="footer-brand"><span className="mark" />BlockBet</div>
-              <p className="footer-desc">On-chain sports betting, casino games, and token swaps — settled in USDC on Arc Testnet. Provably fair, fully transparent.</p>
-            </div>
-            <div className="footer-col">
-              <h4>Product</h4>
-              <Link to="/football">Football</Link>
-              <Link to="/casino">Casino</Link>
-              <Link to="/swap">Swap</Link>
-              <Link to="/leaderboard">Table</Link>
-            </div>
-            <div className="footer-col">
-              <h4>Account</h4>
-              <Link to="/my-bets">Open Bet</Link>
-              <Link to="/history">Match History</Link>
-              <a href="https://faucet.circle.com" target="_blank" rel="noopener noreferrer">Get USDC</a>
-            </div>
-            <div className="footer-col">
-              <h4>Resources</h4>
-              <a href="https://blockbet.mintlify.app" target="_blank" rel="noopener noreferrer">Docs</a>
-              <a href="https://testnet.arcscan.app/address/0xD49620Dad8Ce38d2dD69F97FE955220eF51eF3f9" target="_blank" rel="noopener noreferrer">Contract on explorer</a>
-              <a href="#">Status</a>
-            </div>
+      {/* ============ FOOTER ============ */}
+      <footer className="hp-footer">
+        <div className="hp-wrap">
+          <div className="hp-footer-grid">
+            <div className="hp-footer-col"><h4>PLAY</h4><a href="/football">Football</a><a href="/casino">Casino</a><a href="/swap">Swap</a><a href="/leaderboard">Table</a></div>
+            <div className="hp-footer-col"><h4>ACCOUNT</h4><a href="/my-bets">Open Bet</a><a href="/history">Match History</a><a href="https://faucet.circle.com" target="_blank" rel="noopener noreferrer">Get USDC</a></div>
+            <div className="hp-footer-col"><h4>LEARN</h4><a href="#how-it-works">How it works</a><a href="#provably-fair">Provably fair</a><a href="https://blockbet.mintlify.app" target="_blank" rel="noopener noreferrer">Docs</a></div>
+            <div className="hp-footer-col"><h4>CONNECT</h4><a href="https://x.com/block_on_bet" target="_blank" rel="noopener noreferrer">X</a></div>
           </div>
-          <div className="footer-bottom">
-            <div>© 2026 BlockBet · v2.0 Phase 2</div>
-            <div className="net"><span className="dot" />Arc Testnet · USDC Native</div>
-          </div>
+          <div className="hp-footer-bottom">© 2026 BlockBet — Arc Testnet · USDC Native. Testnet only, no real-money value.</div>
         </div>
       </footer>
     </div>
