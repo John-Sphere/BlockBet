@@ -6,13 +6,13 @@
    ========================================================== */
 
 .home-page{
-  --hp-bg:            #0C0A06;
-  --hp-surface:       #171207;
-  --hp-surface-alt:   #1F1809;
-  --hp-border:        #3A2E12;
-  --hp-text:          #F5EEDD;
-  --hp-text-dim:      #C4B492;
-  --hp-text-faint:    #8C7F5E;
+  --hp-bg:            #0B0E17;
+  --hp-surface:       #12161F;
+  --hp-surface-alt:   #181D29;
+  --hp-border:        #262C3B;
+  --hp-text:          #EEF0F5;
+  --hp-text-dim:      #8990A3;
+  --hp-text-faint:    #545B6E;
 
   --hp-gold:      #E8B23D;
   --hp-gold-2:    #F5C765;
