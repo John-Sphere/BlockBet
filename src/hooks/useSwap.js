@@ -29,7 +29,6 @@ const ERC20_ABI = [
   "function balanceOf(address) view returns (uint256)",
 ];
 
-const SLIPPAGE_BPS = 100; // 1% default tolerance
 const INDEXER_URL = "https://indexer.dev.hyperindex.xyz/d59f742/v1/graphql";
 
 async function queryIndexer(query, variables) {
@@ -166,11 +165,12 @@ export function useSwap() {
 
   // Handles all three real cases: USDC->X, X->USDC, and X->Y (routed
   // through USDC as two separate on-chain swaps).
-  const executeSwap = useCallback(async (fromSymbol, toSymbol, amountIn) => {
+  const executeSwap = useCallback(async (fromSymbol, toSymbol, amountIn, slippagePercent = 1.0) => {
     if (!signer) throw new Error("Wallet not connected");
     const from = TOKENS[fromSymbol];
     const to = TOKENS[toSymbol];
     const amountInUnits = ethers.parseUnits(String(amountIn), from.decimals);
+    const slippageBps = Math.round(slippagePercent * 100);
 
     setSwapping(true);
     try {
@@ -179,7 +179,7 @@ export function useSwap() {
       if (fromSymbol === "USDC") {
         await ensureApproval(from.address, amountInUnits);
         const expectedOut = await swapContract.getAmountOut(to.address, amountInUnits, true);
-        const minOut = (expectedOut * BigInt(10000 - SLIPPAGE_BPS)) / 10000n;
+        const minOut = (expectedOut * BigInt(10000 - slippageBps)) / 10000n;
         const tx = await swapContract.swapUsdcForToken(to.address, amountInUnits, minOut);
         const receipt = await tx.wait();
         return { success: true, txHash: receipt.hash, amountOut: ethers.formatUnits(expectedOut, to.decimals) };
@@ -188,24 +188,24 @@ export function useSwap() {
       if (toSymbol === "USDC") {
         await ensureApproval(from.address, amountInUnits);
         const expectedOut = await swapContract.getAmountOut(from.address, amountInUnits, false);
-        const minOut = (expectedOut * BigInt(10000 - SLIPPAGE_BPS)) / 10000n;
+        const minOut = (expectedOut * BigInt(10000 - slippageBps)) / 10000n;
         const tx = await swapContract.swapTokenForUsdc(from.address, amountInUnits, minOut);
         const receipt = await tx.wait();
         return { success: true, txHash: receipt.hash, amountOut: ethers.formatUnits(expectedOut, to.decimals) };
       }
 
       // Two-hop: X -> USDC, then USDC -> Y. Each leg gets its own
-      // slippage protection independently.
+      // slippage protection independently, using the same tolerance.
       await ensureApproval(from.address, amountInUnits);
       const usdcExpected = await swapContract.getAmountOut(from.address, amountInUnits, false);
-      const usdcMinOut = (usdcExpected * BigInt(10000 - SLIPPAGE_BPS)) / 10000n;
+      const usdcMinOut = (usdcExpected * BigInt(10000 - slippageBps)) / 10000n;
       const tx1 = await swapContract.swapTokenForUsdc(from.address, amountInUnits, usdcMinOut);
       const receipt1 = await tx1.wait();
 
       const usdcReceived = usdcExpected; // close enough for the second leg's quote
       await ensureApproval(TOKENS.USDC.address, usdcReceived);
       const finalExpected = await swapContract.getAmountOut(to.address, usdcReceived, true);
-      const finalMinOut = (finalExpected * BigInt(10000 - SLIPPAGE_BPS)) / 10000n;
+      const finalMinOut = (finalExpected * BigInt(10000 - slippageBps)) / 10000n;
       const tx2 = await swapContract.swapUsdcForToken(to.address, usdcReceived, finalMinOut);
       const receipt2 = await tx2.wait();
 
@@ -260,6 +260,52 @@ export function useSwap() {
       return [];
     }
   }, []);
+
+  // Real APY estimate for LPs, derived from genuine trading volume
+  // that's actually happened through this pool (via the indexer),
+  // not a guess. Sums real USDC-side volume from every swap event
+  // for this token, applies the actual 0.3% fee rate, and annualizes
+  // it against the pool's current size. With limited real volume so
+  // far, this will understandably look modest or even zero — it's
+  // reporting what's genuinely happened, not projecting.
+  const getPoolApy = useCallback(async (symbol) => {
+    const token = TOKENS[symbol];
+    if (!token) return null;
+    try {
+      const data = await queryIndexer(
+        `query SwapVolume($token: String!) {
+          SwapEvent(where: { token: { _ilike: $token } }) {
+            usdcIn amountIn amountOut timestamp
+          }
+        }`,
+        { token: token.address }
+      );
+      if (!data.SwapEvent.length) return { apy: 0, volumeUsdc: 0, daysOfData: 0 };
+
+      let totalVolumeUsdc = 0;
+      let earliestTs = Infinity;
+      for (const e of data.SwapEvent) {
+        const usdcAmount = e.usdcIn ? Number(e.amountIn) : Number(e.amountOut);
+        totalVolumeUsdc += usdcAmount / 1e6;
+        earliestTs = Math.min(earliestTs, Number(e.timestamp));
+      }
+
+      const daysOfData = Math.max(1, (Date.now() / 1000 - earliestTs) / 86400);
+      const feeRevenue = totalVolumeUsdc * 0.003;
+      const dailyFeeRevenue = feeRevenue / daysOfData;
+      const annualizedFeeRevenue = dailyFeeRevenue * 365;
+
+      const readProvider = signer?.provider || provider || new ethers.JsonRpcProvider("https://rpc.testnet.arc.io");
+      const contract = new ethers.Contract(SWAP_CONTRACT, SWAP_ABI, readProvider);
+      const [reserveUsdc] = await contract.getPool(token.address);
+      const poolValueUsdc = Number(ethers.formatUnits(reserveUsdc, 6)) * 2; // both sides combined, roughly
+
+      const apy = poolValueUsdc > 0 ? (annualizedFeeRevenue / poolValueUsdc) * 100 : 0;
+      return { apy, volumeUsdc: totalVolumeUsdc, daysOfData: Math.round(daysOfData * 10) / 10 };
+    } catch {
+      return null;
+    }
+  }, [signer, provider]);
 
   // Real pool state — reserves and total LP shares, read directly
   // from the contract. Used to show current price/ratio and to
@@ -352,7 +398,7 @@ export function useSwap() {
   }, [signer]);
 
   return {
-    getQuote, executeSwap, getBalance, checkNeedsApproval, approveToken, getPriceHistory, getPriceImpact,
+    getQuote, executeSwap, getBalance, checkNeedsApproval, approveToken, getPriceHistory, getPriceImpact, getPoolApy,
     getPoolInfo, getMyLp, addLiquidity, removeLiquidity,
     swapping, TOKENS,
   };

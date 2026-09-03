@@ -147,6 +147,7 @@
 }
 .sw-pool-stat { display: flex; justify-content: space-between; font-size: 11px; color: var(--chalk-dim); padding: 3px 0; }
 .sw-pool-stat span:last-child { font-family: var(--font-mono); color: var(--chalk); }
+.sw-pool-apy { color: var(--live-red) !important; font-weight: 700; }
 
 .sw-pool-section-label {
   font-size: 10.5px;

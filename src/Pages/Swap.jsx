@@ -18,7 +18,7 @@ const TOKEN_META = {
 const TOKEN_LIST = Object.keys(TOKEN_META);
 
 export default function Swap() {
-  const { getQuote, executeSwap, getBalance, checkNeedsApproval, approveToken, getPriceHistory, getPriceImpact, getPoolInfo, getMyLp, addLiquidity, removeLiquidity, swapping, TOKENS } = useSwap();
+  const { getQuote, executeSwap, getBalance, checkNeedsApproval, approveToken, getPriceHistory, getPriceImpact, getPoolApy, getPoolInfo, getMyLp, addLiquidity, removeLiquidity, swapping, TOKENS } = useSwap();
   const { connected, connect, address } = useWallet();
   const { addToast } = useApp();
 
@@ -26,6 +26,7 @@ export default function Swap() {
   const [poolToken, setPoolToken] = useState("BLOCK");
   const [poolInfo, setPoolInfo] = useState(null);
   const [myLp, setMyLp] = useState(null);
+  const [poolApy, setPoolApy] = useState(null);
   const [poolUsdcIn, setPoolUsdcIn] = useState("");
   const [poolTokenIn, setPoolTokenIn] = useState("");
   const [removePercent, setRemovePercent] = useState(50);
@@ -103,7 +104,9 @@ export default function Swap() {
     } else {
       setMyLp(null);
     }
-  }, [poolToken, connected, address, getPoolInfo, getMyLp]);
+    const apyData = await getPoolApy(poolToken);
+    setPoolApy(apyData);
+  }, [poolToken, connected, address, getPoolInfo, getMyLp, getPoolApy]);
 
   useEffect(() => {
     if (activeTab === "pool") refreshPoolData();
@@ -227,7 +230,7 @@ export default function Swap() {
   async function handleSwap() {
     if (!connected) { await connect(); return; }
     try {
-      const res = await executeSwap(fromToken, toToken, amountIn);
+      const res = await executeSwap(fromToken, toToken, amountIn, slippage);
       addToast(`Swapped ${amountIn} ${fromToken} for ~${Number(res.amountOut).toFixed(4)} ${toToken}.`, "success");
       setAmountIn("");
       setAmountOut("");
@@ -287,7 +290,7 @@ export default function Swap() {
 
           {showSettings && (
             <div className="sw-settings">
-              <div className="sw-settings-label">Slippage tolerance (display only — actual protection is fixed at 1% on-chain)</div>
+              <div className="sw-settings-label">Slippage tolerance</div>
               <div className="sw-slippage-row">
                 {[0.5, 1.0, 2.0].map((v) => (
                   <button key={v} className={`sw-slip-btn ${slippage === v ? "active" : ""}`} onClick={() => setSlippage(v)}>
@@ -406,6 +409,15 @@ export default function Swap() {
                   <div className="sw-pool-stat"><span>Pool reserves</span><span>{Number(poolInfo.reserveUsdc).toFixed(2)} USDC / {Number(poolInfo.reserveToken).toFixed(6)} {poolToken}</span></div>
                   {connected && myLp && (
                     <div className="sw-pool-stat"><span>Your share</span><span>{Number(myLp.usdcShare).toFixed(4)} USDC / {Number(myLp.tokenShare).toFixed(6)} {poolToken}</span></div>
+                  )}
+                  {poolApy && (
+                    <div className="sw-pool-stat">
+                      <span>Real APY (last {poolApy.daysOfData}d)</span>
+                      <span className="sw-pool-apy">{poolApy.apy.toFixed(2)}%</span>
+                    </div>
+                  )}
+                  {poolApy && (
+                    <div className="sw-pool-stat"><span>Real trading volume</span><span>${poolApy.volumeUsdc.toFixed(2)}</span></div>
                   )}
                 </div>
               )}
