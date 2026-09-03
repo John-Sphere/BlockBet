@@ -18,7 +18,7 @@ const TOKEN_META = {
 const TOKEN_LIST = Object.keys(TOKEN_META);
 
 export default function Swap() {
-  const { getQuote, executeSwap, getBalance, checkNeedsApproval, approveToken, getPriceHistory, getPoolInfo, getMyLp, addLiquidity, removeLiquidity, swapping, TOKENS } = useSwap();
+  const { getQuote, executeSwap, getBalance, checkNeedsApproval, approveToken, getPriceHistory, getPriceImpact, getPoolInfo, getMyLp, addLiquidity, removeLiquidity, swapping, TOKENS } = useSwap();
   const { connected, connect, address } = useWallet();
   const { addToast } = useApp();
 
@@ -34,6 +34,7 @@ export default function Swap() {
   const [toToken, setToToken] = useState("BLOCK");
   const [amountIn, setAmountIn] = useState("");
   const [amountOut, setAmountOut] = useState("");
+  const [priceImpact, setPriceImpact] = useState(null);
   const [quoting, setQuoting] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showChart, setShowChart] = useState(false);
@@ -160,14 +161,18 @@ export default function Swap() {
     let cancelled = false;
     if (!amountIn || Number(amountIn) <= 0 || fromToken === toToken) {
       setAmountOut("");
+      setPriceImpact(null);
       return;
     }
     setQuoting(true);
     getQuote(fromToken, toToken, amountIn).then((q) => {
       if (!cancelled) { setAmountOut(q || ""); setQuoting(false); }
     });
+    getPriceImpact(fromToken, toToken, amountIn).then((impact) => {
+      if (!cancelled) setPriceImpact(impact);
+    });
     return () => { cancelled = true; };
-  }, [fromToken, toToken, amountIn, getQuote]);
+  }, [fromToken, toToken, amountIn, getQuote, getPriceImpact]);
 
   useEffect(() => {
     let cancelled = false;
@@ -362,6 +367,14 @@ export default function Swap() {
 
               {isTwoHop && (
                 <div className="sw-route-note">Routed through USDC — two on-chain swaps, one confirmation each.</div>
+              )}
+
+              {priceImpact != null && priceImpact >= 1 && (
+                <div className={`sw-impact-warning ${priceImpact >= 10 ? "sw-impact-severe" : priceImpact >= 3 ? "sw-impact-high" : "sw-impact-mild"}`}>
+                  {priceImpact >= 10 ? "⚠ " : ""}
+                  This trade moves the price by ~{priceImpact.toFixed(2)}%
+                  {priceImpact >= 10 ? " — this pool is thin relative to your trade size." : "."}
+                </div>
               )}
 
               <button className="sw-submit" disabled={submitDisabled} onClick={submitAction}>

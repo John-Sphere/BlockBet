@@ -49,6 +49,54 @@ export function useSwap() {
 
   // Read-only quote — works even before connecting a wallet, using
   // whichever provider is available (falls back to a plain RPC read).
+  // Real price impact — compares the pool's current spot price
+  // (before your trade) against the actual effective rate your trade
+  // would get, expressed as a percentage. This is what actually
+  // explains a "bad rate" on a thin pool: it's not a bug, it's the
+  // trade being large relative to the pool's depth.
+  const getPriceImpact = useCallback(async (fromSymbol, toSymbol, amountIn) => {
+    if (!amountIn || Number(amountIn) <= 0) return null;
+    const readProvider = signer?.provider || provider || new ethers.JsonRpcProvider("https://rpc.testnet.arc.io");
+    const contract = new ethers.Contract(SWAP_CONTRACT, SWAP_ABI, readProvider);
+    const from = TOKENS[fromSymbol];
+    const to = TOKENS[toSymbol];
+
+    try {
+      // Two-hop (neither side USDC): approximate using the worse of
+      // the two legs' impact, since both pools get touched.
+      if (fromSymbol !== "USDC" && toSymbol !== "USDC") {
+        const [impactFrom, impactTo] = await Promise.all([
+          getPriceImpact(fromSymbol, "USDC", amountIn),
+          getPriceImpact("USDC", toSymbol, amountIn), // rough estimate, second leg's real input differs slightly
+        ]);
+        if (impactFrom == null || impactTo == null) return null;
+        return Math.max(impactFrom, impactTo);
+      }
+
+      const poolToken = fromSymbol === "USDC" ? to : from;
+      const [reserveUsdc, reserveToken] = await contract.getPool(poolToken.address);
+      if (reserveUsdc === 0n || reserveToken === 0n) return null;
+
+      const amountInUnits = ethers.parseUnits(String(amountIn), from.decimals);
+      const usdcIn = fromSymbol === "USDC";
+      const amountOut = await contract.getAmountOut(poolToken.address, amountInUnits, usdcIn);
+
+      // Convert everything to whole-unit floats first, then compare
+      // rates directly — avoids any decimal-scaling mistakes.
+      const usdcWhole = Number(reserveUsdc) / 1e6;
+      const tokenWhole = Number(reserveToken) / Math.pow(10, poolToken.decimals);
+      const spotPrice = usdcIn ? tokenWhole / usdcWhole : usdcWhole / tokenWhole;
+
+      const amountOutWhole = Number(ethers.formatUnits(amountOut, to.decimals));
+      const effectivePrice = amountOutWhole / Number(amountIn);
+
+      const impact = ((spotPrice - effectivePrice) / spotPrice) * 100;
+      return Math.max(0, impact);
+    } catch {
+      return null;
+    }
+  }, [signer, provider]);
+
   const getQuote = useCallback(async (fromSymbol, toSymbol, amountIn) => {
     if (!amountIn || Number(amountIn) <= 0) return null;
     const readProvider = signer?.provider || provider || new ethers.JsonRpcProvider("https://rpc.testnet.arc.io");
@@ -304,7 +352,7 @@ export function useSwap() {
   }, [signer]);
 
   return {
-    getQuote, executeSwap, getBalance, checkNeedsApproval, approveToken, getPriceHistory,
+    getQuote, executeSwap, getBalance, checkNeedsApproval, approveToken, getPriceHistory, getPriceImpact,
     getPoolInfo, getMyLp, addLiquidity, removeLiquidity,
     swapping, TOKENS,
   };
