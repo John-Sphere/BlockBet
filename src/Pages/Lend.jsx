@@ -17,7 +17,7 @@ export default function Lend() {
   const {
     getLenderInfo, depositAsset, withdrawAsset,
     getBorrowerInfo, getMaxBorrowable, postCollateral, borrowAsset, repayAsset, withdrawCollateral,
-    liquidatePosition, getTokenBalance, busy,
+    liquidatePosition, getTokenBalance, busyAction,
   } = useLend();
   const { connected, connect, address } = useWallet();
   const { addToast } = useApp();
@@ -160,13 +160,13 @@ export default function Lend() {
           <div className="ln-section-label">Deposit</div>
           <div className="ln-input-row">
             <input type="number" placeholder={`${lendAsset} amount`} value={depositAmt} onChange={(e) => setDepositAmt(e.target.value)} />
-            <button onClick={handleDeposit} disabled={busy}>{!connected ? "Connect" : busy ? "…" : "Deposit"}</button>
+            <button onClick={handleDeposit} disabled={!!busyAction}>{!connected ? "Connect" : busyAction === "deposit" ? "…" : "Deposit"}</button>
           </div>
 
           <div className="ln-section-label">Withdraw</div>
           <div className="ln-input-row">
             <input type="number" placeholder={`${lendAsset} amount`} value={withdrawAmt} onChange={(e) => setWithdrawAmt(e.target.value)} />
-            <button onClick={handleWithdraw} disabled={busy}>{busy ? "…" : "Withdraw"}</button>
+            <button onClick={handleWithdraw} disabled={!!busyAction}>{busyAction === "withdraw" ? "…" : "Withdraw"}</button>
           </div>
         </div>
       )}
@@ -193,7 +193,7 @@ export default function Lend() {
           </div>
           <div className="ln-input-row">
             <input type="number" placeholder={`${collateralToken} amount`} value={collateralAmt} onChange={(e) => setCollateralAmt(e.target.value)} />
-            <button onClick={handlePostCollateral} disabled={busy}>{!connected ? "Connect" : busy ? "…" : "Post"}</button>
+            <button onClick={handlePostCollateral} disabled={!!busyAction}>{!connected ? "Connect" : busyAction === "postCollateral" ? "…" : "Post"}</button>
           </div>
 
           <div className="ln-section-label">Borrow</div>
@@ -214,13 +214,13 @@ export default function Lend() {
           </div>
           <div className="ln-input-row">
             <input type="number" placeholder="Amount" value={borrowAmt} onChange={(e) => setBorrowAmt(e.target.value)} />
-            <button onClick={handleBorrow} disabled={busy}>{busy ? "…" : "Borrow"}</button>
+            <button onClick={handleBorrow} disabled={!!busyAction}>{busyAction === "borrow" ? "…" : "Borrow"}</button>
           </div>
 
           <div className="ln-section-label">Repay</div>
           <div className="ln-input-row">
             <input type="number" placeholder={borrowerInfo?.borrowedAsset ? `${borrowerInfo.borrowedAsset} amount` : "Amount"} value={repayAmt} onChange={(e) => setRepayAmt(e.target.value)} />
-            <button onClick={handleRepay} disabled={busy || !borrowerInfo?.borrowedAsset}>{busy ? "…" : "Repay"}</button>
+            <button onClick={handleRepay} disabled={!!busyAction || !borrowerInfo?.borrowedAsset}>{busyAction === "repay" ? "…" : "Repay"}</button>
           </div>
         </div>
       )}
@@ -247,7 +247,7 @@ export default function Lend() {
           <div className="ln-section-label" style={{ marginTop: 12 }}>Amount to repay</div>
           <div className="ln-input-row">
             <input type="number" placeholder="Amount" value={liquidateAmt} onChange={(e) => setLiquidateAmt(e.target.value)} />
-            <button onClick={handleLiquidate} disabled={busy}>{!connected ? "Connect" : busy ? "…" : "Liquidate"}</button>
+            <button onClick={handleLiquidate} disabled={!!busyAction}>{!connected ? "Connect" : busyAction === "liquidate" ? "…" : "Liquidate"}</button>
           </div>
         </div>
       )}

@@ -44,7 +44,11 @@ const ERC20_ABI = [
 
 export function useLend() {
   const { signer, provider } = useWallet();
-  const [busy, setBusy] = useState(false);
+  // Tracks WHICH action is currently running (or null), instead of a
+  // single shared boolean — a shared flag meant every button showed
+  // "busy" together the instant any one action started, which looked
+  // like clicking one button was also triggering another.
+  const [busyAction, setBusyAction] = useState(null);
 
   function readContract() {
     const readProvider = signer?.provider || provider || new ethers.JsonRpcProvider("https://rpc.testnet.arc.io");
@@ -74,7 +78,7 @@ export function useLend() {
   const depositAsset = useCallback(async (symbol, amount) => {
     if (!signer) throw new Error("Wallet not connected");
     const token = LEND_TOKENS[symbol];
-    setBusy(true);
+    setBusyAction("deposit");
     try {
       const units = ethers.parseUnits(String(amount), token.decimals);
       await ensureApproval(token.address, units);
@@ -83,7 +87,7 @@ export function useLend() {
       const receipt = await tx.wait();
       return { success: true, txHash: receipt.hash };
     } finally {
-      setBusy(false);
+      setBusyAction(null);
     }
   }, [signer]);
 
@@ -91,7 +95,7 @@ export function useLend() {
     if (!signer) throw new Error("Wallet not connected");
     const token = LEND_TOKENS[symbol];
     const address = await signer.getAddress();
-    setBusy(true);
+    setBusyAction("withdraw");
     try {
       const contract = new ethers.Contract(LEND_CONTRACT, LEND_ABI, signer);
 
@@ -113,7 +117,7 @@ export function useLend() {
       const receipt = await tx.wait();
       return { success: true, txHash: receipt.hash };
     } finally {
-      setBusy(false);
+      setBusyAction(null);
     }
   }, [signer]);
 
@@ -159,7 +163,7 @@ export function useLend() {
   const postCollateral = useCallback(async (symbol, amount) => {
     if (!signer) throw new Error("Wallet not connected");
     const token = LEND_TOKENS[symbol];
-    setBusy(true);
+    setBusyAction("postCollateral");
     try {
       const units = ethers.parseUnits(String(amount), token.decimals);
       await ensureApproval(token.address, units);
@@ -168,14 +172,14 @@ export function useLend() {
       const receipt = await tx.wait();
       return { success: true, txHash: receipt.hash };
     } finally {
-      setBusy(false);
+      setBusyAction(null);
     }
   }, [signer]);
 
   const borrowAsset = useCallback(async (symbol, amount) => {
     if (!signer) throw new Error("Wallet not connected");
     const token = LEND_TOKENS[symbol];
-    setBusy(true);
+    setBusyAction("borrow");
     try {
       const units = ethers.parseUnits(String(amount), token.decimals);
       const contract = new ethers.Contract(LEND_CONTRACT, LEND_ABI, signer);
@@ -183,7 +187,7 @@ export function useLend() {
       const receipt = await tx.wait();
       return { success: true, txHash: receipt.hash };
     } finally {
-      setBusy(false);
+      setBusyAction(null);
     }
   }, [signer]);
 
@@ -193,7 +197,7 @@ export function useLend() {
   const repayAsset = useCallback(async (symbol, amount) => {
     if (!signer) throw new Error("Wallet not connected");
     const token = LEND_TOKENS[symbol];
-    setBusy(true);
+    setBusyAction("repay");
     try {
       const units = ethers.parseUnits(String(amount), token.decimals);
       await ensureApproval(token.address, units);
@@ -202,14 +206,14 @@ export function useLend() {
       const receipt = await tx.wait();
       return { success: true, txHash: receipt.hash };
     } finally {
-      setBusy(false);
+      setBusyAction(null);
     }
   }, [signer]);
 
   const withdrawCollateral = useCallback(async (symbol, amount) => {
     if (!signer) throw new Error("Wallet not connected");
     const token = LEND_TOKENS[symbol];
-    setBusy(true);
+    setBusyAction("withdrawCollateral");
     try {
       const units = ethers.parseUnits(String(amount), token.decimals);
       const contract = new ethers.Contract(LEND_CONTRACT, LEND_ABI, signer);
@@ -217,14 +221,14 @@ export function useLend() {
       const receipt = await tx.wait();
       return { success: true, txHash: receipt.hash };
     } finally {
-      setBusy(false);
+      setBusyAction(null);
     }
   }, [signer]);
 
   const liquidatePosition = useCallback(async (borrowerAddress, borrowedSymbol, repayAmount) => {
     if (!signer) throw new Error("Wallet not connected");
     const token = LEND_TOKENS[borrowedSymbol];
-    setBusy(true);
+    setBusyAction("liquidate");
     try {
       const units = ethers.parseUnits(String(repayAmount), token.decimals);
       await ensureApproval(token.address, units);
@@ -233,7 +237,7 @@ export function useLend() {
       const receipt = await tx.wait();
       return { success: true, txHash: receipt.hash };
     } finally {
-      setBusy(false);
+      setBusyAction(null);
     }
   }, [signer]);
 
@@ -257,6 +261,6 @@ export function useLend() {
     getLenderInfo, depositAsset, withdrawAsset,
     getBorrowerInfo, getMaxBorrowable, postCollateral, borrowAsset, repayAsset, withdrawCollateral,
     liquidatePosition, getTokenBalance, getUtilization,
-    busy, LEND_TOKENS,
+    busyAction, LEND_TOKENS,
   };
 }
