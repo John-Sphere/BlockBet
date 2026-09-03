@@ -9,6 +9,7 @@
 import { simulateBasketballMatch } from "./simulateBasketball.js";
 import { calculateOdds, calculateLiveOdds } from "./basketballOddsEngine.js";
 import { BASKETBALL_LEAGUES, BASKETBALL_CLUBS } from "../data/basketballClubs.js";
+import { recordResult } from "./basketballStandings.js";
 
 // ── Timing (compressed real-world minutes, same philosophy as football) ──
 const BETTING_WINDOW_MS = 3 * 60 * 1000;
@@ -181,14 +182,25 @@ function tick() {
     const previousStatuses = new Map(matchState.map((m) => [m.id, m.status]));
     matchState = matchState.map((m) => tickMatch(m, now));
 
-    // Reuses the same /api/resolve-match endpoint football already
-    // uses — it's sport-agnostic (just takes home/away/result), so no
-    // basketball-specific backend needed. Only fires once per match,
-    // the instant it transitions to finished.
     matchState.forEach((m) => {
       const wasFinished = previousStatuses.get(m.id) === "finished";
-      if (m.status === "finished" && !wasFinished && m.chainMatchId !== null) {
-        resolveBasketballMatchOnChain(m.homeTeam, m.awayTeam, m.sim.result);
+      if (m.status === "finished" && !wasFinished) {
+        // Every finished game updates the real standings table,
+        // regardless of whether it had any real bets on it — the
+        // table should reflect every simulated result, not just the
+        // ones people wagered on.
+        recordResult({
+          homeTeam: m.homeTeam, awayTeam: m.awayTeam,
+          homeScore: m.homeScore, awayScore: m.awayScore,
+        });
+
+        // Reuses the same /api/resolve-match endpoint football
+        // already uses — it's sport-agnostic (just takes
+        // home/away/result), so no basketball-specific backend
+        // needed. Only fires for matches with a real chain bet.
+        if (m.chainMatchId !== null) {
+          resolveBasketballMatchOnChain(m.homeTeam, m.awayTeam, m.sim.result);
+        }
       }
     });
   }
