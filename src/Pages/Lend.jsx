@@ -163,9 +163,9 @@ export default function Lend() {
             <button onClick={handleDeposit} disabled={busy}>{!connected ? "Connect" : busy ? "…" : "Deposit"}</button>
           </div>
 
-          <div className="ln-section-label">Withdraw (in shares)</div>
+          <div className="ln-section-label">Withdraw</div>
           <div className="ln-input-row">
-            <input type="number" placeholder="Share amount" value={withdrawAmt} onChange={(e) => setWithdrawAmt(e.target.value)} />
+            <input type="number" placeholder={`${lendAsset} amount`} value={withdrawAmt} onChange={(e) => setWithdrawAmt(e.target.value)} />
             <button onClick={handleWithdraw} disabled={busy}>{busy ? "…" : "Withdraw"}</button>
           </div>
         </div>

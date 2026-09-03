@@ -87,13 +87,29 @@ export function useLend() {
     }
   }, [signer]);
 
-  const withdrawAsset = useCallback(async (symbol, shareAmount) => {
+  const withdrawAsset = useCallback(async (symbol, amount) => {
     if (!signer) throw new Error("Wallet not connected");
     const token = LEND_TOKENS[symbol];
+    const address = await signer.getAddress();
     setBusy(true);
     try {
       const contract = new ethers.Contract(LEND_CONTRACT, LEND_ABI, signer);
-      const tx = await contract.withdraw(token.address, shareAmount);
+
+      // Convert the human-readable amount you typed into the exact
+      // raw share count the contract actually needs — the same
+      // exchange rate applies to everyone in a pool, so your shares
+      // divided by your current balance gives that rate precisely,
+      // done in raw BigInt math to avoid any rounding error.
+      const myShares = await contract.lenderShares(token.address, address);
+      const myBalanceRaw = await contract.lenderBalance(token.address, address);
+      if (myBalanceRaw === 0n) throw new Error("You don't have a deposit in this pool");
+
+      const desiredRaw = ethers.parseUnits(String(amount), token.decimals);
+      if (desiredRaw > myBalanceRaw) throw new Error(`You only have ${ethers.formatUnits(myBalanceRaw, token.decimals)} ${symbol} deposited`);
+
+      const sharesToWithdraw = (desiredRaw * myShares) / myBalanceRaw;
+
+      const tx = await contract.withdraw(token.address, sharesToWithdraw);
       const receipt = await tx.wait();
       return { success: true, txHash: receipt.hash };
     } finally {
