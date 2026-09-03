@@ -3,11 +3,7 @@ import { createContext, useContext, useReducer, useCallback, useEffect } from "r
 const Ctx = createContext(null);
 
 function getInitialTheme() {
-  if (typeof window === "undefined") return "light";
-  const saved = window.localStorage.getItem("bb_theme");
-  if (saved === "light" || saved === "dark") return saved;
-  // Fall back to the visitor's OS-level preference the first time.
-  return window.matchMedia?.("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  return "dark";
 }
 
 const init = { sidebarOpen: false, toasts: [], theme: getInitialTheme() };
@@ -20,8 +16,6 @@ function reducer(state, action) {
       return { ...state, toasts: [...state.toasts, action.payload] };
     case "REMOVE_TOAST":
       return { ...state, toasts: state.toasts.filter(t => t.id !== action.id) };
-    case "TOGGLE_THEME":
-      return { ...state, theme: state.theme === "light" ? "dark" : "light" };
     default:
       return state;
   }
@@ -37,16 +31,14 @@ export function AppProvider({ children }) {
   }, []);
 
   const toggleSidebar = useCallback(() => dispatch({ type:"TOGGLE_SIDEBAR" }), []);
-  const toggleTheme = useCallback(() => dispatch({ type:"TOGGLE_THEME" }), []);
 
   // Apply the theme to the document and remember it for next visit.
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", state.theme);
-    window.localStorage.setItem("bb_theme", state.theme);
   }, [state.theme]);
 
   return (
-    <Ctx.Provider value={{ ...state, addToast, toggleSidebar, toggleTheme }}>
+    <Ctx.Provider value={{ ...state, addToast, toggleSidebar }}>
       {children}
       {/* Global toast renderer */}
       <div className="toast-container">

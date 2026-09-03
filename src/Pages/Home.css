@@ -14,11 +14,11 @@
   --hp-text-dim:      #8990A3;
   --hp-text-faint:    #545B6E;
 
-  --hp-gold:      #E8B23D;
-  --hp-gold-2:    #F5C765;
-  --hp-gold-dim:  #8C6A22;
-  --hp-gold-bg:   rgba(232,178,61,0.12);
-  --hp-gold-glow: rgba(232,178,61,0.4);
+  --hp-gold:      #4C86FF;
+  --hp-gold-2:    #7DA6FF;
+  --hp-gold-dim:  #2E5BD6;
+  --hp-gold-bg:   rgba(76,134,255,0.12);
+  --hp-gold-glow: rgba(76,134,255,0.4);
 
   --hp-live:  #3EE28C;
   --hp-down:  #FF6E6E;
@@ -41,7 +41,7 @@
 
 /* ============ HERO ============ */
 .hp-hero{ position:relative; padding:80px 56px 60px; overflow:hidden; }
-.hp-hero-shape{ position:absolute; top:0; right:-8%; width:600px; height:600px; opacity:0.85; pointer-events:none; }
+.hp-hero-shape{ position:absolute; top:20px; right:4%; width:560px; height:560px; opacity:0.85; pointer-events:none; }
 .hp-eyebrow{
   display:flex; align-items:center; gap:10px; font-family: var(--hp-font-mono); font-size:15px; font-weight:700;
   color: var(--hp-gold-2); letter-spacing:0.1em; margin-bottom:22px; position:relative; z-index:1;
@@ -156,7 +156,7 @@
 
 /* ============ CTA ============ */
 .hp-cta-banner{
-  text-align:center; background: radial-gradient(600px 240px at 50% 0%, rgba(232,178,61,0.14), transparent 65%), var(--hp-surface);
+  text-align:center; background: radial-gradient(600px 240px at 50% 0%, rgba(76,134,255,0.14), transparent 65%), var(--hp-surface);
   border:1px solid var(--hp-border); border-radius:20px; padding:56px 40px;
 }
 .hp-cta-banner h2{ font-family: var(--hp-font-display); font-size:26px; font-weight:600; margin-bottom:12px; }

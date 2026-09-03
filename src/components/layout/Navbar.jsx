@@ -17,7 +17,7 @@ export function Navbar() {
     txPending,
     ensureArcNetwork,
   } = useWallet();
-  const { toggleSidebar, addToast, theme, toggleTheme } = useApp();
+  const { toggleSidebar, addToast } = useApp();
   const { pathname } = useLocation();
   const isHome = pathname === "/";
   const [liveCount, setLiveCount] = useState(0);
@@ -56,17 +56,6 @@ export function Navbar() {
           <img src="/logo.png" alt="BlockBet" className="logo-img" /><span>BlockBet</span>
         </Link>
         <div className="bb-spacer" />
-        <button
-          className={`bb-theme-switch ${theme === "dark" ? "bb-theme-switch--dark" : ""}`}
-          onClick={toggleTheme}
-          role="switch"
-          aria-checked={theme === "dark"}
-          aria-label={theme === "light" ? "Switch to dark mode" : "Switch to light mode"}
-        >
-          <span className="bb-theme-switch-label bb-theme-switch-label--left">Light</span>
-          <span className="bb-theme-switch-label bb-theme-switch-label--right">Dark</span>
-          <span className="bb-theme-switch-thumb" />
-        </button>
       </header>
     );
   }
