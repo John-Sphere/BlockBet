@@ -5,6 +5,7 @@ import { Sidebar } from "./Sidebar";
 import { BetSlipPanel } from "../ui/BetSlipPanel";
 import { MobileTabBar } from "./MobileTabBar";
 import { MobileMenu } from "./MobileMenu";
+import { FloatingBetSlip } from "./FloatingBetSlip";
 import { OfflineBanner } from "./OfflineBanner";
 import { RouteProgressBar } from "./RouteProgressBar";
 
@@ -35,6 +36,7 @@ export function Layout({ children }) {
       </div>
       <MobileTabBar onOpenMenu={toggleSidebar} />
       <MobileMenu />
+      <FloatingBetSlip />
     </div>
   );
 }

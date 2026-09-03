@@ -1,5 +1,4 @@
 import { NavLink } from "react-router-dom";
-import { useBetSlip } from "../../context/BetSlipContext";
 import "./MobileTabBar.css";
 
 const ICONS = {
@@ -12,12 +11,6 @@ const ICONS = {
   menu: (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
       <path d="M4 7h16M4 12h16M4 17h16" />
-    </svg>
-  ),
-  slip: (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <rect x="3" y="4" width="18" height="16" rx="2" />
-      <path d="M3 9h18" />
     </svg>
   ),
   live: (
@@ -33,13 +26,12 @@ const ICONS = {
 };
 
 /**
- * 5-item bar, Bet Slip back in the middle position (not floating):
- * Pitch, Menu, Bet Slip, Live, Swap. Open Bet was dropped from here —
- * it's redundant, since it's already reachable from the sidebar and
- * the mobile menu drawer.
+ * 4-item bar: Pitch, Menu, Live, Swap. Bet Slip moved to its own
+ * floating circular button (FloatingBetSlip.jsx) instead of living
+ * here — the Sporty Bet-style pattern, sitting above this bar so it
+ * doesn't overlap.
  */
 export function MobileTabBar({ onOpenMenu }) {
-  const { selections, setOpen } = useBetSlip();
   return (
     <nav className="mtb">
       <NavLink to="/football" className={({ isActive }) => `mtb-item ${isActive ? "active" : ""}`}>
@@ -49,13 +41,6 @@ export function MobileTabBar({ onOpenMenu }) {
       <button className="mtb-item" onClick={onOpenMenu}>
         {ICONS.menu}
         <span>Menu</span>
-      </button>
-      <button className="mtb-item" onClick={() => setOpen(true)}>
-        <span className="mtb-icon-wrap">
-          {ICONS.slip}
-          {selections.length > 0 && <span className="mtb-badge">{selections.length}</span>}
-        </span>
-        <span>Bet Slip</span>
       </button>
       <NavLink to="/football?live=1" className={({ isActive }) => `mtb-item ${isActive ? "active" : ""}`}>
         <span className="mtb-icon-wrap">
