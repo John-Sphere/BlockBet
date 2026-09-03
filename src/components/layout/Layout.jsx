@@ -34,7 +34,7 @@ export function Layout({ children }) {
         </main>
         {!isHome && !isCasino && <BetSlipPanel />}
       </div>
-      <MobileTabBar onOpenMenu={toggleSidebar} />
+      {!isHome && <MobileTabBar onOpenMenu={toggleSidebar} />}
       <MobileMenu />
       <FloatingBetSlip />
     </div>

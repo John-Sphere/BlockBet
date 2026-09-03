@@ -172,9 +172,12 @@
 
 /* ============ RESPONSIVE ============ */
 @media (max-width: 900px){
-  .hp-hero{ padding:56px 24px 40px; }
-  .hp-hero h1{ font-size:38px; }
-  .hp-hero-shape{ opacity:0.4; width:100%; }
+  .hp-hero{ padding:40px 24px 32px; display:flex; flex-direction:column; }
+  .hp-hero h1{ font-size:32px; }
+  .hp-hero-shape{
+    position:static; order:10; width:100%; max-width:340px; height:auto; aspect-ratio:1/1;
+    opacity:1; margin:28px auto 0; right:auto; top:auto;
+  }
   .hp-feat-grid, .hp-glossary, .hp-use-grid, .hp-res-grid{ grid-template-columns:1fr; }
   .hp-use-grid, .hp-res-grid{ display:grid; grid-template-columns:1fr; }
   .hp-flow-steps{ flex-direction:column; gap:24px; }
