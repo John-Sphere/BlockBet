@@ -121,7 +121,6 @@ export default function Home() {
           <div className="hp-feat-grid">
             {FEATURES.map((f) => (
               <div className="hp-feat-card" key={f.title}>
-                <div className="hp-feat-ico">{f.icon}</div>
                 <h4>{f.title}</h4>
                 <p>{f.body}</p>
               </div>
@@ -137,7 +136,7 @@ export default function Home() {
           <div className="hp-glossary">
             {GLOSSARY.map((g) => (
               <div className="hp-g-card" key={g.term}>
-                <div className="hp-g-term"><div className="hp-g-ico">{g.icon}</div><h5>{g.term}</h5></div>
+                <div className="hp-g-term"><h5>{g.term}</h5></div>
                 <p>{g.body}</p>
               </div>
             ))}
@@ -185,7 +184,6 @@ export default function Home() {
           <div className="hp-use-grid">
             {USE_CASES.map((u) => (
               <div className="hp-use-card" key={u.title}>
-                <div className="hp-use-ico">{u.icon}</div>
                 <h5>{u.title}</h5>
                 <p>{u.body}</p>
               </div>
