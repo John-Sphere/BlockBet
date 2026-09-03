@@ -3,7 +3,7 @@ import { ethers } from "ethers";
 import { useWallet } from "../context/WalletContext";
 
 // Fill this in once BlockLend.sol is actually deployed.
-const LEND_CONTRACT = "0xB67e4C8B4328269e5CcA56Ba0a593eC806a85531";
+const LEND_CONTRACT = "0xC06cF01986717BE2A8D0c524eaebd3b663bD938f";
 const USDC_ADDRESS = "0x3600000000000000000000000000000000000000";
 
 const COLLATERAL_TOKENS = {
