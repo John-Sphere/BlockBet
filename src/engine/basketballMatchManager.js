@@ -11,7 +11,7 @@ import { calculateOdds, calculateLiveOdds } from "./basketballOddsEngine.js";
 import { BASKETBALL_LEAGUES, BASKETBALL_CLUBS } from "../data/basketballClubs.js";
 
 // ── Timing (compressed real-world minutes, same philosophy as football) ──
-const BETTING_WINDOW_MS = 2 * 60 * 1000;
+const BETTING_WINDOW_MS = 3 * 60 * 1000;
 const QUARTER_MS        = 2 * 60 * 1000; // each of the 4 quarters
 const HALFTIME_MS       = 1 * 60 * 1000; // break between Q2 and Q3
 const ROUND_PERIOD_MS   = 20 * 60 * 1000;

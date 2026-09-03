@@ -11,7 +11,7 @@ import { simulateTennisMatch } from "./simulateTennis.js";
 import { calculateOdds, calculateLiveOdds } from "./tennisOddsEngine.js";
 import { TENNIS_LEAGUES, TENNIS_PLAYERS } from "../data/tennisPlayers.js";
 
-const BETTING_WINDOW_MS = 2 * 60 * 1000;
+const BETTING_WINDOW_MS = 3 * 60 * 1000;
 const GAME_DURATION_MS  = 20 * 1000; // compressed real-time per game
 const ROUND_PERIOD_MS   = 20 * 60 * 1000;
 const STAGGER_MS        = 25 * 1000;

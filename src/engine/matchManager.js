@@ -26,7 +26,7 @@ import { recordResult, getFormRating } from "./standings.js";
 import { startLiveSync, stopLiveSync } from "./liveEvents.js";
 
 // ── TIMING ─────────────────────────────────────────────────
-const BETTING_WINDOW_MS = 2   * 60 * 1000;
+const BETTING_WINDOW_MS = 3   * 60 * 1000;
 const HALF_DURATION_MS  = 3.5 * 60 * 1000; // was 2 min — slowed down per request
 const HT_DURATION_MS    = 1.5 * 60 * 1000; // was 1 min
 const RESULT_HOLD_MS    = 2   * 60 * 1000;

@@ -10,7 +10,7 @@ import { simulateDartsMatch } from "./simulateDarts.js";
 import { calculateOdds, calculateLiveOdds } from "./dartsOddsEngine.js";
 import { DARTS_LEAGUES, DARTS_PLAYERS } from "../data/dartsPlayers.js";
 
-const BETTING_WINDOW_MS = 2 * 60 * 1000;
+const BETTING_WINDOW_MS = 3 * 60 * 1000;
 const LEG_DURATION_MS   = 15 * 1000; // compressed real-time per leg
 const ROUND_PERIOD_MS   = 20 * 60 * 1000;
 const STAGGER_MS        = 25 * 1000;
