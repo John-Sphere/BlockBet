@@ -37,6 +37,7 @@ export function MobileMenu() {
           <Link to="/tennis" className={`bb-mm-item ${pathname === "/tennis" ? "active" : ""}`} onClick={close}>Tennis</Link>
           <Link to="/darts" className={`bb-mm-item ${pathname === "/darts" ? "active" : ""}`} onClick={close}>Darts</Link>
           <Link to="/casino" className={`bb-mm-item ${pathname === "/casino" ? "active" : ""}`} onClick={close}>Casino</Link>
+          <Link to="/portfolio" className={`bb-mm-item ${pathname === "/portfolio" ? "active" : ""}`} onClick={close}>Portfolio</Link>
 
           <div className="bb-mm-divider" />
           <Link to="/my-bets" className={`bb-mm-item ${pathname === "/my-bets" ? "active" : ""}`} onClick={close}>Open Bet</Link>

@@ -23,10 +23,16 @@ const ICONS = {
       <path d="M4 8h13l-3-3M20 16H7l3 3" />
     </svg>
   ),
+  lend: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <rect x="3" y="7" width="18" height="13" rx="2" />
+      <path d="M3 11h18M8 15h.01M12 15h.01" />
+    </svg>
+  ),
 };
 
 /**
- * 4-item bar: Pitch, Menu, Live, Swap. Bet Slip moved to its own
+ * 5-item bar: Pitch, Menu, Live, Swap, Lend. Bet Slip moved to its own
  * floating circular button (FloatingBetSlip.jsx) instead of living
  * here — the Sporty Bet-style pattern, sitting above this bar so it
  * doesn't overlap.
@@ -52,6 +58,10 @@ export function MobileTabBar({ onOpenMenu }) {
       <NavLink to="/swap" className={({ isActive }) => `mtb-item ${isActive ? "active" : ""}`}>
         {ICONS.swap}
         <span>Swap</span>
+      </NavLink>
+      <NavLink to="/lend" className={({ isActive }) => `mtb-item ${isActive ? "active" : ""}`}>
+        {ICONS.lend}
+        <span>Lend</span>
       </NavLink>
     </nav>
   );

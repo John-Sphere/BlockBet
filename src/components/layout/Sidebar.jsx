@@ -89,6 +89,12 @@ export function Sidebar() {
             Casino
           </span>
         </Link>
+        <Link to="/portfolio" className={`bb-nav-item ${pathname === "/portfolio" ? "active" : ""}`}>
+          <span className="bb-nl">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="7" width="18" height="14" rx="2"/><path d="M3 11h18M8 15h.01M12 15h.01"/></svg>
+            Portfolio
+          </span>
+        </Link>
 
         {OTHER_SPORTS.map((s) => (
           <Link key={s.to} to={s.to} className="bb-nav-item disabled">
