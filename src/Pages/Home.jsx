@@ -107,6 +107,7 @@ export default function Home() {
         </p>
         <div className="hp-hero-cta-row">
           <a href="/football" className="hp-btn-primary">Start betting →</a>
+          <a href="/mail" className="hp-btn-secondary">BlockMail ✉</a>
           <a href="#how-it-works" className="hp-btn-secondary">How it works</a>
         </div>
         <div className="hp-hero-status"><i />{liveMatches.length} matches live right now on Arc Testnet</div>

@@ -13,6 +13,7 @@ const Casino      = lazy(() => import("./Pages/Casino"));
 const Swap         = lazy(() => import("./Pages/Swap"));
 const Lend         = lazy(() => import("./Pages/Lend"));
 const Portfolio    = lazy(() => import("./Pages/Portfolio"));
+const BlockMail    = lazy(() => import("./Pages/BlockMail"));
 const Roulette    = lazy(() => import("./Pages/Roulette"));
 const Aviator      = lazy(() => import("./Pages/Aviator"));
 const MatchDetail = lazy(() => import("./Pages/MatchDetail"));
@@ -72,6 +73,7 @@ export default function App() {
             <Route path="/swap" element={<Swap />} />
             <Route path="/lend" element={<Lend />} />
             <Route path="/portfolio" element={<Portfolio />} />
+            <Route path="/mail" element={<BlockMail />} />
             <Route path="/casino/roulette" element={<Roulette />} />
             <Route path="/casino/aviator" element={<Aviator />} />
             <Route path="/match/:matchId" element={<MatchDetail />} />
