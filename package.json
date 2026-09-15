@@ -18,6 +18,8 @@
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
     "react-router-dom": "^7.18.1",
+    "tweetnacl": "^1.0.3",
+    "tweetnacl-util": "^0.15.1",
     "viem": "^2.21.0",
     "wagmi": "^2.12.0"
   },
