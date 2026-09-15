@@ -220,12 +220,23 @@ export function useBlockMail() {
   // the same transaction — since sendMailWithPayment emits both
   // events together in one call, sharing the same transaction hash.
   // This is a genuine on-chain query every time, not cached data.
+  //
+  // Deliberately queries only a recent block range, not from block
+  // 0 — Arc's public RPC node prunes old chain history, so scanning
+  // the entire chain from genesis fails with a real "pruned history
+  // unavailable" error. 100,000 blocks comfortably covers this
+  // contract's entire lifetime for now; if message volume grows
+  // over a long period, this window may eventually need widening.
   const getInbox = useCallback(async () => {
     if (!contract || !address || !keypairRef.current) return [];
 
+    const readProvider = signer?.provider || new ethers.JsonRpcProvider("https://rpc.testnet.arc.io");
+    const currentBlock = await readProvider.getBlockNumber();
+    const fromBlock = Math.max(0, currentBlock - 100000);
+
     const [mailEvents, paymentEvents] = await Promise.all([
-      contract.queryFilter(contract.filters.MailSent(null, address)),
-      contract.queryFilter(contract.filters.MailPaymentSent(null, address)),
+      contract.queryFilter(contract.filters.MailSent(null, address), fromBlock, "latest"),
+      contract.queryFilter(contract.filters.MailPaymentSent(null, address), fromBlock, "latest"),
     ]);
 
     const paymentByTxHash = new Map();
