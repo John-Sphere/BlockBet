@@ -166,6 +166,11 @@ export default function BlockMail() {
             <button className={`bm-tab ${tab === "sent" ? "active" : ""}`} onClick={() => setTab("sent")}>
               Sent {sentHistory.length > 0 && <span className="bm-tab-count">{sentHistory.length}</span>}
             </button>
+            {tab === "inbox" && (
+              <button className="bm-tab bm-refresh-btn" onClick={refreshInbox} disabled={loadingInbox} title="Check the chain for new mail">
+                {loadingInbox ? "Checking…" : "↻ Refresh"}
+              </button>
+            )}
           </div>
 
           {tab === "inbox" && (

@@ -228,16 +228,22 @@ export function useBlockMail() {
   // contract's entire lifetime for now; if message volume grows
   // over a long period, this window may eventually need widening.
   const getInbox = useCallback(async () => {
-    if (!contract || !address || !keypairRef.current) return [];
+    if (!contract || !address || !keypairRef.current) {
+      console.log("[BlockMail debug] getInbox skipped — missing:", { hasContract: !!contract, address, hasKeypair: !!keypairRef.current });
+      return [];
+    }
 
     const readProvider = signer?.provider || new ethers.JsonRpcProvider("https://rpc.testnet.arc.io");
     const currentBlock = await readProvider.getBlockNumber();
     const fromBlock = Math.max(0, currentBlock - 100000);
+    console.log("[BlockMail debug] querying as address:", address, "fromBlock:", fromBlock, "currentBlock:", currentBlock);
 
     const [mailEvents, paymentEvents] = await Promise.all([
       contract.queryFilter(contract.filters.MailSent(null, address), fromBlock, "latest"),
       contract.queryFilter(contract.filters.MailPaymentSent(null, address), fromBlock, "latest"),
     ]);
+    console.log("[BlockMail debug] mailEvents found:", mailEvents.length, mailEvents);
+    console.log("[BlockMail debug] paymentEvents found:", paymentEvents.length);
 
     const paymentByTxHash = new Map();
     for (const p of paymentEvents) {
@@ -262,6 +268,7 @@ export function useBlockMail() {
       mailEvents.map(async (event) => {
         const senderPublicKeyHex = await getSenderKey(event.args.from);
         const decrypted = decrypt(event.args.ciphertext, event.args.nonce, senderPublicKeyHex);
+        console.log("[BlockMail debug] event from:", event.args.from, "senderKey:", senderPublicKeyHex, "decrypted:", decrypted);
         const payment = paymentByTxHash.get(event.transactionHash);
 
         let paymentInfo = null;
@@ -285,6 +292,7 @@ export function useBlockMail() {
         };
       })
     );
+    console.log("[BlockMail debug] final entries returned:", entries);
 
     // Most recent first, same convention as sentHistory.
     return entries.sort((a, b) => b.timestamp - a.timestamp);
