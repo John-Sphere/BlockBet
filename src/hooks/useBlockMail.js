@@ -227,6 +227,21 @@ export function useBlockMail() {
   // unavailable" error. 100,000 blocks comfortably covers this
   // contract's entire lifetime for now; if message volume grows
   // over a long period, this window may eventually need widening.
+  // Arc's RPC node enforces a maximum block range per eth_getLogs
+  // call — querying too wide a range in one request genuinely fails
+  // with "requested range too large". This splits a wide range into
+  // smaller sequential chunks and combines the results, the standard
+  // way to work around an RPC range cap.
+  async function queryFilterChunked(filter, fromBlock, toBlock, chunkSize = 5000) {
+    const allEvents = [];
+    for (let start = fromBlock; start <= toBlock; start += chunkSize) {
+      const end = Math.min(start + chunkSize - 1, toBlock);
+      const events = await contract.queryFilter(filter, start, end);
+      allEvents.push(...events);
+    }
+    return allEvents;
+  }
+
   const getInbox = useCallback(async () => {
     if (!contract || !address || !keypairRef.current) {
       console.log("[BlockMail debug] getInbox skipped — missing:", { hasContract: !!contract, address, hasKeypair: !!keypairRef.current });
@@ -239,8 +254,8 @@ export function useBlockMail() {
     console.log("[BlockMail debug] querying as address:", address, "fromBlock:", fromBlock, "currentBlock:", currentBlock);
 
     const [mailEvents, paymentEvents] = await Promise.all([
-      contract.queryFilter(contract.filters.MailSent(null, address), fromBlock, "latest"),
-      contract.queryFilter(contract.filters.MailPaymentSent(null, address), fromBlock, "latest"),
+      queryFilterChunked(contract.filters.MailSent(null, address), fromBlock, currentBlock),
+      queryFilterChunked(contract.filters.MailPaymentSent(null, address), fromBlock, currentBlock),
     ]);
     console.log("[BlockMail debug] mailEvents found:", mailEvents.length, mailEvents);
     console.log("[BlockMail debug] paymentEvents found:", paymentEvents.length);
