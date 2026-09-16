@@ -29,7 +29,7 @@ const ERC20_ABI = [
   "function balanceOf(address) view returns (uint256)",
 ];
 
-const INDEXER_URL = "https://indexer.dev.hyperindex.xyz/d59f742/v1/graphql";
+const INDEXER_URL = "https://indexer.dev.hyperindex.xyz/87c02a0/v1/graphql";
 
 async function queryIndexer(query, variables) {
   const res = await fetch(INDEXER_URL, {

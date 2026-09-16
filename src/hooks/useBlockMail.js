@@ -32,6 +32,25 @@ export const MAX_FILE_BYTES = 10 * 1024 * 1024; // keep in sync with api/ipfs-up
 
 const BLOCKMAIL_ADDRESS = import.meta.env.VITE_BLOCKMAIL_ADDRESS;
 
+// Same indexer already used for match/bet/swap data — real, fast
+// GraphQL queries instead of scanning blockchain history directly.
+// This is what actually resolved the earlier RPC issues (pruned
+// history unavailable, then requested range too large) — the
+// indexer processes blocks incrementally as they happen, rather
+// than needing wide ad-hoc queries against a public RPC node.
+const INDEXER_URL = "https://indexer.dev.hyperindex.xyz/87c02a0/v1/graphql";
+
+async function queryIndexer(query, variables) {
+  const res = await fetch(INDEXER_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ query, variables }),
+  });
+  const json = await res.json();
+  if (json.errors) throw new Error(json.errors[0]?.message || "Indexer query failed");
+  return json.data;
+}
+
 function sentStorageKey(address) {
   return `blockmail_sent_${address?.toLowerCase()}`;
 }
@@ -215,103 +234,63 @@ export function useBlockMail() {
     return { text: raw, attachment: null };
   }, []);
 
-  // Queries every real MailSent event addressed to you, decrypts
-  // each one, and correlates any matching MailPaymentSent event from
-  // the same transaction — since sendMailWithPayment emits both
-  // events together in one call, sharing the same transaction hash.
-  // This is a genuine on-chain query every time, not cached data.
-  //
-  // Deliberately queries only a recent block range, not from block
-  // 0 — Arc's public RPC node prunes old chain history, so scanning
-  // the entire chain from genesis fails with a real "pruned history
-  // unavailable" error. 100,000 blocks comfortably covers this
-  // contract's entire lifetime for now; if message volume grows
-  // over a long period, this window may eventually need widening.
-  // Arc's RPC node enforces a maximum block range per eth_getLogs
-  // call — querying too wide a range in one request genuinely fails
-  // with "requested range too large". This splits a wide range into
-  // smaller sequential chunks and combines the results, the standard
-  // way to work around an RPC range cap.
-  async function queryFilterChunked(filter, fromBlock, toBlock, chunkSize = 5000) {
-    const allEvents = [];
-    for (let start = fromBlock; start <= toBlock; start += chunkSize) {
-      const end = Math.min(start + chunkSize - 1, toBlock);
-      const events = await contract.queryFilter(filter, start, end);
-      allEvents.push(...events);
-    }
-    return allEvents;
-  }
-
+  // Real query against the indexer — genuinely simpler than the RPC
+  // approach this replaced, since the indexer already correlates any
+  // attached payment directly into each message (paymentToken/
+  // paymentAmount), and sender public keys can be looked up the same
+  // way instead of a separate contract call.
   const getInbox = useCallback(async () => {
-    if (!contract || !address || !keypairRef.current) {
-      console.log("[BlockMail debug] getInbox skipped — missing:", { hasContract: !!contract, address, hasKeypair: !!keypairRef.current });
-      return [];
-    }
+    if (!address || !keypairRef.current) return [];
 
-    const readProvider = signer?.provider || new ethers.JsonRpcProvider("https://rpc.testnet.arc.io");
-    const currentBlock = await readProvider.getBlockNumber();
-    const fromBlock = Math.max(0, currentBlock - 100000);
-    console.log("[BlockMail debug] querying as address:", address, "fromBlock:", fromBlock, "currentBlock:", currentBlock);
-
-    const [mailEvents, paymentEvents] = await Promise.all([
-      queryFilterChunked(contract.filters.MailSent(null, address), fromBlock, currentBlock),
-      queryFilterChunked(contract.filters.MailPaymentSent(null, address), fromBlock, currentBlock),
-    ]);
-    console.log("[BlockMail debug] mailEvents found:", mailEvents.length, mailEvents);
-    console.log("[BlockMail debug] paymentEvents found:", paymentEvents.length);
-
-    const paymentByTxHash = new Map();
-    for (const p of paymentEvents) {
-      paymentByTxHash.set(p.transactionHash, {
-        token: p.args.token,
-        amount: p.args.amount,
-      });
-    }
-
-    // Cache sender public keys within this single call — a sender
-    // who's messaged you multiple times only needs one lookup.
-    const senderKeyCache = new Map();
-    async function getSenderKey(senderAddress) {
-      if (!senderKeyCache.has(senderAddress)) {
-        const key = await contract.encryptionPublicKey(senderAddress);
-        senderKeyCache.set(senderAddress, key);
-      }
-      return senderKeyCache.get(senderAddress);
-    }
-
-    const entries = await Promise.all(
-      mailEvents.map(async (event) => {
-        const senderPublicKeyHex = await getSenderKey(event.args.from);
-        const decrypted = decrypt(event.args.ciphertext, event.args.nonce, senderPublicKeyHex);
-        console.log("[BlockMail debug] event from:", event.args.from, "senderKey:", senderPublicKeyHex, "decrypted:", decrypted);
-        const payment = paymentByTxHash.get(event.transactionHash);
-
-        let paymentInfo = null;
-        if (payment) {
-          const symbol = Object.keys(MAIL_TOKENS).find(
-            (s) => MAIL_TOKENS[s].address?.toLowerCase() === payment.token.toLowerCase()
-          );
-          if (symbol) {
-            paymentInfo = { symbol, amount: ethers.formatUnits(payment.amount, MAIL_TOKENS[symbol].decimals) };
-          }
+    const data = await queryIndexer(
+      `query Inbox($to: String!) {
+        MailMessage(where: { to: { _ilike: $to } }, order_by: { timestamp: desc }) {
+          id from to ciphertext nonce timestamp paymentToken paymentAmount
         }
-
-        return {
-          id: event.transactionHash,
-          from: event.args.from,
-          senderPublicKeyHex,
-          text: decrypted?.text ?? "[Could not decrypt this message]",
-          attachment: decrypted?.attachment ?? null,
-          payment: paymentInfo,
-          timestamp: Number(event.args.timestamp) * 1000,
-        };
-      })
+      }`,
+      { to: address }
     );
-    console.log("[BlockMail debug] final entries returned:", entries);
+    const messages = data.MailMessage;
+    if (messages.length === 0) return [];
 
-    // Most recent first, same convention as sentHistory.
-    return entries.sort((a, b) => b.timestamp - a.timestamp);
-  }, [contract, address, decrypt]);
+    // Batch-fetch every unique sender's public key in one query,
+    // rather than one lookup per message.
+    const uniqueSenders = [...new Set(messages.map((m) => m.from))];
+    const keyData = await queryIndexer(
+      `query SenderKeys($senders: [String!]) {
+        PublicKeyRegistration(where: { id: { _in: $senders } }) {
+          id publicKey
+        }
+      }`,
+      { senders: uniqueSenders }
+    );
+    const keysByAddress = new Map(keyData.PublicKeyRegistration.map((r) => [r.id.toLowerCase(), r.publicKey]));
+
+    return messages.map((m) => {
+      const senderPublicKeyHex = keysByAddress.get(m.from.toLowerCase());
+      const decrypted = senderPublicKeyHex ? decrypt(m.ciphertext, m.nonce, senderPublicKeyHex) : null;
+
+      let paymentInfo = null;
+      if (m.paymentToken) {
+        const symbol = Object.keys(MAIL_TOKENS).find(
+          (s) => MAIL_TOKENS[s].address?.toLowerCase() === m.paymentToken.toLowerCase()
+        );
+        if (symbol) {
+          paymentInfo = { symbol, amount: ethers.formatUnits(m.paymentAmount, MAIL_TOKENS[symbol].decimals) };
+        }
+      }
+
+      return {
+        id: m.id,
+        from: m.from,
+        senderPublicKeyHex,
+        text: decrypted?.text ?? "[Could not decrypt this message]",
+        attachment: decrypted?.attachment ?? null,
+        payment: paymentInfo,
+        timestamp: Number(m.timestamp) * 1000,
+      };
+    });
+  }, [address, decrypt]);
 
   /** Downloads + decrypts a file attachment referenced in an already-decrypted message. */
   const downloadAttachment = useCallback(async (attachment, senderPublicKeyHex) => {
